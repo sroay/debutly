@@ -1,0 +1,68 @@
+# Self-hosted Debutly stack (M3): Postgres (runs), Redis (queue), SeaweedFS (S3-compatible
+# screenshot storage) and workers.
+#
+#   docker compose up -d --build                  # stack + 1 worker (reads DEBUTLY_* from .env)
+#   docker compose up -d --scale worker=4         # more agents in parallel
+#   docker compose --profile smoke run --rm smoke # end-to-end check (~$0.01 of LLM)
+#
+# Then run from the host:  npm run debutly -- --store postgres://debutly:debutly@localhost:5433/debutly --queue redis://localhost:6380 ...
+# Host ports are offset so they don't clash with local Supabase stacks. Workers reach public
+# (staging) URLs; for an app on this machine run workers natively (npm run debutly:worker).
+name: debutly
+
+services:
+  postgres:
+    image: postgres:17
+    environment: { POSTGRES_USER: debutly, POSTGRES_PASSWORD: debutly, POSTGRES_DB: debutly }
+    ports: ["5433:5432"]
+    volumes: [pgdata:/var/lib/postgresql/data]
+    healthcheck: { test: ["CMD-SHELL", "pg_isready -U debutly"], interval: 2s, retries: 30 }
+
+  redis:
+    image: redis:7-alpine
+    ports: ["6380:6379"]
+    healthcheck: { test: ["CMD", "redis-cli", "ping"], interval: 2s, retries: 30 }
+
+  # S3-compatible object storage. Local-only and unauthenticated, like the rest of this stack.
+  s3:
+    image: chrislusf/seaweedfs:latest
+    command: server -dir=/data -s3 -s3.port=8333
+    ports: ["9010:8333"]
+    volumes: [s3data:/data]
+
+  s3-init:
+    image: amazon/aws-cli:latest
+    depends_on: [s3]
+    environment: { AWS_ACCESS_KEY_ID: debutly, AWS_SECRET_ACCESS_KEY: debutly, AWS_DEFAULT_REGION: us-east-1 }
+    entrypoint: >
+      sh -c "for i in $(seq 1 30); do aws --endpoint-url http://s3:8333 s3api head-bucket --bucket debutly 2>/dev/null && exit 0;
+             aws --endpoint-url http://s3:8333 s3 mb s3://debutly 2>/dev/null && exit 0; sleep 2; done; exit 1"
+
+  worker:
+    build: { context: ., dockerfile: Dockerfile.worker }
+    env_file: [{ path: .env, required: false }]
+    environment: &workerenv
+      REDIS_URL: redis://redis:6379
+      DATABASE_URL: postgres://debutly:debutly@postgres:5432/debutly
+      DEBUTLY_S3_ENDPOINT: http://s3:8333
+      DEBUTLY_S3_BUCKET: debutly
+      DEBUTLY_S3_ACCESS_KEY: debutly
+      DEBUTLY_S3_SECRET_KEY: debutly
+      DEBUTLY_S3_PUBLIC_URL: http://localhost:9010/debutly
+    depends_on:
+      postgres: { condition: service_healthy }
+      redis: { condition: service_healthy }
+      s3-init: { condition: service_completed_successfully }
+
+  smoke:
+    profiles: [smoke]
+    build: { context: ., dockerfile: Dockerfile.worker }
+    command: ["npx", "tsx", "scripts/smoke-stack.ts"]
+    env_file: [{ path: .env, required: false }]
+    environment: *workerenv
+    depends_on:
+      worker: { condition: service_started }
+
+volumes:
+  pgdata:
+  s3data:

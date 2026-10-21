@@ -1,0 +1,14 @@
+node_modules/
+/runs/
+.env
+
+# Local dashboard database (npm run debutly:import -- --store pglite:.data/dashboard)
+.data/
+
+# Dashboard
+dashboard/.next/
+dashboard/.env*.local
+dashboard/tsconfig.tsbuildinfo
+
+# Local tool settings
+.claude/

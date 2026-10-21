@@ -1,0 +1,57 @@
+import { expect, it } from "vitest";
+import { parseAgentReply } from "../../src/agent/parse-reply";
+import { describeAction } from "../../src/agent/describe";
+
+it("parses a plain JSON reply", () => {
+  const r = parseAgentReply(`{"reasoning":"go","action":{"type":"click","id":3}}`);
+  expect(r).toEqual({ reasoning: "go", action: { type: "click", id: 3 } });
+});
+
+it("parses JSON wrapped in prose or code fences", () => {
+  const r = parseAgentReply('Sure:\n```json\n{"reasoning":"x","action":{"type":"done","success":false,"note":"broken"}}\n```');
+  expect(r.action).toEqual({ type: "done", success: false, note: "broken" });
+});
+
+it("accepts a reply that leaves out the reasoning", () => {
+  expect(parseAgentReply(`{"action":{"type":"click","id":4}}`)).toEqual({ reasoning: "", action: { type: "click", id: 4 } });
+});
+
+it("rejects invalid actions", () => {
+  expect(() => parseAgentReply(`{"reasoning":"x","action":{"type":"fly"}}`)).toThrow();
+  expect(() => parseAgentReply("no json here")).toThrow(/no JSON/);
+});
+
+it("describes actions in human terms", () => {
+  const obs = { url: "http://x/", title: "t", text: "", elements: [{ id: 2, role: "button", name: "Pay", tag: "button" }] };
+  expect(describeAction({ type: "click", id: 2 }, obs)).toBe('clicked button "Pay"');
+  expect(describeAction({ type: "fill", id: 2, text: "a" }, obs)).toBe('typed "a" into button "Pay"');
+  expect(describeAction({ type: "goto", path: "/x" }, obs)).toBe("went to /x");
+  expect(describeAction({ type: "done", success: true, note: "ok" }, obs)).toBe("finished (success): ok");
+});
+
+it("parses key presses and rejects keys outside the safe set", () => {
+  expect(parseAgentReply(`{"reasoning":"close","action":{"type":"press","key":"Escape"}}`).action).toEqual({ type: "press", key: "Escape" });
+  expect(() => parseAgentReply(`{"reasoning":"x","action":{"type":"press","key":"Control+W"}}`)).toThrow();
+});
+
+it("parses waiting for a page that is still loading", () => {
+  expect(parseAgentReply(`{"reasoning":"still loading","action":{"type":"wait"}}`).action).toEqual({ type: "wait" });
+  expect(describeAction({ type: "wait" }, { url: "http://x/", title: "t", text: "", elements: [] })).toBe("waited for the page to load");
+});
+
+it("reads an action a model sent as a string, quoted or escaped (GLM 5.3 Flash does both)", () => {
+  // Seen in the 2026-10-02 nightly runs: three tries, the same reply, and the agent ended.
+  const quoted = `{"reasoning":"Company name is filled.","action":"{"type":"fill","id":1,"text":"fuseagency.com"}"}`;
+  expect(parseAgentReply(quoted)).toEqual({ reasoning: "Company name is filled.", action: { type: "fill", id: 1, text: "fuseagency.com" } });
+  const withComma = `{"reasoning":"Location.","action":"{"type":"fill","id":45,"text":"New York, NY"}"}`;
+  expect(parseAgentReply(withComma).action).toEqual({ type: "fill", id: 45, text: "New York, NY" });
+  const first = `{"action":"{"type":"click","id":3}","reasoning":"Next."}`;
+  expect(parseAgentReply(first)).toEqual({ reasoning: "Next.", action: { type: "click", id: 3 } });
+  const escaped = JSON.stringify({ reasoning: "Wait.", action: JSON.stringify({ type: "wait" }) });
+  expect(parseAgentReply(escaped).action).toEqual({ type: "wait" });
+});
+
+it("still refuses a string action that isn't an action", () => {
+  expect(() => parseAgentReply(`{"reasoning":"x","action":"click the button"}`)).toThrow();
+  expect(() => parseAgentReply(`{"reasoning":"x","action":"{"type":"explode"}"}`)).toThrow();
+});

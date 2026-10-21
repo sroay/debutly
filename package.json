@@ -1,0 +1,67 @@
+{
+  "name": "debutly",
+  "version": "0.1.0",
+  "description": "Rehearse your launch: AI agents use your web app like your first customers and report what breaks.",
+  "private": true,
+  "type": "module",
+  "license": "AGPL-3.0-only",
+  "author": "Chetan Sroay (https://github.com/sroay)",
+  "homepage": "https://github.com/sroay/debutly#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/sroay/debutly.git"
+  },
+  "bugs": {
+    "url": "https://github.com/sroay/debutly/issues"
+  },
+  "keywords": [
+    "testing",
+    "e2e",
+    "ai-agents",
+    "playwright",
+    "llm",
+    "synthetic-users",
+    "qa",
+    "launch"
+  ],
+  "engines": {
+    "node": ">=20.9"
+  },
+  "workspaces": [
+    "dashboard"
+  ],
+  "scripts": {
+    "test": "vitest run",
+    "typecheck": "tsc --noEmit",
+    "fixture": "tsx fixture/main.ts",
+    "debutly": "tsx src/cli.ts",
+    "debutly:cancel": "tsx src/cancel.ts",
+    "debutly:worker": "tsx src/worker.ts",
+    "debutly:predictions": "tsx src/predictions.ts",
+    "debutly:perceive": "tsx src/perceive.ts",
+    "debutly:costs": "tsx src/costs.ts",
+    "debutly:import": "tsx src/import.ts",
+    "dashboard": "npm run dev -w dashboard",
+    "dashboard:build": "npm run build -w dashboard"
+  },
+  "dependencies": {
+    "@anthropic-ai/sdk": "^0.128.0",
+    "@aws-sdk/client-s3": "^3.1142.0",
+    "bullmq": "^6.3.9",
+    "drizzle-orm": "^0.45.3",
+    "express": "^5.2.1",
+    "ioredis": "^5.11.1",
+    "playwright": "^1.63.0",
+    "postgres": "^3.4.9",
+    "zod": "^4.6.5"
+  },
+  "devDependencies": {
+    "@electric-sql/pglite": "^0.5.8",
+    "@types/express": "^5.0.6",
+    "@types/node": "^26.6.3",
+    "drizzle-kit": "^0.31.11",
+    "tsx": "^4.23.15",
+    "typescript": "^7.0.2",
+    "vitest": "^5.0.2"
+  }
+}

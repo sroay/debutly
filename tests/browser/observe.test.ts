@@ -1,0 +1,76 @@
+import { afterAll, beforeAll, expect, it } from "vitest";
+import { chromium, type Browser, type Page } from "playwright";
+import { startFixture, type RunningFixture } from "../../fixture/server";
+import { observe } from "../../src/browser/observe";
+
+let fx: RunningFixture;
+let browser: Browser;
+let page: Page;
+
+beforeAll(async () => {
+  fx = await startFixture();
+  browser = await chromium.launch();
+  page = await browser.newPage();
+});
+afterAll(async () => {
+  await browser.close();
+  await fx.close();
+});
+
+it("names a field by the label wrapped around it, without the field's own text", async () => {
+  await page.setContent(`
+    <label>Bulk action <select><option>Archive</option><option>Delete</option></select></label>
+    <label>Company name <input></label>
+    <label><input type="checkbox"> Send me updates</label>`);
+  const obs = await observe(page);
+  expect(obs.elements.map((e) => e.name)).toEqual(["Bulk action", "Company name", "Send me updates"]);
+});
+
+it("lists interactive elements with roles and accessible names", async () => {
+  await page.goto(`${fx.url}/signup`);
+  const obs = await observe(page);
+  expect(obs.title).toBe("Sign up - Fixturely");
+  expect(obs.elements).toContainEqual(expect.objectContaining({ role: "link", name: "Pricing" }));
+  expect(obs.elements).toContainEqual(expect.objectContaining({ role: "input:email", name: "Work email" }));
+  expect(obs.elements).toContainEqual(expect.objectContaining({ role: "button", name: "Create account" }));
+  expect(obs.text).toContain("Create your account");
+});
+
+it("exposes the unlabeled icon button with an empty name", async () => {
+  await page.goto(`${fx.url}/dashboard`);
+  const obs = await observe(page);
+  expect(obs.elements).toContainEqual(expect.objectContaining({ role: "button", name: "" }));
+});
+
+it("skips hidden inputs", async () => {
+  await page.goto(`${fx.url}/checkout?plan=solo`);
+  const obs = await observe(page);
+  expect(obs.elements.some((e) => e.role === "input:hidden")).toBe(false);
+});
+
+it("sees the options of an open custom dropdown", async () => {
+  await page.goto(`${fx.url}/checkout?plan=solo`);
+  await page.locator("#country").click();
+  const obs = await observe(page);
+  expect(obs.elements).toContainEqual(expect.objectContaining({ role: "combobox", name: "Billing country" }));
+  expect(obs.elements).toContainEqual(expect.objectContaining({ role: "option", name: "United Kingdom" }));
+});
+
+it("falls back to the title tooltip for an icon-only button, as browsers do", async () => {
+  await page.setContent(`<button title="Sign out"><svg width="8" height="8"></svg></button><button><svg width="8" height="8"></svg></button>`);
+  const obs = await observe(page);
+  expect(obs.elements.map((e) => e.name)).toEqual(["Sign out", ""]);
+});
+
+it("names a native select by its label and lists its options apart", async () => {
+  await page.goto(`${fx.url}/signup`);
+  const obs = await observe(page);
+  expect(obs.elements).toContainEqual(
+    expect.objectContaining({
+      role: "select",
+      name: "Team size",
+      value: "Just me",
+      options: ["Just me", "2-10 people", "11-50 people"],
+    }),
+  );
+});
