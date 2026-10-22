@@ -1,5 +1,7 @@
 # Debutly
 
+[![Rehearsed with Debutly](https://debutly.dev/badge.svg)](https://debutly.dev)
+
 **Rehearse your launch.** Debutly sends AI agents through your web app as if they were your first customers. In a real browser they sign up, confirm their email, pick a plan, invite teammates and use the product. Then they tell you what broke, where they got stuck and where they gave up, with the steps to reproduce it, screenshots, and how many agents hit each problem.
 
 Run it before a launch, on every pull request, or on a schedule against a throwaway copy of your app.

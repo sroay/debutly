@@ -90,6 +90,11 @@ it("quotes what the app said when a missing key explains a failure", () => {
   expect(md).not.toContain("Blocked at the same moment");
 });
 
+it("ends with where the report came from", () => {
+  const md = renderReport({ targetUrl: "http://a.test", goal: "Buy", sessions: [session], findings: [] });
+  expect(md.trimEnd().endsWith("Rehearsed with [Debutly](https://debutly.dev).")).toBe(true);
+});
+
 it("says up front when the AI provider ran out of credits part-way", () => {
   const stopped: Session = { ...session, agentId: "p2", personaName: "Ben", outcome: "error", outcomeNote: "The AI provider account is out of credits: 402" };
   const md = renderReport({ targetUrl: "http://a.test", goal: "Buy", sessions: [session, stopped], findings: [] });

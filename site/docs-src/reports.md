@@ -57,3 +57,13 @@ Failures your test copy caused, not your app: a server error saying a key is mis
 ## In the dashboard
 
 Recorded runs also appear in the [dashboard](/docs/dashboard), where each finding links to a step-by-step replay of the moment it happened, and findings are marked new, recurring or gone from one run to the next.
+
+## Show that you rehearse
+
+If your project is public, a badge in your README tells visitors you test the first-customer journey before you ship:
+
+[![Rehearsed with Debutly](https://debutly.dev/badge.svg)](https://debutly.dev)
+
+```markdown
+[![Rehearsed with Debutly](https://debutly.dev/badge.svg)](https://debutly.dev)
+```

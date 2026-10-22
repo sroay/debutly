@@ -178,5 +178,9 @@ export function renderReport(input: ReportInput): string {
     low.length ? low.map((f) => renderFinding(f, input.sessions)).join("\n\n") : "_None._",
     "",
     ...renderSandboxCaused(caused),
+    "---",
+    "",
+    "Rehearsed with [Debutly](https://debutly.dev).",
+    "",
   ].join("\n");
 }
