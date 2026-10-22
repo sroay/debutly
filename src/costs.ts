@@ -9,6 +9,7 @@ import "./util/key-defaults";
 import { execFile } from "node:child_process";
 import { promisify } from "node:util";
 import { parseArgs } from "node:util";
+import { isOpenRouter } from "./llm/openrouter";
 
 const run = promisify(execFile);
 
@@ -67,7 +68,7 @@ const usd = (x: number) => `$${x.toFixed(2)}`;
 if (process.argv[1]?.endsWith("costs.ts")) {
   const { values } = parseArgs({ options: { repo: { type: "string", multiple: true } } });
   const { DEBUTLY_BASE_URL, DEBUTLY_API_KEY } = process.env;
-  if (DEBUTLY_BASE_URL?.includes("openrouter.ai") && DEBUTLY_API_KEY) {
+  if (DEBUTLY_BASE_URL && isOpenRouter(DEBUTLY_BASE_URL) && DEBUTLY_API_KEY) {
     const s = await fetchKeySpend(DEBUTLY_BASE_URL, DEBUTLY_API_KEY);
     console.log("OpenRouter key");
     console.log(`  Today ${usd(s.today)} · this week ${usd(s.week)} · this month ${usd(s.month)} · all time ${usd(s.total)}`);

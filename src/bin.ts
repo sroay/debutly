@@ -4,6 +4,7 @@ import "./util/legacy-env";
 import "./util/key-defaults";
 import { createRequire } from "node:module";
 import { join } from "node:path";
+import { fileURLToPath } from "node:url";
 import { CONFIG_FILE, configArgs, readConfig } from "./config";
 import { OutOfCreditsError } from "./llm/types";
 
@@ -30,9 +31,9 @@ const flagsOnly = !first || (first.startsWith("-") && !["--help", "-h", "--versi
 const command = flagsOnly ? "run" : first;
 const args = flagsOnly ? process.argv.slice(2) : rest;
 
-// The other entry points read their own flags from process.argv.
-const handOver = (argv: string[]) => {
-  process.argv = [process.argv[0], process.argv[1], ...argv];
+// The other entry points read their own flags from process.argv, as if run directly.
+const handOver = (entry: string, argv: string[]) => {
+  process.argv = [process.argv[0], fileURLToPath(new URL(entry, import.meta.url)), ...argv];
 };
 
 async function run(): Promise<void> {
@@ -69,7 +70,7 @@ async function run(): Promise<void> {
       process.exit(1);
     }
   }
-  handOver(argv);
+  handOver("./cli.ts", argv);
   await import("./cli");
 }
 
@@ -89,27 +90,27 @@ try {
       break;
     }
     case "perceive":
-      handOver(args);
+      handOver("./perceive.ts", args);
       await import("./perceive");
       break;
     case "worker":
-      handOver(args);
+      handOver("./worker.ts", args);
       await import("./worker");
       break;
     case "cancel":
-      handOver(args);
+      handOver("./cancel.ts", args);
       await import("./cancel");
       break;
     case "import":
-      handOver(args);
+      handOver("./import.ts", args);
       await import("./import");
       break;
     case "predictions":
-      handOver(args);
+      handOver("./predictions.ts", args);
       await import("./predictions");
       break;
     case "costs":
-      handOver(args);
+      handOver("./costs.ts", args);
       await import("./costs");
       break;
     case "help":

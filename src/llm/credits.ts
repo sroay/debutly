@@ -1,4 +1,5 @@
 import type { CostEstimate } from "../cost/estimate";
+import { isOpenRouter } from "./openrouter";
 
 /**
  * What an OpenRouter key may still spend, in USD, from GET /key. Null when the key has no limit,
@@ -6,7 +7,7 @@ import type { CostEstimate } from "../cost/estimate";
  * management key, so a key limit is the only balance an ordinary key can see.
  */
 export async function keyCreditsLeft(baseUrl: string, apiKey: string, fetchFn: typeof fetch = fetch): Promise<number | null> {
-  if (!/openrouter\.ai/.test(baseUrl)) return null;
+  if (!isOpenRouter(baseUrl)) return null;
   try {
     const res = await fetchFn(`${baseUrl.replace(/\/+$/, "")}/key`, { headers: { authorization: `Bearer ${apiKey}` } });
     if (!res.ok) return null;

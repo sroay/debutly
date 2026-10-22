@@ -1,3 +1,4 @@
+import { isOpenRouter } from "./openrouter";
 import { OutOfCreditsError, type LlmClient, type LlmRequest } from "./types";
 
 export interface OpenAiCompatibleOptions {
@@ -36,7 +37,7 @@ export class OpenAiCompatibleLlm implements LlmClient {
   async complete(req: LlmRequest): Promise<string> {
     if (this.outOfCredits) throw this.outOfCredits;
     const fetchFn = this.opts.fetchFn ?? fetch;
-    const openRouter = /openrouter.ai/.test(this.opts.baseUrl);
+    const openRouter = isOpenRouter(this.opts.baseUrl);
     const sleep = this.opts.sleep ?? ((ms: number) => new Promise<void>((r) => setTimeout(r, ms)));
     let maxTokens = req.maxTokens ?? 4096;
     const body = () =>

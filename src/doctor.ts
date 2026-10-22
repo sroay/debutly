@@ -1,6 +1,7 @@
 // `debutly doctor`: is everything in place for a run? Each check says what to do when it fails.
 import { CONFIG_FILE, readConfig, type DebutlyConfig } from "./config";
 import { keyCreditsLeft } from "./llm/credits";
+import { isOpenRouter } from "./llm/openrouter";
 
 export type CheckStatus = "ok" | "warn" | "fail";
 export interface Check {
@@ -48,7 +49,7 @@ async function keyWorks(env: NodeJS.ProcessEnv, fetchFn: typeof fetch): Promise<
     const res =
       provider === "anthropic"
         ? await fetchFn("https://api.anthropic.com/v1/models", { headers: { "x-api-key": key, "anthropic-version": "2023-06-01" }, signal })
-        : await fetchFn(`${(env.DEBUTLY_BASE_URL ?? "").replace(/\/+$/, "")}/${/openrouter\.ai/.test(env.DEBUTLY_BASE_URL ?? "") ? "key" : "models"}`, {
+        : await fetchFn(`${(env.DEBUTLY_BASE_URL ?? "").replace(/\/+$/, "")}/${isOpenRouter(env.DEBUTLY_BASE_URL) ? "key" : "models"}`, {
             headers: { authorization: `Bearer ${key}` },
             signal,
           });

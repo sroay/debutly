@@ -3,6 +3,7 @@
 // the Anthropic provider. OPENROUTER_API_KEY and ANTHROPIC_API_KEY are read when
 // DEBUTLY_API_KEY isn't set, so a key already in the environment for other tools just works.
 // Anything set explicitly wins. Entry points import this right after legacy-env.
+import { isOpenRouter } from "../llm/openrouter";
 
 export const OPENROUTER_DEFAULTS = {
   DEBUTLY_PROVIDER: "openai-compatible",
@@ -13,13 +14,16 @@ export const OPENROUTER_DEFAULTS = {
 } as const;
 
 export function applyKeyDefaults(env: NodeJS.ProcessEnv = process.env): NodeJS.ProcessEnv {
+  // A borrowed key only goes where it belongs: OpenRouter's to OpenRouter, Anthropic's to
+  // Anthropic, never to an address set elsewhere.
   if (!env.DEBUTLY_API_KEY) {
-    const key = env.OPENROUTER_API_KEY || env.ANTHROPIC_API_KEY;
-    if (key) env.DEBUTLY_API_KEY = key;
+    const toOpenRouter = !env.DEBUTLY_BASE_URL || isOpenRouter(env.DEBUTLY_BASE_URL);
+    if (env.OPENROUTER_API_KEY && toOpenRouter && (!env.DEBUTLY_PROVIDER || env.DEBUTLY_PROVIDER === "openai-compatible")) env.DEBUTLY_API_KEY = env.OPENROUTER_API_KEY;
+    else if (env.ANTHROPIC_API_KEY && (!env.DEBUTLY_PROVIDER || env.DEBUTLY_PROVIDER === "anthropic")) env.DEBUTLY_API_KEY = env.ANTHROPIC_API_KEY;
   }
   const key = env.DEBUTLY_API_KEY ?? "";
   if (!env.DEBUTLY_PROVIDER && key.startsWith("sk-ant-")) env.DEBUTLY_PROVIDER = "anthropic";
-  const openRouter = key.startsWith("sk-or-") && (!env.DEBUTLY_PROVIDER || env.DEBUTLY_PROVIDER === "openai-compatible") && (!env.DEBUTLY_BASE_URL || /openrouter\.ai/.test(env.DEBUTLY_BASE_URL));
+  const openRouter = key.startsWith("sk-or-") && (!env.DEBUTLY_PROVIDER || env.DEBUTLY_PROVIDER === "openai-compatible") && (!env.DEBUTLY_BASE_URL || isOpenRouter(env.DEBUTLY_BASE_URL));
   if (openRouter) {
     // Set to empty is set: DEBUTLY_REASONING_EFFORT= turns reasoning control off.
     for (const [name, value] of Object.entries(OPENROUTER_DEFAULTS)) if (env[name] === undefined) env[name] = value;
