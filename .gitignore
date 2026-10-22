@@ -12,3 +12,10 @@ dashboard/tsconfig.tsbuildinfo
 
 # Local tool settings
 .claude/
+
+# Vercel CLI links
+.vercel/
+.env*.local
+
+.vercel
+.env*.local
