@@ -6,7 +6,7 @@ Run it before a launch, on every pull request, or every night against a throwawa
 
 > **Only point Debutly at a test, staging or throwaway copy of your app, never production.** Agents create accounts, submit forms and, in test mode, pay.
 
-Created by [Chetan Sroay](https://github.com/sroay). Status: early. Flags, the report format and the database schema may still change.
+Website: [debutly.dev](https://debutly.dev). Created by [Chetan Sroay](https://github.com/sroay). Status: early. Flags, the report format and the database schema may still change.
 
 ## What it does
 

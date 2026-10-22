@@ -6,7 +6,7 @@
   "type": "module",
   "license": "AGPL-3.0-only",
   "author": "Chetan Sroay (https://github.com/sroay)",
-  "homepage": "https://github.com/sroay/debutly#readme",
+  "homepage": "https://debutly.dev",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/sroay/debutly.git"
