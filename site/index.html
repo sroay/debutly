@@ -1,0 +1,203 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Debutly: rehearse your launch</title>
+  <meta name="description" content="AI agents use your web app like its first customers, in a real browser: they sign up, pay, invite their team and use the product, then tell you what broke. Free and open source.">
+  <link rel="canonical" href="https://debutly.dev/">
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+  <meta property="og:type" content="website">
+  <meta property="og:url" content="https://debutly.dev/">
+  <meta property="og:title" content="Debutly: rehearse your launch">
+  <meta property="og:description" content="AI agents use your web app like its first customers and tell you what broke, before real customers find it. Free and open source.">
+  <meta property="og:image" content="https://debutly.dev/og.png">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="theme-color" content="#ECEEF0">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible+Mono:wght@400;700&family=Atkinson+Hyperlegible+Next:wght@400;700&family=Big+Shoulders+Display:wght@800;900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/styles.css">
+</head>
+<body>
+  <a class="skip" href="#main">Skip to content</a>
+
+  <header class="top">
+    <a class="wordmark" href="/" aria-label="Debutly home">
+      <span class="mark" aria-hidden="true"></span>Debutly
+    </a>
+    <nav aria-label="Main">
+      <a href="#how">How it works</a>
+      <a href="#report">Sample report</a>
+      <a href="https://github.com/sroay/debutly">GitHub</a>
+    </nav>
+  </header>
+
+  <main id="main">
+    <section class="hero" aria-labelledby="hero-title">
+      <h1 id="hero-title">Rehearse your launch.</h1>
+      <div class="hero-text">
+        <p class="lede">Debutly sends AI agents through your web app as its first customers. In a real browser they sign up, confirm their email, pick a plan, invite their team and use the product. Then they tell you what broke, and where they gave up.</p>
+        <div class="actions">
+          <a class="button button-primary" href="https://github.com/sroay/debutly#quick-start">Get started on GitHub</a>
+          <a class="button" href="#report">See a sample report</a>
+        </div>
+      </div>
+    </section>
+
+    <section class="stage" aria-label="An example rehearsal">
+      <div class="cast">
+        <h2 class="small-heading">The cast for this run</h2>
+        <ul class="cast-list">
+          <li class="role t-pink">
+            <span class="tape" aria-hidden="true"></span>
+            <span><strong>Maya Okafor</strong> runs a six-person design studio. She signs up and buys the Team plan.</span>
+          </li>
+          <li class="role t-blue">
+            <span class="tape" aria-hidden="true"></span>
+            <span><strong>Tom Reyes</strong> is Maya's designer. He joins from her invite email.</span>
+          </li>
+          <li class="role t-yellow">
+            <span class="tape" aria-hidden="true"></span>
+            <span><strong>Priya Nair</strong> uses a screen reader.</span>
+          </li>
+          <li class="role t-green">
+            <span class="tape" aria-hidden="true"></span>
+            <span><strong>Lucas Berg</strong> is on a slow mobile connection.</span>
+          </li>
+        </ul>
+        <p class="note">Made-up customers for a demo app. You describe your buyers, and Debutly casts people like them.</p>
+      </div>
+
+      <figure class="sheet" aria-labelledby="log-title">
+        <figcaption id="log-title" class="sheet-title">Run log for acme.test</figcaption>
+        <ol class="log" data-play>
+          <li class="t-pink"><span class="who">Maya</span>opens acme.test and starts a free trial</li>
+          <li class="t-pink"><span class="who">Maya</span>confirms her email from the link in her inbox</li>
+          <li class="t-pink"><span class="who">Maya</span>chooses the Team plan and pays with a test card</li>
+          <li class="t-pink"><span class="who">Maya</span>invites tom@studio.test</li>
+          <li class="t-yellow found"><span class="who">Priya</span>reaches the plan picker: its buttons have no names<span class="flag">Finding</span></li>
+          <li class="t-blue found"><span class="who">Tom</span>opens the invite and reads "This link has expired"<span class="flag">Finding</span></li>
+          <li class="t-green found"><span class="who">Lucas</span>waits 14 seconds for the pricing page<span class="flag">Finding</span></li>
+          <li class="t-green"><span class="who">Lucas</span>gives up before checkout</li>
+        </ol>
+        <p class="sheet-foot">Finished in 6 minutes for $0.04, with 3 findings.</p>
+      </figure>
+    </section>
+
+    <section id="how" class="band" aria-labelledby="how-title">
+      <h2 id="how-title">How a rehearsal works</h2>
+      <ol class="steps">
+        <li>
+          <h3>Start a test copy of your app</h3>
+          <p>A staging site, or a throwaway copy built fresh in CI with test keys. Never production: the agents create accounts, submit forms and pay.</p>
+        </li>
+        <li>
+          <h3>Describe your customers</h3>
+          <p>Say who buys from you and what they should get done. Debutly casts them: owners with budgets, their teammates, and people who use the web differently.</p>
+        </li>
+        <li>
+          <h3>Let them use it</h3>
+          <p>Each agent gets its own browser and inbox, and works through your app a step at a time, reading the screen as a person would.</p>
+        </li>
+        <li>
+          <h3>Read the notes</h3>
+          <p>Every problem comes with the steps to reproduce it, screenshots, and how many agents ran into it.</p>
+        </li>
+      </ol>
+    </section>
+
+    <section id="report" class="band" aria-labelledby="report-title">
+      <h2 id="report-title">Notes from a rehearsal</h2>
+      <p class="section-lede">From a run against a demo app. In the dashboard, each finding opens a replay of the moment it happened.</p>
+      <div class="report">
+        <article class="finding t-pink">
+          <p class="severity">Blocker <span class="seen">seen by 3 of 4 agents</span></p>
+          <h3>Invite links expire before teammates open them</h3>
+          <ol class="repro">
+            <li>The owner invites a teammate from Settings.</li>
+            <li>The teammate opens the email a minute later.</li>
+            <li>The page says "This link has expired", with no way to ask for a new one.</li>
+          </ol>
+        </article>
+        <article class="finding t-yellow">
+          <p class="severity">Major <span class="seen">seen by the low-vision agent</span></p>
+          <h3>The cookie banner covers the Pay button at 200% zoom</h3>
+          <ol class="repro">
+            <li>Zoom the checkout page to 200%.</li>
+            <li>Scroll to the card form.</li>
+            <li>The banner sits over Pay, and its close button is off the screen.</li>
+          </ol>
+        </article>
+        <article class="finding t-blue">
+          <p class="severity">Minor <span class="seen">seen by the screen-reader agent</span></p>
+          <h3>Plan buttons have no names</h3>
+          <ol class="repro">
+            <li>Open Pricing with a screen reader.</li>
+            <li>Move through the plans: each is announced only as "button".</li>
+          </ol>
+        </article>
+        <aside class="env-note">
+          <h3>Not counted as bugs</h3>
+          <p>The test copy blocked a payment webhook and two outgoing emails, as it should. Failures that happened because of that are listed apart, so they never pile up in your bug list.</p>
+        </aside>
+      </div>
+    </section>
+
+    <section class="band" aria-labelledby="what-title">
+      <h2 id="what-title">What gets rehearsed</h2>
+      <dl class="features">
+        <div>
+          <dt>Whole businesses, not just users</dt>
+          <dd>An owner signs up and pays; teammates accept invites and work in their own logins. Roles, seats and shared workspaces get tested too.</dd>
+        </div>
+        <div>
+          <dt>People who use the web differently</dt>
+          <dd>Every run includes a screen-reader user, someone with low vision, someone on a slow connection and a non-native English speaker.</dd>
+        </div>
+        <div>
+          <dt>What buyers think</dt>
+          <dd>Skeptical buyer agents read your landing and pricing pages next to your competitors' and say why they would say no. Compare two versions before you ship one.</dd>
+        </div>
+        <div>
+          <dt>Real bugs, not test-environment noise</dt>
+          <dd>If your app runs in a sandbox, Debutly reads what it blocked and keeps those failures out of your findings.</dd>
+        </div>
+        <div>
+          <dt>A replay of every run</dt>
+          <dd>The dashboard shows each agent's run step by step: what it saw, what it did, why, and what happened next.</dd>
+        </div>
+        <div>
+          <dt>Costs you can see</dt>
+          <dd>Every run is priced before it starts and can be capped. A quick run with a low-cost model costs a few cents.</dd>
+        </div>
+      </dl>
+    </section>
+
+    <section id="start" class="band open" aria-labelledby="start-title">
+      <div class="open-text">
+        <h2 id="start-title">Free and open source</h2>
+        <p>Debutly is licensed under AGPL-3.0. Run it on your machine or in your own GitHub Actions, with your own model key: your code and keys stay with you.</p>
+        <p>A hosted version is in the works. Watch the repository to hear when it's ready.</p>
+        <a class="button button-primary" href="https://github.com/sroay/debutly">View on GitHub</a>
+      </div>
+      <pre class="code" aria-label="Quick start commands"><code>git clone https://github.com/sroay/debutly.git
+cd debutly && npm install
+npx playwright install chromium
+cp .env.example .env   <span class="comment"># add your model key</span>
+
+node --env-file=.env --import tsx src/cli.ts \
+  --url http://localhost:3000 \
+  --goal "Sign up, choose a plan and invite a teammate" \
+  --icp "Owners of small design studios" --agents 3</code></pre>
+    </section>
+  </main>
+
+  <footer class="foot">
+    <p>Debutly is made by <a href="https://github.com/sroay">Chetan Sroay</a>.</p>
+    <p class="foot-links"><a href="https://github.com/sroay/debutly">Source on GitHub</a> <a href="https://github.com/sroay/debutly/blob/master/LICENSE">AGPL-3.0 licence</a> <a href="https://github.com/sroay/debutly/security">Report a security issue</a></p>
+  </footer>
+
+  <script src="/play.js" defer></script>
+</body>
+</html>
