@@ -2,7 +2,6 @@
   "name": "debutly",
   "version": "0.1.0",
   "description": "Rehearse your launch: AI agents use your web app like your first customers and report what breaks.",
-  "private": true,
   "type": "module",
   "license": "AGPL-3.0-only",
   "author": "Chetan Sroay (https://github.com/sroay)",
@@ -25,8 +24,19 @@
     "launch"
   ],
   "engines": {
-    "node": ">=20.9"
+    "node": ">=20.12"
   },
+  "bin": {
+    "debutly": "bin/debutly.mjs"
+  },
+  "files": [
+    "bin/",
+    "src/",
+    "drizzle/",
+    "tsconfig.json",
+    "LICENSE",
+    "README.md"
+  ],
   "workspaces": [
     "dashboard"
   ],
@@ -47,21 +57,24 @@
   "dependencies": {
     "@anthropic-ai/sdk": "^0.128.0",
     "@aws-sdk/client-s3": "^3.1142.0",
+    "@electric-sql/pglite": "^0.5.8",
     "bullmq": "^6.3.9",
     "drizzle-orm": "^0.45.3",
     "express": "^5.2.1",
     "ioredis": "^5.11.1",
     "playwright": "^1.63.0",
     "postgres": "^3.4.9",
+    "tsx": "^4.23.15",
     "zod": "^4.6.5"
   },
   "devDependencies": {
-    "@electric-sql/pglite": "^0.5.8",
     "@types/express": "^5.0.6",
     "@types/node": "^26.6.3",
     "drizzle-kit": "^0.31.11",
-    "tsx": "^4.23.15",
     "typescript": "^7.0.2",
     "vitest": "^5.0.2"
+  },
+  "publishConfig": {
+    "access": "public"
   }
 }

@@ -9,6 +9,7 @@
 // Pages are read, never submitted to. Writes launch-readiness.md, verdicts.json and
 // market-context.json; with --store the run and its predictions are recorded.
 import "./util/legacy-env";
+import "./util/key-defaults";
 import { mkdir, readFile, writeFile } from "node:fs/promises";
 import { join } from "node:path";
 import { parseArgs } from "node:util";

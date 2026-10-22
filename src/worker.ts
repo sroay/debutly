@@ -5,6 +5,7 @@
 //
 // Optional: DEBUTLY_WORKER_CONCURRENCY (default 2), DEBUTLY_S3_* for screenshots (else ./runs/worker/<runId>).
 import "./util/legacy-env";
+import "./util/key-defaults";
 import { join } from "node:path";
 import { Worker } from "bullmq";
 import { chromium } from "playwright";

@@ -2,6 +2,7 @@
 // serves the fixture, runs 2 real agents through the queue on the workers, and checks the run
 // landed in Postgres with its screenshots in S3 storage. Costs about $0.01 of LLM.
 import "../src/util/legacy-env";
+import "../src/util/key-defaults";
 import { Queue, QueueEvents } from "bullmq";
 import { hostname } from "node:os";
 import { startFixture } from "../fixture/server";

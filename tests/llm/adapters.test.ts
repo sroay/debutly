@@ -81,6 +81,21 @@ describe("OpenAiCompatibleLlm", () => {
     expect(fetchFn).toHaveBeenCalledTimes(1);
   });
 
+  it("asks for a shorter reply when that is all the balance covers (2026-10-22)", async () => {
+    const short = '{"error":{"message":"This request requires more credits, or fewer max_tokens. You requested up to 16000 tokens, but can only afford 7001.","code":402}}';
+    const fetchFn = vi
+      .fn()
+      .mockResolvedValueOnce(new Response(short, { status: 402 }))
+      .mockResolvedValueOnce(new Response(JSON.stringify({ choices: [{ message: { content: "ok" } }] }), { status: 200 }));
+    const llm = new OpenAiCompatibleLlm({ baseUrl: "https://x.test/v1", apiKey: "k", model: "m", fetchFn });
+    expect(await llm.complete({ ...req, maxTokens: 16000 })).toBe("ok");
+    const sizes = fetchFn.mock.calls.map((c) => JSON.parse((c as unknown as [string, RequestInit])[1].body as string).max_tokens);
+    expect(sizes).toEqual([16000, 7001]);
+    // Too little for any useful reply: out of credits.
+    const broke = vi.fn(async () => new Response(short.replace("7001", "300"), { status: 402 }));
+    await expect(new OpenAiCompatibleLlm({ baseUrl: "https://x.test/v1", apiKey: "k", model: "m", fetchFn: broke }).complete(req)).rejects.toBeInstanceOf(OutOfCreditsError);
+  });
+
   it("gives up after repeated rate limits", async () => {
     const fetchFn = vi.fn(async () => new Response("busy", { status: 429 }));
     const llm = new OpenAiCompatibleLlm({ baseUrl: "https://x.test/v1", apiKey: "k", model: "m", fetchFn, sleep: async () => {} });

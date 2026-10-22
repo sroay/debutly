@@ -1,0 +1,55 @@
+name: ci
+on:
+  push:
+    branches: [master]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci --no-audit --no-fund
+      - run: npx playwright install --with-deps chromium
+      - run: npm run typecheck
+      - run: npm run typecheck -w dashboard
+      - run: npm test
+
+  # The GitHub Action itself, end to end against the seeded-bug fixture: one agent, a few steps,
+  # well under a cent. Needs the DEBUTLY_API_KEY secret, so it skips on forks.
+  action:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    if: github.event_name == 'push'
+    env:
+      HAS_KEY: ${{ secrets.DEBUTLY_API_KEY != '' }}
+    steps:
+      - uses: actions/checkout@v4
+        if: env.HAS_KEY == 'true'
+      - name: Start the fixture app
+        if: env.HAS_KEY == 'true'
+        run: |
+          npm ci --no-audit --no-fund
+          npx tsx fixture/main.ts &
+      - uses: ./
+        if: env.HAS_KEY == 'true'
+        id: debutly
+        with:
+          api-key: ${{ secrets.DEBUTLY_API_KEY }}
+          url: http://localhost:4310
+          goal: Sign up and choose the Studio plan
+          icp: Freelance designers who sell templates
+          max-cost: "0.05"
+          args: --agents 1 --max-steps 8 --inclusion off
+      # Whether one agent finds the planted bug varies run to run; the acceptance test covers that.
+      - name: A report was written
+        if: env.HAS_KEY == 'true'
+        run: grep -q "^# Debutly Report" "${{ steps.debutly.outputs.report }}/report.md"

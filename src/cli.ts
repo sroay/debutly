@@ -1,4 +1,5 @@
 import "./util/legacy-env";
+import "./util/key-defaults";
 import { parseArgs } from "node:util";
 import { Queue, QueueEvents } from "bullmq";
 import { writeFile } from "node:fs/promises";
@@ -46,7 +47,8 @@ const { values } = parseArgs({
     "max-cost": { type: "string" },
     // Screen-reader, low-vision, slow-connection and non-native-English agents, rotating nightly.
     inclusion: { type: "string", default: "on" },
-    "max-steps": { type: "string", default: "20" },
+    // GLM-5.3 Flash, the default agent model, takes about 40% more steps than Gemini.
+    "max-steps": { type: "string", default: "30" },
     concurrency: { type: "string", default: "3" },
     out: { type: "string" },
     // Local mail catcher (e.g. Mailpit from `supabase start`) that gives agents real inboxes.
@@ -76,7 +78,7 @@ const { values } = parseArgs({
 const unitKind = values.unit;
 if (!values.url || !values.goal || !values.icp || (unitKind !== "individual" && unitKind !== "business")) {
   console.error(
-    'Usage: npm run debutly -- --url <url> --goal "<goal>" --icp "<ideal customer profile>" [--unit individual|business] [--tier quick|standard|deep] [--agents N] [--employees N] [--max-cost USD] [--inclusion on|off] [--max-steps 20] [--concurrency 3] [--out runs/x] [--mailpit http://127.0.0.1:54324] [--email-domain agents.test] [--sandbox-outbox http://localhost:3000/api/sandbox/outbox] [--store postgres://…] [--app name] [--trigger nightly|pr|manual] [--ci-url url] [--screenshot-days 7] [--queue redis://…] [--agent-token-cap N] [--agent-minutes N] [--evaluators N]',
+    'Usage: npx debutly (settings in debutly.json; npx debutly init writes one) or npx debutly --url <url> --goal "<goal>" --icp "<ideal customer profile>" [--unit individual|business] [--tier quick|standard|deep] [--agents N] [--employees N] [--max-cost USD] [--inclusion on|off] [--max-steps 30] [--concurrency 3] [--out runs/x] [--mailpit http://127.0.0.1:54324] [--email-domain agents.test] [--sandbox-outbox http://localhost:3000/api/sandbox/outbox] [--store postgres://…] [--app name] [--trigger nightly|pr|manual] [--ci-url url] [--screenshot-days 7] [--queue redis://…] [--agent-token-cap N] [--agent-minutes N] [--evaluators N]',
   );
   process.exit(1);
 }

@@ -18,6 +18,11 @@ export interface OpenAiCompatibleOptions {
 const MAX_ATTEMPTS = 4;
 const MAX_WAIT_MS = 30_000;
 const isRetryable = (status: number) => status === 429 || status >= 500;
+// OpenRouter holds back credit for a reply of max_tokens. On a low balance it refuses with 402 and
+// says what it can still cover ("You requested up to 16000 tokens, but can only afford 7001"); a
+// reply that size is still plenty for most requests (an agent's is ~150 tokens), so ask again.
+const AFFORDABLE = /can only afford (\d+)/;
+const MIN_AFFORDABLE_TOKENS = 1024;
 
 export class OpenAiCompatibleLlm implements LlmClient {
   private outOfCredits?: OutOfCreditsError;
@@ -33,21 +38,23 @@ export class OpenAiCompatibleLlm implements LlmClient {
     const fetchFn = this.opts.fetchFn ?? fetch;
     const openRouter = /openrouter.ai/.test(this.opts.baseUrl);
     const sleep = this.opts.sleep ?? ((ms: number) => new Promise<void>((r) => setTimeout(r, ms)));
-    const body = JSON.stringify({
-      model: this.opts.model,
-      max_tokens: req.maxTokens ?? 4096,
-      messages: [{ role: "system", content: req.system }, ...req.messages],
-      ...(this.opts.reasoningEffort ? { reasoning: { effort: this.opts.reasoningEffort } } : {}),
-      ...(this.opts.provider ? { provider: this.opts.provider } : {}),
-      // OpenRouter then reports what each request actually cost.
-      ...(openRouter ? { usage: { include: true } } : {}),
-    });
+    let maxTokens = req.maxTokens ?? 4096;
+    const body = () =>
+      JSON.stringify({
+        model: this.opts.model,
+        max_tokens: maxTokens,
+        messages: [{ role: "system", content: req.system }, ...req.messages],
+        ...(this.opts.reasoningEffort ? { reasoning: { effort: this.opts.reasoningEffort } } : {}),
+        ...(this.opts.provider ? { provider: this.opts.provider } : {}),
+        // OpenRouter then reports what each request actually cost.
+        ...(openRouter ? { usage: { include: true } } : {}),
+      });
 
     for (let attempt = 1; ; attempt++) {
       const res = await fetchFn(`${this.opts.baseUrl.replace(/\/+$/, "")}/chat/completions`, {
         method: "POST",
         headers: { "content-type": "application/json", authorization: `Bearer ${this.opts.apiKey}` },
-        body,
+        body: body(),
       });
       if (res.ok) {
         const data = (await res.json()) as {
@@ -63,6 +70,11 @@ export class OpenAiCompatibleLlm implements LlmClient {
       const text = await res.text();
       // OpenRouter: the account (or the key's limit) can't cover this request.
       if (res.status === 402) {
+        const affordable = Number(text.match(AFFORDABLE)?.[1]);
+        if (affordable >= MIN_AFFORDABLE_TOKENS && affordable < maxTokens) {
+          maxTokens = affordable;
+          continue;
+        }
         this.outOfCredits = new OutOfCreditsError(text);
         throw this.outOfCredits;
       }

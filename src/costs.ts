@@ -5,6 +5,7 @@
 // Shows the OpenRouter key's spend (today, this week, this month, limit left) and, for each app
 // repo given, what its latest nightly agent run cost (read from the GitHub run log via `gh`).
 import "./util/legacy-env";
+import "./util/key-defaults";
 import { execFile } from "node:child_process";
 import { promisify } from "node:util";
 import { parseArgs } from "node:util";

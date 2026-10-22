@@ -10,6 +10,7 @@
  * Needs an OpenAI-compatible endpoint (DEBUTLY_BASE_URL, DEBUTLY_API_KEY).
  */
 import "../src/util/legacy-env";
+import "../src/util/key-defaults";
 import { join } from "node:path";
 import { startFixture } from "../fixture/server";
 import { OpenAiCompatibleLlm } from "../src/llm/openai-compatible";

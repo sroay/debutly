@@ -1,0 +1,104 @@
+name: Debutly
+description: AI agents use a test copy of your app like your first customers, and report what broke and where they got stuck.
+author: Chetan Sroay
+branding:
+  icon: users
+  color: blue
+
+inputs:
+  api-key:
+    description: Your model provider key (an OpenRouter sk-or-… or Anthropic sk-ant-… key). Pass it from a secret.
+    required: true
+  url:
+    description: The test copy of your app, started in an earlier step. Defaults to "url" in debutly.json.
+    required: false
+  goal:
+    description: What the agents try to do. Defaults to "goal" in debutly.json.
+    required: false
+  icp:
+    description: Who your customers are. Defaults to "icp" in debutly.json.
+    required: false
+  tier:
+    description: quick, standard or deep. Defaults to debutly.json, then quick.
+    required: false
+  max-cost:
+    description: Refuse to start a run that could cost more than this, in USD.
+    required: false
+    default: "1.00"
+  args:
+    description: More flags for the run, e.g. "--unit business --mailpit http://127.0.0.1:54324".
+    required: false
+    default: ""
+  wait-seconds:
+    description: How long to wait for the app to answer before starting.
+    required: false
+    default: "180"
+  store-url:
+    description: A Postgres address to record the run in, for the Debutly dashboard. Pass it from a secret.
+    required: false
+
+outputs:
+  report:
+    description: The folder with report.md, findings.json, sessions.json and the screenshots.
+    value: ${{ steps.run.outputs.report }}
+
+runs:
+  using: composite
+  steps:
+    - uses: actions/setup-node@v4
+      with:
+        node-version: 22
+
+    - name: Install Debutly
+      shell: bash
+      working-directory: ${{ github.action_path }}
+      run: |
+        npm ci --omit=dev --workspaces=false --no-audit --no-fund
+        npx playwright install --with-deps chromium
+
+    - name: Wait for the app
+      shell: bash
+      env:
+        INPUT_URL: ${{ inputs.url }}
+        WAIT_SECONDS: ${{ inputs.wait-seconds }}
+      run: |
+        url="${INPUT_URL:-$(node -p 'try { require(process.cwd() + "/debutly.json").url ?? "" } catch { "" }')}"
+        if [ -z "$url" ]; then echo "::error title=Debutly::No app address: set the url input, or url in debutly.json."; exit 1; fi
+        for _ in $(seq "$WAIT_SECONDS"); do
+          if curl -s -o /dev/null --max-time 5 "$url"; then echo "$url answers."; exit 0; fi
+          sleep 1
+        done
+        echo "::error title=Debutly::Nothing answered at $url after $WAIT_SECONDS s. Start the app in an earlier step."
+        exit 1
+
+    - name: Run the agents
+      id: run
+      shell: bash
+      env:
+        DEBUTLY_API_KEY: ${{ inputs.api-key }}
+        DEBUTLY_STORE_URL: ${{ inputs.store-url }}
+        INPUT_URL: ${{ inputs.url }}
+        INPUT_GOAL: ${{ inputs.goal }}
+        INPUT_ICP: ${{ inputs.icp }}
+        INPUT_TIER: ${{ inputs.tier }}
+        INPUT_MAX_COST: ${{ inputs.max-cost }}
+        INPUT_ARGS: ${{ inputs.args }}
+      run: |
+        report="$RUNNER_TEMP/debutly-report"
+        echo "report=$report" >> "$GITHUB_OUTPUT"
+        args=(--out "$report")
+        [ -n "$INPUT_URL" ] && args+=(--url "$INPUT_URL")
+        [ -n "$INPUT_GOAL" ] && args+=(--goal "$INPUT_GOAL")
+        [ -n "$INPUT_ICP" ] && args+=(--icp "$INPUT_ICP")
+        [ -n "$INPUT_TIER" ] && args+=(--tier "$INPUT_TIER")
+        [ -n "$INPUT_MAX_COST" ] && args+=(--max-cost "$INPUT_MAX_COST")
+        read -r -a extra <<< "$INPUT_ARGS"
+        node "$GITHUB_ACTION_PATH/bin/debutly.mjs" run "${args[@]}" "${extra[@]}"
+        if [ -f "$report/report.md" ]; then cat "$report/report.md" >> "$GITHUB_STEP_SUMMARY"; fi
+
+    - uses: actions/upload-artifact@v4
+      if: always()
+      with:
+        name: debutly-report
+        path: ${{ runner.temp }}/debutly-report
+        if-no-files-found: ignore
