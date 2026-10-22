@@ -1,0 +1,205 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>GitHub Actions · Debutly docs</title>
+  <meta name="description" content="Run Debutly's agents on a schedule in GitHub Actions against a throwaway copy of your app, with the sroay/debutly action.">
+  <link rel="canonical" href="https://debutly.dev/docs/github-actions">
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+  <meta property="og:type" content="article">
+  <meta property="og:url" content="https://debutly.dev/docs/github-actions">
+  <meta property="og:title" content="GitHub Actions">
+  <meta property="og:description" content="Run Debutly's agents on a schedule in GitHub Actions against a throwaway copy of your app, with the sroay/debutly action.">
+  <meta property="og:image" content="https://debutly.dev/og.png">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="theme-color" content="#ECEEF0">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible+Mono:wght@400;700&family=Atkinson+Hyperlegible+Next:wght@400;700&family=Big+Shoulders+Display:wght@800;900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/styles.css">
+  <link rel="stylesheet" href="/docs.css">
+</head>
+<body class="docs">
+  <a class="skip" href="#content">Skip to content</a>
+
+  <header class="top">
+    <a class="wordmark" href="/" aria-label="Debutly home">
+      <span class="mark" aria-hidden="true"></span>Debutly
+    </a>
+    <nav aria-label="Main">
+      <a href="/docs" aria-current="false">Docs</a>
+      <a href="https://github.com/sroay/debutly">GitHub</a>
+    </nav>
+  </header>
+
+  <div class="docs-layout">
+    <details class="docs-menu">
+      <summary>Docs menu</summary>
+      <nav aria-label="Docs">
+<h2 class="nav-section">Start</h2>
+<ul>
+<li><a href="/docs">Overview</a></li>
+<li><a href="/docs/quick-start">Quick start</a></li>
+<li><a href="/docs/configuration">Configuration</a></li>
+<li class="here"><a href="/docs/github-actions" aria-current="page">GitHub Actions</a></li>
+</ul>
+<h2 class="nav-section">Guides</h2>
+<ul>
+<li><a href="/docs/test-environments">Test environments</a></li>
+<li><a href="/docs/reports">Reading the report</a></li>
+<li><a href="/docs/teams">Teams and invites</a></li>
+<li><a href="/docs/buyers">What buyers think</a></li>
+<li><a href="/docs/dashboard">The dashboard</a></li>
+<li><a href="/docs/models-and-costs">Models and costs</a></li>
+</ul>
+<h2 class="nav-section">Tutorials</h2>
+<ul>
+<li><a href="/docs/tutorial-nextjs-supabase">Next.js and Supabase</a></li>
+</ul>
+<h2 class="nav-section">Help</h2>
+<ul>
+<li><a href="/docs/troubleshooting">Troubleshooting</a></li>
+</ul>
+      </nav>
+    </details>
+    <nav class="docs-nav" aria-label="Docs">
+<h2 class="nav-section">Start</h2>
+<ul>
+<li><a href="/docs">Overview</a></li>
+<li><a href="/docs/quick-start">Quick start</a></li>
+<li><a href="/docs/configuration">Configuration</a></li>
+<li class="here"><a href="/docs/github-actions" aria-current="page">GitHub Actions</a></li>
+</ul>
+<h2 class="nav-section">Guides</h2>
+<ul>
+<li><a href="/docs/test-environments">Test environments</a></li>
+<li><a href="/docs/reports">Reading the report</a></li>
+<li><a href="/docs/teams">Teams and invites</a></li>
+<li><a href="/docs/buyers">What buyers think</a></li>
+<li><a href="/docs/dashboard">The dashboard</a></li>
+<li><a href="/docs/models-and-costs">Models and costs</a></li>
+</ul>
+<h2 class="nav-section">Tutorials</h2>
+<ul>
+<li><a href="/docs/tutorial-nextjs-supabase">Next.js and Supabase</a></li>
+</ul>
+<h2 class="nav-section">Help</h2>
+<ul>
+<li><a href="/docs/troubleshooting">Troubleshooting</a></li>
+</ul>
+    </nav>
+
+    <main id="content" class="docs-page">
+      <article class="prose">
+<h1>GitHub Actions</h1>
+<p>The safest place to run Debutly is a throwaway copy of your app, built fresh on the CI runner and thrown away afterwards: your real code and schema, an empty database, test keys only. Your code and keys never leave your own CI.</p>
+<p><code>npx debutly init</code> can write this workflow for you. By hand, it is three steps:</p>
+<pre><code class="language-yaml"># .github/workflows/debutly.yml, next to debutly.json
+name: debutly
+on:
+  schedule: [{ cron: &quot;0 4 * * 1&quot; }]   # Mondays at 04:00 UTC
+  workflow_dispatch:                 # and a &quot;Run workflow&quot; button
+jobs:
+  agents:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+      - run: |                         # start a test copy of your app
+          npm ci &amp;&amp; npm run build
+          PORT=3000 npm start &amp;
+      - uses: sroay/debutly@v0
+        with:
+          api-key: ${{ secrets.DEBUTLY_API_KEY }}
+</code></pre>
+<p>Then add your model key as a repository secret named <code>DEBUTLY_API_KEY</code>: in your repository, <strong>Settings → Secrets and variables → Actions → New repository secret</strong>.</p>
+<h2 id="what-the-action-does"><a class="anchor" href="#what-the-action-does">What the action does</a></h2>
+<ol>
+<li>Installs Debutly and Chromium on the runner.</li>
+<li>Waits for your app to answer, up to three minutes.</li>
+<li>Runs the agents with the settings in <code>debutly.json</code>.</li>
+<li>Puts the report on the workflow run&#39;s summary page, and attaches the screenshots and full record as an artifact called <code>debutly-report</code>.</li>
+</ol>
+<h2 id="inputs"><a class="anchor" href="#inputs">Inputs</a></h2>
+<p>Inputs override <code>debutly.json</code>, so you can keep one file and run different rehearsals from different workflows.</p>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>Input</th>
+<th>Default</th>
+<th>What it does</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>api-key</code></td>
+<td>(required)</td>
+<td>Your model key. Always pass it from a secret.</td>
+</tr>
+<tr>
+<td><code>url</code></td>
+<td><code>url</code> in debutly.json</td>
+<td>Where the app runs on the runner.</td>
+</tr>
+<tr>
+<td><code>goal</code></td>
+<td><code>goal</code> in debutly.json</td>
+<td>What the agents try to do.</td>
+</tr>
+<tr>
+<td><code>icp</code></td>
+<td><code>icp</code> in debutly.json</td>
+<td>Who your customers are.</td>
+</tr>
+<tr>
+<td><code>tier</code></td>
+<td>debutly.json, then <code>quick</code></td>
+<td><code>quick</code>, <code>standard</code> or <code>deep</code>.</td>
+</tr>
+<tr>
+<td><code>max-cost</code></td>
+<td><code>1.00</code></td>
+<td>Refuse to start a run that could cost more, in US dollars.</td>
+</tr>
+<tr>
+<td><code>args</code></td>
+<td>none</td>
+<td>Any other flags, e.g. <code>--unit business --mailpit http://127.0.0.1:54324</code>.</td>
+</tr>
+<tr>
+<td><code>wait-seconds</code></td>
+<td><code>180</code></td>
+<td>How long to wait for the app to answer.</td>
+</tr>
+<tr>
+<td><code>store-url</code></td>
+<td>none</td>
+<td>A Postgres address to record the run for the <a href="/docs/dashboard">dashboard</a>. Pass it from a secret.</td>
+</tr>
+</tbody></table></div>
+<p>The action has one output, <code>report</code>: the folder with <code>report.md</code>, <code>findings.json</code>, <code>sessions.json</code> and the screenshots, for steps after it.</p>
+<h2 id="starting-your-app-on-the-runner"><a class="anchor" href="#starting-your-app-on-the-runner">Starting your app on the runner</a></h2>
+<p>The step before the action has to leave your app running. A command ending in <code>&amp;</code> keeps running in the background for the rest of the job. Use test keys only: a payment provider&#39;s test mode, no real email sending. If your app needs a database, start one in the job too. With Supabase, <code>supabase start</code> runs the whole stack, including a mail catcher at <code>http://127.0.0.1:54324</code> that gives the agents inboxes; see the <a href="/docs/tutorial-nextjs-supabase">Next.js and Supabase tutorial</a>.</p>
+<h2 id="when-to-run-it"><a class="anchor" href="#when-to-run-it">When to run it</a></h2>
+<ul>
+<li><strong>On a schedule</strong>, as above. Weekly suits most apps; nightly if you ship every day.</li>
+<li><strong>On pull requests</strong> that touch sign-up, billing or onboarding, with <code>on: pull_request</code> and a <code>paths:</code> filter.</li>
+<li><strong>Before a launch</strong>, from the Actions tab with <strong>Run workflow</strong>.</li>
+</ul>
+<p>A quick run takes 5 to 15 minutes of runner time. GitHub Actions is free for public repositories; private repositories use your plan&#39;s minutes.</p>
+
+      </article>
+      <nav class="pager" aria-label="Previous and next page">
+        <a class="pager-prev" href="/docs/configuration"><span>Previous</span>Configuration</a>
+        <a class="pager-next" href="/docs/test-environments"><span>Next</span>Test environments</a>
+      </nav>
+      <p class="edit"><a href="https://github.com/sroay/debutly/edit/master/site/docs-src/github-actions.md">Edit this page on GitHub</a></p>
+    </main>
+  </div>
+
+  <footer class="foot">
+    <p>Debutly is made by <a href="https://github.com/sroay">Chetan Sroay</a>.</p>
+    <p class="foot-links"><a href="https://github.com/sroay/debutly">Source on GitHub</a> <a href="https://github.com/sroay/debutly/blob/master/LICENSE">AGPL-3.0 licence</a> <a href="https://github.com/sroay/debutly/security">Report a security issue</a></p>
+  </footer>
+</body>
+</html>

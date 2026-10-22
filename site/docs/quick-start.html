@@ -1,0 +1,158 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Quick start · Debutly docs</title>
+  <meta name="description" content="Your first Debutly run in about five minutes. Set up with npx debutly init, add one model key, check with npx debutly doctor and run.">
+  <link rel="canonical" href="https://debutly.dev/docs/quick-start">
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+  <meta property="og:type" content="article">
+  <meta property="og:url" content="https://debutly.dev/docs/quick-start">
+  <meta property="og:title" content="Quick start">
+  <meta property="og:description" content="Your first Debutly run in about five minutes. Set up with npx debutly init, add one model key, check with npx debutly doctor and run.">
+  <meta property="og:image" content="https://debutly.dev/og.png">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="theme-color" content="#ECEEF0">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible+Mono:wght@400;700&family=Atkinson+Hyperlegible+Next:wght@400;700&family=Big+Shoulders+Display:wght@800;900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/styles.css">
+  <link rel="stylesheet" href="/docs.css">
+</head>
+<body class="docs">
+  <a class="skip" href="#content">Skip to content</a>
+
+  <header class="top">
+    <a class="wordmark" href="/" aria-label="Debutly home">
+      <span class="mark" aria-hidden="true"></span>Debutly
+    </a>
+    <nav aria-label="Main">
+      <a href="/docs" aria-current="false">Docs</a>
+      <a href="https://github.com/sroay/debutly">GitHub</a>
+    </nav>
+  </header>
+
+  <div class="docs-layout">
+    <details class="docs-menu">
+      <summary>Docs menu</summary>
+      <nav aria-label="Docs">
+<h2 class="nav-section">Start</h2>
+<ul>
+<li><a href="/docs">Overview</a></li>
+<li class="here"><a href="/docs/quick-start" aria-current="page">Quick start</a></li>
+<li><a href="/docs/configuration">Configuration</a></li>
+<li><a href="/docs/github-actions">GitHub Actions</a></li>
+</ul>
+<h2 class="nav-section">Guides</h2>
+<ul>
+<li><a href="/docs/test-environments">Test environments</a></li>
+<li><a href="/docs/reports">Reading the report</a></li>
+<li><a href="/docs/teams">Teams and invites</a></li>
+<li><a href="/docs/buyers">What buyers think</a></li>
+<li><a href="/docs/dashboard">The dashboard</a></li>
+<li><a href="/docs/models-and-costs">Models and costs</a></li>
+</ul>
+<h2 class="nav-section">Tutorials</h2>
+<ul>
+<li><a href="/docs/tutorial-nextjs-supabase">Next.js and Supabase</a></li>
+</ul>
+<h2 class="nav-section">Help</h2>
+<ul>
+<li><a href="/docs/troubleshooting">Troubleshooting</a></li>
+</ul>
+      </nav>
+    </details>
+    <nav class="docs-nav" aria-label="Docs">
+<h2 class="nav-section">Start</h2>
+<ul>
+<li><a href="/docs">Overview</a></li>
+<li class="here"><a href="/docs/quick-start" aria-current="page">Quick start</a></li>
+<li><a href="/docs/configuration">Configuration</a></li>
+<li><a href="/docs/github-actions">GitHub Actions</a></li>
+</ul>
+<h2 class="nav-section">Guides</h2>
+<ul>
+<li><a href="/docs/test-environments">Test environments</a></li>
+<li><a href="/docs/reports">Reading the report</a></li>
+<li><a href="/docs/teams">Teams and invites</a></li>
+<li><a href="/docs/buyers">What buyers think</a></li>
+<li><a href="/docs/dashboard">The dashboard</a></li>
+<li><a href="/docs/models-and-costs">Models and costs</a></li>
+</ul>
+<h2 class="nav-section">Tutorials</h2>
+<ul>
+<li><a href="/docs/tutorial-nextjs-supabase">Next.js and Supabase</a></li>
+</ul>
+<h2 class="nav-section">Help</h2>
+<ul>
+<li><a href="/docs/troubleshooting">Troubleshooting</a></li>
+</ul>
+    </nav>
+
+    <main id="content" class="docs-page">
+      <article class="prose">
+<h1>Quick start</h1>
+<p>Your first run takes about five minutes. You need Node.js 20.12 or later and a test copy of your app.</p>
+<aside class="callout"><p><strong>Before the first npm release</strong>, type <code>npx github:sroay/debutly</code> wherever this page says <code>npx debutly</code>. The first time takes a minute or two while npm downloads it.</p>
+</aside>
+<h2 id="1-set-up"><a class="anchor" href="#1-set-up">1. Set up</a></h2>
+<p>In your app&#39;s folder:</p>
+<pre><code class="language-bash">npx debutly init
+</code></pre>
+<p>It asks four things:</p>
+<ul>
+<li><strong>Where the test copy runs.</strong> For example <code>http://localhost:3000</code>. Never your real site.</li>
+<li><strong>What the agents should try.</strong> Sign up, buy a plan, invite a teammate, or something you describe.</li>
+<li><strong>Who your customers are.</strong> One sentence, like &quot;Owners of small marketing agencies, 2 to 15 people&quot;. With a key in place, init suggests one from your home page.</li>
+<li><strong>Whether they work as a team</strong>, and the address of a mail catcher if sign-up sends a confirmation email.</li>
+</ul>
+<p>It writes <code>debutly.json</code> with your answers and adds <code>.env</code> and <code>.debutly/</code> to <code>.gitignore</code>. It can also write a GitHub workflow; see <a href="/docs/github-actions">GitHub Actions</a>.</p>
+<h2 id="2-add-a-model-key"><a class="anchor" href="#2-add-a-model-key">2. Add a model key</a></h2>
+<p>Create a key at <a href="https://openrouter.ai/keys">openrouter.ai/keys</a> and put it in a file called <code>.env</code> in the same folder:</p>
+<pre><code class="language-bash">DEBUTLY_API_KEY=sk-or-v1-…
+</code></pre>
+<p>That is the only setting a run needs. With an OpenRouter key, Debutly uses GLM-5.3 Flash for the agents and DeepSeek V4 Flash to write the customers, the cheapest pair that worked well in our tests. If <code>OPENROUTER_API_KEY</code> or <code>ANTHROPIC_API_KEY</code> is already set in your shell, Debutly uses that.</p>
+<p>Giving the key a monthly spending limit on OpenRouter is a good idea: Debutly reads the limit before each run and refuses to start one it can&#39;t pay for.</p>
+<h2 id="3-check"><a class="anchor" href="#3-check">3. Check</a></h2>
+<p>Start your app&#39;s test copy, then:</p>
+<pre><code class="language-bash">npx debutly doctor
+</code></pre>
+<p>It checks Node.js, the key (without printing it), the browser, <code>debutly.json</code>, and that your app answers. Anything wrong comes with what to do about it:</p>
+<pre><code class="language-text">✓ Node.js 22.4.0
+✓ API key found (https://openrouter.ai/api/v1; agents use z-ai/glm-5.3-flash)
+✓ The provider accepts the API key
+    $4.50 left on the key&#39;s limit
+✓ Chromium is installed
+✓ debutly.json: &quot;Sign up and invite a teammate&quot;
+✓ http://localhost:3000 answers (HTTP 200)
+
+Ready. Start a run with: npx debutly
+</code></pre>
+<h2 id="4-run"><a class="anchor" href="#4-run">4. Run</a></h2>
+<pre><code class="language-bash">npx debutly
+</code></pre>
+<p>The first run downloads Chromium, the browser the agents use (about 150 MB, once per machine). Then Debutly prints what the run could cost, casts the customers and lets them loose. A quick run of three agents takes a few minutes.</p>
+<p>The report is in <code>.debutly/runs/&lt;time&gt;/report.md</code>, next to the screenshots and the full record of every step. <a href="/docs/reports">Reading the report</a> explains it.</p>
+<h2 id="next"><a class="anchor" href="#next">Next</a></h2>
+<ul>
+<li>Change a setting for one run with a flag: <code>npx debutly --tier standard --max-cost 3</code>. All settings are in <a href="/docs/configuration">Configuration</a>.</li>
+<li>Test sign-up emails and team invites: <a href="/docs/teams">Teams and invites</a>.</li>
+<li>Run it every week in CI: <a href="/docs/github-actions">GitHub Actions</a>.</li>
+</ul>
+
+      </article>
+      <nav class="pager" aria-label="Previous and next page">
+        <a class="pager-prev" href="/docs"><span>Previous</span>Overview</a>
+        <a class="pager-next" href="/docs/configuration"><span>Next</span>Configuration</a>
+      </nav>
+      <p class="edit"><a href="https://github.com/sroay/debutly/edit/master/site/docs-src/quick-start.md">Edit this page on GitHub</a></p>
+    </main>
+  </div>
+
+  <footer class="foot">
+    <p>Debutly is made by <a href="https://github.com/sroay">Chetan Sroay</a>.</p>
+    <p class="foot-links"><a href="https://github.com/sroay/debutly">Source on GitHub</a> <a href="https://github.com/sroay/debutly/blob/master/LICENSE">AGPL-3.0 licence</a> <a href="https://github.com/sroay/debutly/security">Report a security issue</a></p>
+  </footer>
+</body>
+</html>

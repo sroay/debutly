@@ -1,0 +1,185 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Models and costs · Debutly docs</title>
+  <meta name="description" content="Which models Debutly uses, what a run costs, and how spending is kept in check with estimates, caps and credit checks.">
+  <link rel="canonical" href="https://debutly.dev/docs/models-and-costs">
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+  <meta property="og:type" content="article">
+  <meta property="og:url" content="https://debutly.dev/docs/models-and-costs">
+  <meta property="og:title" content="Models and costs">
+  <meta property="og:description" content="Which models Debutly uses, what a run costs, and how spending is kept in check with estimates, caps and credit checks.">
+  <meta property="og:image" content="https://debutly.dev/og.png">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="theme-color" content="#ECEEF0">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible+Mono:wght@400;700&family=Atkinson+Hyperlegible+Next:wght@400;700&family=Big+Shoulders+Display:wght@800;900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/styles.css">
+  <link rel="stylesheet" href="/docs.css">
+</head>
+<body class="docs">
+  <a class="skip" href="#content">Skip to content</a>
+
+  <header class="top">
+    <a class="wordmark" href="/" aria-label="Debutly home">
+      <span class="mark" aria-hidden="true"></span>Debutly
+    </a>
+    <nav aria-label="Main">
+      <a href="/docs" aria-current="false">Docs</a>
+      <a href="https://github.com/sroay/debutly">GitHub</a>
+    </nav>
+  </header>
+
+  <div class="docs-layout">
+    <details class="docs-menu">
+      <summary>Docs menu</summary>
+      <nav aria-label="Docs">
+<h2 class="nav-section">Start</h2>
+<ul>
+<li><a href="/docs">Overview</a></li>
+<li><a href="/docs/quick-start">Quick start</a></li>
+<li><a href="/docs/configuration">Configuration</a></li>
+<li><a href="/docs/github-actions">GitHub Actions</a></li>
+</ul>
+<h2 class="nav-section">Guides</h2>
+<ul>
+<li><a href="/docs/test-environments">Test environments</a></li>
+<li><a href="/docs/reports">Reading the report</a></li>
+<li><a href="/docs/teams">Teams and invites</a></li>
+<li><a href="/docs/buyers">What buyers think</a></li>
+<li><a href="/docs/dashboard">The dashboard</a></li>
+<li class="here"><a href="/docs/models-and-costs" aria-current="page">Models and costs</a></li>
+</ul>
+<h2 class="nav-section">Tutorials</h2>
+<ul>
+<li><a href="/docs/tutorial-nextjs-supabase">Next.js and Supabase</a></li>
+</ul>
+<h2 class="nav-section">Help</h2>
+<ul>
+<li><a href="/docs/troubleshooting">Troubleshooting</a></li>
+</ul>
+      </nav>
+    </details>
+    <nav class="docs-nav" aria-label="Docs">
+<h2 class="nav-section">Start</h2>
+<ul>
+<li><a href="/docs">Overview</a></li>
+<li><a href="/docs/quick-start">Quick start</a></li>
+<li><a href="/docs/configuration">Configuration</a></li>
+<li><a href="/docs/github-actions">GitHub Actions</a></li>
+</ul>
+<h2 class="nav-section">Guides</h2>
+<ul>
+<li><a href="/docs/test-environments">Test environments</a></li>
+<li><a href="/docs/reports">Reading the report</a></li>
+<li><a href="/docs/teams">Teams and invites</a></li>
+<li><a href="/docs/buyers">What buyers think</a></li>
+<li><a href="/docs/dashboard">The dashboard</a></li>
+<li class="here"><a href="/docs/models-and-costs" aria-current="page">Models and costs</a></li>
+</ul>
+<h2 class="nav-section">Tutorials</h2>
+<ul>
+<li><a href="/docs/tutorial-nextjs-supabase">Next.js and Supabase</a></li>
+</ul>
+<h2 class="nav-section">Help</h2>
+<ul>
+<li><a href="/docs/troubleshooting">Troubleshooting</a></li>
+</ul>
+    </nav>
+
+    <main id="content" class="docs-page">
+      <article class="prose">
+<h1>Models and costs</h1>
+<p>You bring your own model key and pay your provider directly. Debutly never sees your bill.</p>
+<h2 id="what-a-run-costs"><a class="anchor" href="#what-a-run-costs">What a run costs</a></h2>
+<p>Every run prints an estimate before it starts:</p>
+<pre><code class="language-text">Estimated cost: $0.03–$0.05 (3 agents × up to 30 steps on z-ai/glm-5.3-flash)
+</code></pre>
+<p>With the default models, a quick run of three agents usually costs a few cents. A business crew run on a real SaaS app (2 owners, 4 teammates) cost about $0.05. The report says what each run actually cost, and <code>npx debutly costs</code> shows your OpenRouter key&#39;s spend by day, week and month.</p>
+<h2 id="keeping-spending-in-check"><a class="anchor" href="#keeping-spending-in-check">Keeping spending in check</a></h2>
+<ul>
+<li><strong><code>maxCost</code></strong> refuses to start a run whose estimate could exceed it. The GitHub Action sets it to $1.00 unless you say otherwise.</li>
+<li><strong>A key limit.</strong> Give your OpenRouter key a monthly limit. Before each run Debutly reads what is left on it, refuses a run that can&#39;t be paid for, and warns when one might run short.</li>
+<li><strong>Running out part-way.</strong> If the provider refuses for lack of credit during a run, every agent stops at its next step instead of each paying for a failed request, and the report says the run was cut short. On a low balance OpenRouter can refuse a request for the most it might cost; Debutly then asks again for a reply the balance covers.</li>
+<li><strong>Per-agent caps</strong>: <code>maxSteps</code>, <code>agentTokenCap</code> and <code>agentMinutes</code>.</li>
+</ul>
+<h2 id="the-models"><a class="anchor" href="#the-models">The models</a></h2>
+<p>With an OpenRouter key, Debutly uses:</p>
+<ul>
+<li><strong><code>z-ai/glm-5.3-flash</code></strong> for the agents, with low reasoning effort. It found as many seeded bugs as Gemini 3.8 Flash for about a quarter of the cost, taking about 40% more steps, which is why <code>maxSteps</code> defaults to 30.</li>
+<li><strong><code>deepseek/deepseek-v4-flash</code></strong> to cast the customers and judge pages.</li>
+</ul>
+<p>Change them with <code>DEBUTLY_NAV_MODEL</code> and <code>DEBUTLY_JUDGE_MODEL</code>. Any model on OpenRouter works, and so does any OpenAI-compatible provider (<code>DEBUTLY_PROVIDER=openai-compatible</code> and <code>DEBUTLY_BASE_URL</code>) or Anthropic (<code>DEBUTLY_PROVIDER=anthropic</code>).</p>
+<p>Models compared on the seeded-bug fixture (5 planted bugs, 3 agents), September 2026:</p>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>Model</th>
+<th>Bugs found (of 5)</th>
+<th>Seconds per step</th>
+<th>Cost</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>google/gemini-3.8-flash (flex tier)</td>
+<td>4</td>
+<td>3.1</td>
+<td>$0.020</td>
+</tr>
+<tr>
+<td>z-ai/glm-5.3-flash</td>
+<td>4</td>
+<td>3.8</td>
+<td>$0.004</td>
+</tr>
+<tr>
+<td>tencent/hy3</td>
+<td>4</td>
+<td>12.4</td>
+<td>$0.024</td>
+</tr>
+<tr>
+<td>qwen/qwen3.8-flash</td>
+<td>4</td>
+<td>30.0</td>
+<td>$0.027</td>
+</tr>
+<tr>
+<td>qwen/qwen3.7-flash</td>
+<td>4</td>
+<td>27.8</td>
+<td>$0.011</td>
+</tr>
+<tr>
+<td>inclusionai/ling-3.0-flash</td>
+<td>3</td>
+<td>5.8</td>
+<td>$0.003</td>
+</tr>
+<tr>
+<td>bytedance-seed/seed-2.0-mini</td>
+<td>2</td>
+<td>6.3</td>
+<td>$0.009</td>
+</tr>
+</tbody></table></div>
+<p><code>google/gemini-3.8-flash</code> is the fastest and needs the fewest steps; <code>DEBUTLY_NAV_ROUTING=&#39;{&quot;order&quot;:[&quot;google-ai-studio/flex&quot;]}&#39;</code> halves its price. To compare models on your own app, see <code>scripts/compare-models.ts</code> in the repository.</p>
+
+      </article>
+      <nav class="pager" aria-label="Previous and next page">
+        <a class="pager-prev" href="/docs/dashboard"><span>Previous</span>The dashboard</a>
+        <a class="pager-next" href="/docs/tutorial-nextjs-supabase"><span>Next</span>Next.js and Supabase</a>
+      </nav>
+      <p class="edit"><a href="https://github.com/sroay/debutly/edit/master/site/docs-src/models-and-costs.md">Edit this page on GitHub</a></p>
+    </main>
+  </div>
+
+  <footer class="foot">
+    <p>Debutly is made by <a href="https://github.com/sroay">Chetan Sroay</a>.</p>
+    <p class="foot-links"><a href="https://github.com/sroay/debutly">Source on GitHub</a> <a href="https://github.com/sroay/debutly/blob/master/LICENSE">AGPL-3.0 licence</a> <a href="https://github.com/sroay/debutly/security">Report a security issue</a></p>
+  </footer>
+</body>
+</html>

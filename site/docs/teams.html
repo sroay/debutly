@@ -1,0 +1,135 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Teams and invites · Debutly docs</title>
+  <meta name="description" content="Rehearse a B2B launch with business crews. An owner signs up and pays, invites teammates by email, and each teammate joins in their own browser.">
+  <link rel="canonical" href="https://debutly.dev/docs/teams">
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+  <meta property="og:type" content="article">
+  <meta property="og:url" content="https://debutly.dev/docs/teams">
+  <meta property="og:title" content="Teams and invites">
+  <meta property="og:description" content="Rehearse a B2B launch with business crews. An owner signs up and pays, invites teammates by email, and each teammate joins in their own browser.">
+  <meta property="og:image" content="https://debutly.dev/og.png">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="theme-color" content="#ECEEF0">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible+Mono:wght@400;700&family=Atkinson+Hyperlegible+Next:wght@400;700&family=Big+Shoulders+Display:wght@800;900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/styles.css">
+  <link rel="stylesheet" href="/docs.css">
+</head>
+<body class="docs">
+  <a class="skip" href="#content">Skip to content</a>
+
+  <header class="top">
+    <a class="wordmark" href="/" aria-label="Debutly home">
+      <span class="mark" aria-hidden="true"></span>Debutly
+    </a>
+    <nav aria-label="Main">
+      <a href="/docs" aria-current="false">Docs</a>
+      <a href="https://github.com/sroay/debutly">GitHub</a>
+    </nav>
+  </header>
+
+  <div class="docs-layout">
+    <details class="docs-menu">
+      <summary>Docs menu</summary>
+      <nav aria-label="Docs">
+<h2 class="nav-section">Start</h2>
+<ul>
+<li><a href="/docs">Overview</a></li>
+<li><a href="/docs/quick-start">Quick start</a></li>
+<li><a href="/docs/configuration">Configuration</a></li>
+<li><a href="/docs/github-actions">GitHub Actions</a></li>
+</ul>
+<h2 class="nav-section">Guides</h2>
+<ul>
+<li><a href="/docs/test-environments">Test environments</a></li>
+<li><a href="/docs/reports">Reading the report</a></li>
+<li class="here"><a href="/docs/teams" aria-current="page">Teams and invites</a></li>
+<li><a href="/docs/buyers">What buyers think</a></li>
+<li><a href="/docs/dashboard">The dashboard</a></li>
+<li><a href="/docs/models-and-costs">Models and costs</a></li>
+</ul>
+<h2 class="nav-section">Tutorials</h2>
+<ul>
+<li><a href="/docs/tutorial-nextjs-supabase">Next.js and Supabase</a></li>
+</ul>
+<h2 class="nav-section">Help</h2>
+<ul>
+<li><a href="/docs/troubleshooting">Troubleshooting</a></li>
+</ul>
+      </nav>
+    </details>
+    <nav class="docs-nav" aria-label="Docs">
+<h2 class="nav-section">Start</h2>
+<ul>
+<li><a href="/docs">Overview</a></li>
+<li><a href="/docs/quick-start">Quick start</a></li>
+<li><a href="/docs/configuration">Configuration</a></li>
+<li><a href="/docs/github-actions">GitHub Actions</a></li>
+</ul>
+<h2 class="nav-section">Guides</h2>
+<ul>
+<li><a href="/docs/test-environments">Test environments</a></li>
+<li><a href="/docs/reports">Reading the report</a></li>
+<li class="here"><a href="/docs/teams" aria-current="page">Teams and invites</a></li>
+<li><a href="/docs/buyers">What buyers think</a></li>
+<li><a href="/docs/dashboard">The dashboard</a></li>
+<li><a href="/docs/models-and-costs">Models and costs</a></li>
+</ul>
+<h2 class="nav-section">Tutorials</h2>
+<ul>
+<li><a href="/docs/tutorial-nextjs-supabase">Next.js and Supabase</a></li>
+</ul>
+<h2 class="nav-section">Help</h2>
+<ul>
+<li><a href="/docs/troubleshooting">Troubleshooting</a></li>
+</ul>
+    </nav>
+
+    <main id="content" class="docs-page">
+      <article class="prose">
+<h1>Teams and invites</h1>
+<p>Many products are bought by one person and used by a team. With <code>&quot;unit&quot;: &quot;business&quot;</code>, each customer is a small company: an owner and their teammates.</p>
+<pre><code class="language-json">{
+  &quot;unit&quot;: &quot;business&quot;,
+  &quot;employees&quot;: 2,
+  &quot;mailpit&quot;: &quot;http://127.0.0.1:54324&quot;,
+  &quot;goal&quot;: &quot;Sign up, choose a plan and invite your teammates&quot;
+}
+</code></pre>
+<h2 id="how-a-crew-runs"><a class="anchor" href="#how-a-crew-runs">How a crew runs</a></h2>
+<ol>
+<li>Debutly casts a business: its name, what kind of company it is, its size, a monthly budget for tools like yours, and a goal.</li>
+<li><strong>The owner</strong> goes first. They decide which plan and how many seats to buy, within the budget, and are told to invite their teammates at their email addresses once they&#39;re set up.</li>
+<li><strong>Each teammate</strong> whose invite reached their inbox then starts in their own browser, with no shared login. They accept the invite, set up their account and check they landed in the company&#39;s workspace, not an empty one of their own. Then they do one task someone in their role would do.</li>
+<li>A teammate whose invite never arrived is reported as <code>not_invited</code>, with the reason. That is often the finding: the invite flow is broken.</li>
+</ol>
+<p>The report has one line per business: whether the owner got through, and whether the team got in.</p>
+<h2 id="what-crews-need"><a class="anchor" href="#what-crews-need">What crews need</a></h2>
+<ul>
+<li><strong>A mail catcher.</strong> Invites arrive by email, so set <code>mailpit</code> to a <a href="https://mailpit.axllent.org">Mailpit</a> your test copy sends its mail to. Without one, teammates can&#39;t receive invites and are recorded as not invited.</li>
+<li><strong>Teammates per business.</strong> <code>employees</code> is 0 to 4. The <code>quick</code> tier has none, so set <code>employees</code> (init sets 2), or use the <code>standard</code> (2) or <code>deep</code> (3) tier.</li>
+<li><strong>Room for more agents.</strong> A crew of an owner and two teammates is three agents, so a run of 3 businesses is 9 agents. The cost estimate printed before each run counts them all.</li>
+</ul>
+<h2 id="what-crews-find"><a class="anchor" href="#what-crews-find">What crews find</a></h2>
+<p>Things a single-user test can&#39;t: invites that expire or never send, teammates who land in their own empty workspace, seats that don&#39;t match the plan, roles that can&#39;t do their job, and settings only the owner can reach.</p>
+
+      </article>
+      <nav class="pager" aria-label="Previous and next page">
+        <a class="pager-prev" href="/docs/reports"><span>Previous</span>Reading the report</a>
+        <a class="pager-next" href="/docs/buyers"><span>Next</span>What buyers think</a>
+      </nav>
+      <p class="edit"><a href="https://github.com/sroay/debutly/edit/master/site/docs-src/teams.md">Edit this page on GitHub</a></p>
+    </main>
+  </div>
+
+  <footer class="foot">
+    <p>Debutly is made by <a href="https://github.com/sroay">Chetan Sroay</a>.</p>
+    <p class="foot-links"><a href="https://github.com/sroay/debutly">Source on GitHub</a> <a href="https://github.com/sroay/debutly/blob/master/LICENSE">AGPL-3.0 licence</a> <a href="https://github.com/sroay/debutly/security">Report a security issue</a></p>
+  </footer>
+</body>
+</html>

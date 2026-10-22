@@ -1,0 +1,171 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Test environments · Debutly docs</title>
+  <meta name="description" content="Where to point Debutly's agents, never production, and how a sandbox outbox lets Debutly tell test-environment failures from real bugs.">
+  <link rel="canonical" href="https://debutly.dev/docs/test-environments">
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+  <meta property="og:type" content="article">
+  <meta property="og:url" content="https://debutly.dev/docs/test-environments">
+  <meta property="og:title" content="Test environments">
+  <meta property="og:description" content="Where to point Debutly's agents, never production, and how a sandbox outbox lets Debutly tell test-environment failures from real bugs.">
+  <meta property="og:image" content="https://debutly.dev/og.png">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="theme-color" content="#ECEEF0">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible+Mono:wght@400;700&family=Atkinson+Hyperlegible+Next:wght@400;700&family=Big+Shoulders+Display:wght@800;900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/styles.css">
+  <link rel="stylesheet" href="/docs.css">
+</head>
+<body class="docs">
+  <a class="skip" href="#content">Skip to content</a>
+
+  <header class="top">
+    <a class="wordmark" href="/" aria-label="Debutly home">
+      <span class="mark" aria-hidden="true"></span>Debutly
+    </a>
+    <nav aria-label="Main">
+      <a href="/docs" aria-current="false">Docs</a>
+      <a href="https://github.com/sroay/debutly">GitHub</a>
+    </nav>
+  </header>
+
+  <div class="docs-layout">
+    <details class="docs-menu">
+      <summary>Docs menu</summary>
+      <nav aria-label="Docs">
+<h2 class="nav-section">Start</h2>
+<ul>
+<li><a href="/docs">Overview</a></li>
+<li><a href="/docs/quick-start">Quick start</a></li>
+<li><a href="/docs/configuration">Configuration</a></li>
+<li><a href="/docs/github-actions">GitHub Actions</a></li>
+</ul>
+<h2 class="nav-section">Guides</h2>
+<ul>
+<li class="here"><a href="/docs/test-environments" aria-current="page">Test environments</a></li>
+<li><a href="/docs/reports">Reading the report</a></li>
+<li><a href="/docs/teams">Teams and invites</a></li>
+<li><a href="/docs/buyers">What buyers think</a></li>
+<li><a href="/docs/dashboard">The dashboard</a></li>
+<li><a href="/docs/models-and-costs">Models and costs</a></li>
+</ul>
+<h2 class="nav-section">Tutorials</h2>
+<ul>
+<li><a href="/docs/tutorial-nextjs-supabase">Next.js and Supabase</a></li>
+</ul>
+<h2 class="nav-section">Help</h2>
+<ul>
+<li><a href="/docs/troubleshooting">Troubleshooting</a></li>
+</ul>
+      </nav>
+    </details>
+    <nav class="docs-nav" aria-label="Docs">
+<h2 class="nav-section">Start</h2>
+<ul>
+<li><a href="/docs">Overview</a></li>
+<li><a href="/docs/quick-start">Quick start</a></li>
+<li><a href="/docs/configuration">Configuration</a></li>
+<li><a href="/docs/github-actions">GitHub Actions</a></li>
+</ul>
+<h2 class="nav-section">Guides</h2>
+<ul>
+<li class="here"><a href="/docs/test-environments" aria-current="page">Test environments</a></li>
+<li><a href="/docs/reports">Reading the report</a></li>
+<li><a href="/docs/teams">Teams and invites</a></li>
+<li><a href="/docs/buyers">What buyers think</a></li>
+<li><a href="/docs/dashboard">The dashboard</a></li>
+<li><a href="/docs/models-and-costs">Models and costs</a></li>
+</ul>
+<h2 class="nav-section">Tutorials</h2>
+<ul>
+<li><a href="/docs/tutorial-nextjs-supabase">Next.js and Supabase</a></li>
+</ul>
+<h2 class="nav-section">Help</h2>
+<ul>
+<li><a href="/docs/troubleshooting">Troubleshooting</a></li>
+</ul>
+    </nav>
+
+    <main id="content" class="docs-page">
+      <article class="prose">
+<h1>Test environments</h1>
+<aside class="callout"><p><strong>Never point Debutly at production.</strong> The agents create accounts, fill in forms, upload files and pay. They do it the way customers would, so on your real app they would leave real accounts, send real emails and, without test keys, try to charge real cards.</p>
+</aside>
+<h2 id="good-places-to-run"><a class="anchor" href="#good-places-to-run">Good places to run</a></h2>
+<ul>
+<li><strong>Your machine.</strong> Your app running locally with a local database and test keys.</li>
+<li><strong>A staging site</strong> that is yours to fill with test accounts.</li>
+<li><strong>A throwaway copy in CI</strong>, built on the runner and deleted afterwards. This is the safest: an empty database every time, so every run starts like launch day. See <a href="/docs/github-actions">GitHub Actions</a>.</li>
+</ul>
+<p><code>npx debutly doctor</code> warns when an address doesn&#39;t look like a local, staging or test copy.</p>
+<h2 id="what-the-agents-will-and-won-39-t-do"><a class="anchor" href="#what-the-agents-will-and-won-39-t-do">What the agents will and won&#39;t do</a></h2>
+<ul>
+<li>They pay only with the test card <code>4242 4242 4242 4242</code>, which payment providers&#39; test modes accept and live modes refuse.</li>
+<li>They never press a button or choose an option that deletes, removes, deactivates, closes an account or cancels a subscription. The attempt is recorded and refused.</li>
+<li>They won&#39;t type in another site&#39;s address. They only leave your app by clicking a link on your pages or in their own emails.</li>
+<li>They can attach files: a sample photo and a sample document, made up on the spot.</li>
+</ul>
+<h2 id="email"><a class="anchor" href="#email">Email</a></h2>
+<p>Agents can only confirm an email or accept an invite if they can read their mail. Give them a mail catcher: run <a href="https://mailpit.axllent.org">Mailpit</a>, point your app&#39;s email sending at it, and set <code>mailpit</code> in <code>debutly.json</code> to its address. Each agent gets its own address, like <code>maya.u1-o.k3x9@agents.test</code>, and reads only its own mail. <code>supabase start</code> runs Mailpit for you on <code>http://127.0.0.1:54324</code>.</p>
+<h2 id="telling-test-environment-failures-from-bugs"><a class="anchor" href="#telling-test-environment-failures-from-bugs">Telling test-environment failures from bugs</a></h2>
+<p>A good test copy has no real keys: it can&#39;t send real email, charge cards or call paid APIs. Your app may fail when it tries, and those failures aren&#39;t bugs your customers will see. Debutly files them under <strong>Caused by the test environment</strong> instead of in your findings when:</p>
+<ul>
+<li>the app&#39;s server error says a key or setting is missing, such as &quot;No Gemini API key configured&quot; or &quot;OPENAI_API_KEY is not set&quot;;</li>
+<li>the app couldn&#39;t reach a website an agent made up for its company (agents invent their businesses, websites included);</li>
+<li>your app&#39;s sandbox was blocking an outside call, or faking an AI answer, at the moment the failure happened.</li>
+</ul>
+<p>The first two need nothing from you. The last needs a <strong>sandbox outbox</strong>.</p>
+<h3 id="the-sandbox-outbox"><a class="anchor" href="#the-sandbox-outbox">The sandbox outbox</a></h3>
+<p>A sandbox is the part of your test copy that intercepts outside calls: it records an email instead of sending it, or blocks a call to a payment API. If it keeps a list of what it did, Debutly can read it after the run. Expose that list at an address in your test copy, and set <code>sandboxOutbox</code> to it and <code>DEBUTLY_SANDBOX_TOKEN</code> to a token only the test copy and Debutly share.</p>
+<p>Debutly asks for everything since the run started:</p>
+<pre><code class="language-http">GET /api/sandbox/outbox?since=2026-10-22T04:00:00.000Z
+Authorization: Bearer &lt;DEBUTLY_SANDBOX_TOKEN&gt;
+</code></pre>
+<p>and expects JSON like this:</p>
+<pre><code class="language-json">{
+  &quot;entries&quot;: [
+    {
+      &quot;outcome&quot;: &quot;blocked&quot;,
+      &quot;channel&quot;: &quot;payment&quot;,
+      &quot;host&quot;: &quot;api.stripe.com&quot;,
+      &quot;url&quot;: &quot;https://api.stripe.com/v1/charges&quot;,
+      &quot;summary&quot;: &quot;charge for the Team plan&quot;,
+      &quot;created_at&quot;: &quot;2026-10-22T04:03:12.481Z&quot;
+    },
+    {
+      &quot;outcome&quot;: &quot;faked&quot;,
+      &quot;channel&quot;: &quot;email&quot;,
+      &quot;host&quot;: &quot;api.resend.com&quot;,
+      &quot;recipient&quot;: &quot;maya.u1-o.k3x9@agents.test&quot;,
+      &quot;summary&quot;: &quot;Confirm your email&quot;,
+      &quot;created_at&quot;: &quot;2026-10-22T04:01:40.022Z&quot;
+    }
+  ]
+}
+</code></pre>
+<ul>
+<li><code>outcome</code> is <code>blocked</code> (the call was refused) or <code>faked</code> (the sandbox answered in its place).</li>
+<li><code>channel</code> says what kind of call it was: <code>email</code>, <code>payment</code>, <code>ai</code> or anything else.</li>
+<li><code>host</code>, <code>url</code>, <code>recipient</code>, <code>summary</code> and <code>rule</code> (which of your sandbox&#39;s rules applied) are shown in the dashboard. Only <code>outcome</code>, <code>host</code> and <code>created_at</code> are required.</li>
+</ul>
+<p>A server error from your app counts as the test environment&#39;s doing when every time it happened, the sandbox blocked a call, or faked an AI answer, within two seconds of it. Faked emails don&#39;t count: your app was told they were sent. Only build the outbox into the test copy, never into production.</p>
+
+      </article>
+      <nav class="pager" aria-label="Previous and next page">
+        <a class="pager-prev" href="/docs/github-actions"><span>Previous</span>GitHub Actions</a>
+        <a class="pager-next" href="/docs/reports"><span>Next</span>Reading the report</a>
+      </nav>
+      <p class="edit"><a href="https://github.com/sroay/debutly/edit/master/site/docs-src/test-environments.md">Edit this page on GitHub</a></p>
+    </main>
+  </div>
+
+  <footer class="foot">
+    <p>Debutly is made by <a href="https://github.com/sroay">Chetan Sroay</a>.</p>
+    <p class="foot-links"><a href="https://github.com/sroay/debutly">Source on GitHub</a> <a href="https://github.com/sroay/debutly/blob/master/LICENSE">AGPL-3.0 licence</a> <a href="https://github.com/sroay/debutly/security">Report a security issue</a></p>
+  </footer>
+</body>
+</html>

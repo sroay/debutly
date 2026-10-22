@@ -1,10 +1,10 @@
 // Perception, grounding and experiments, without a browser per buyer:
 //
-//   npm run debutly:perceive -- --icp "…" --url https://app.test/ --url https://app.test/pricing \
+//   npx debutly perceive --icp "…" --url https://app.test/ --url https://app.test/pricing \
 //     [--competitors https://rival.test/pricing,https://other.test/pricing] [--evaluators 50]
-//   npm run debutly:perceive -- --icp "…" --variant A=https://app.test/pricing --variant B=pricing-b.md
-//   npm run debutly:perceive -- --icp "…" --from-run runs/<dir>          (pages the depth agents saw)
-//   npm run debutly:perceive -- --icp "…" --file pitch.md                (idea stage)
+//   npx debutly perceive --icp "…" --variant A=https://app.test/pricing --variant B=pricing-b.md
+//   npx debutly perceive --icp "…" --from-run runs/<dir>          (pages the depth agents saw)
+//   npx debutly perceive --icp "…" --file pitch.md                (idea stage)
 //
 // Pages are read, never submitted to. Writes launch-readiness.md, verdicts.json and
 // market-context.json; with --store the run and its predictions are recorded.
@@ -51,7 +51,7 @@ const variantArgs = values.variant ?? [];
 const hasMain = !!(values.url?.length || values.file?.length || values["from-run"]);
 if (!values.icp || (!hasMain && variantArgs.length < 2) || (hasMain && variantArgs.length)) {
   console.error(
-    'Usage: npm run debutly:perceive -- --icp "<buyers>" (--url <url>… | --file <pitch>… | --from-run <dir> | --variant A=<url|file> --variant B=<url|file>) [--competitors url,url] [--market-context file] [--tier quick|standard|deep] [--evaluators N] [--max-cost USD] [--store postgres://…] [--out dir]',
+    'Usage: npx debutly perceive --icp "<buyers>" (--url <url>… | --file <pitch>… | --from-run <dir> | --variant A=<url|file> --variant B=<url|file>) [--competitors url,url] [--market-context file] [--tier quick|standard|deep] [--evaluators N] [--max-cost USD] [--store postgres://…] [--out dir]',
   );
   process.exit(1);
 }

@@ -464,7 +464,7 @@ h3 {
   max-width: 48ch;
 }
 
-.open-text .button {
+.open-text .actions {
   margin-top: 10px;
 }
 
@@ -480,6 +480,14 @@ h3 {
 
 .code .comment {
   color: #9fb0c1;
+}
+
+.code-note {
+  margin-top: 14px;
+}
+
+.code-note code {
+  font: 400 0.92em var(--mono);
 }
 
 /* Footer */
@@ -510,7 +518,8 @@ h3 {
 @media (max-width: 900px) {
   .stage,
   .open {
-    grid-template-columns: 1fr;
+    /* minmax(0, …): a long line of code scrolls in its box instead of widening the page. */
+    grid-template-columns: minmax(0, 1fr);
   }
 
   .steps {
@@ -528,7 +537,8 @@ h3 {
     font-size: 1.0625rem;
   }
 
-  .top nav a:not(:last-child) {
+  /* On a phone the header keeps the links that leave the page: Docs and GitHub. */
+  .top nav a[href^="#"] {
     display: none;
   }
 

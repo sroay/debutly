@@ -1,0 +1,155 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>What buyers think · Debutly docs</title>
+  <meta name="description" content="Skeptical-buyer evaluators judge your landing and pricing pages against competitors, compare two versions of a page, and test an idea before it is built.">
+  <link rel="canonical" href="https://debutly.dev/docs/buyers">
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+  <meta property="og:type" content="article">
+  <meta property="og:url" content="https://debutly.dev/docs/buyers">
+  <meta property="og:title" content="What buyers think">
+  <meta property="og:description" content="Skeptical-buyer evaluators judge your landing and pricing pages against competitors, compare two versions of a page, and test an idea before it is built.">
+  <meta property="og:image" content="https://debutly.dev/og.png">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="theme-color" content="#ECEEF0">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible+Mono:wght@400;700&family=Atkinson+Hyperlegible+Next:wght@400;700&family=Big+Shoulders+Display:wght@800;900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/styles.css">
+  <link rel="stylesheet" href="/docs.css">
+</head>
+<body class="docs">
+  <a class="skip" href="#content">Skip to content</a>
+
+  <header class="top">
+    <a class="wordmark" href="/" aria-label="Debutly home">
+      <span class="mark" aria-hidden="true"></span>Debutly
+    </a>
+    <nav aria-label="Main">
+      <a href="/docs" aria-current="false">Docs</a>
+      <a href="https://github.com/sroay/debutly">GitHub</a>
+    </nav>
+  </header>
+
+  <div class="docs-layout">
+    <details class="docs-menu">
+      <summary>Docs menu</summary>
+      <nav aria-label="Docs">
+<h2 class="nav-section">Start</h2>
+<ul>
+<li><a href="/docs">Overview</a></li>
+<li><a href="/docs/quick-start">Quick start</a></li>
+<li><a href="/docs/configuration">Configuration</a></li>
+<li><a href="/docs/github-actions">GitHub Actions</a></li>
+</ul>
+<h2 class="nav-section">Guides</h2>
+<ul>
+<li><a href="/docs/test-environments">Test environments</a></li>
+<li><a href="/docs/reports">Reading the report</a></li>
+<li><a href="/docs/teams">Teams and invites</a></li>
+<li class="here"><a href="/docs/buyers" aria-current="page">What buyers think</a></li>
+<li><a href="/docs/dashboard">The dashboard</a></li>
+<li><a href="/docs/models-and-costs">Models and costs</a></li>
+</ul>
+<h2 class="nav-section">Tutorials</h2>
+<ul>
+<li><a href="/docs/tutorial-nextjs-supabase">Next.js and Supabase</a></li>
+</ul>
+<h2 class="nav-section">Help</h2>
+<ul>
+<li><a href="/docs/troubleshooting">Troubleshooting</a></li>
+</ul>
+      </nav>
+    </details>
+    <nav class="docs-nav" aria-label="Docs">
+<h2 class="nav-section">Start</h2>
+<ul>
+<li><a href="/docs">Overview</a></li>
+<li><a href="/docs/quick-start">Quick start</a></li>
+<li><a href="/docs/configuration">Configuration</a></li>
+<li><a href="/docs/github-actions">GitHub Actions</a></li>
+</ul>
+<h2 class="nav-section">Guides</h2>
+<ul>
+<li><a href="/docs/test-environments">Test environments</a></li>
+<li><a href="/docs/reports">Reading the report</a></li>
+<li><a href="/docs/teams">Teams and invites</a></li>
+<li class="here"><a href="/docs/buyers" aria-current="page">What buyers think</a></li>
+<li><a href="/docs/dashboard">The dashboard</a></li>
+<li><a href="/docs/models-and-costs">Models and costs</a></li>
+</ul>
+<h2 class="nav-section">Tutorials</h2>
+<ul>
+<li><a href="/docs/tutorial-nextjs-supabase">Next.js and Supabase</a></li>
+</ul>
+<h2 class="nav-section">Help</h2>
+<ul>
+<li><a href="/docs/troubleshooting">Troubleshooting</a></li>
+</ul>
+    </nav>
+
+    <main id="content" class="docs-page">
+      <article class="prose">
+<h1>What buyers think</h1>
+<p>The agents in a normal run use your product. <strong>Evaluators</strong> judge what it says: skeptical buyers on a budget who read your landing and pricing pages and decide whether they&#39;d buy. They need no browser, so even hundreds cost cents. Each one must name at least two concrete objections before giving a score, and leans towards &quot;no&quot;.</p>
+<h2 id="your-pages"><a class="anchor" href="#your-pages">Your pages</a></h2>
+<pre><code class="language-bash">npx debutly perceive --icp &quot;Owners of small marketing agencies&quot; \
+  --url https://staging.example.com/ --url https://staging.example.com/pricing \
+  --competitors https://rival.example/pricing,https://other.example/pricing
+</code></pre>
+<p>With <code>--competitors</code>, evaluators judge you next to what your buyers would compare you with, read from those companies&#39; own pricing pages.</p>
+<h2 id="two-versions-which-do-buyers-pick"><a class="anchor" href="#two-versions-which-do-buyers-pick">Two versions: which do buyers pick?</a></h2>
+<pre><code class="language-bash">npx debutly perceive --icp &quot;…&quot; --variant A=https://staging.example.com/pricing --variant B=pricing-b.md
+</code></pre>
+<p>Each variant is an address or a text file. Every evaluator sees both and picks one, or neither. The report says which won, with a 95% interval, and says so when the lead could be noise.</p>
+<h2 id="before-anything-is-built"><a class="anchor" href="#before-anything-is-built">Before anything is built</a></h2>
+<pre><code class="language-bash">npx debutly perceive --icp &quot;…&quot; --file pitch.md
+</code></pre>
+<p>A pitch, a landing page draft or a one-pager in a text file is enough.</p>
+<h2 id="after-a-run"><a class="anchor" href="#after-a-run">After a run</a></h2>
+<p>Add <code>--evaluators 50</code> (or <code>&quot;evaluators&quot;: 50</code>) to a normal run, and evaluators judge the pages the agents saw.</p>
+<h2 id="the-report"><a class="anchor" href="#the-report">The report</a></h2>
+<p><code>launch-readiness.md</code> ranks the blockers and the objections buyers raised most, compares variants, and suggests fixes. It never shows a conversion rate: it is simulated evidence, and says so.</p>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>Option</th>
+<th>What it does</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>--tier quick|standard|deep</code></td>
+<td>50, 300 or 1,500 evaluators.</td>
+</tr>
+<tr>
+<td><code>--evaluators N</code></td>
+<td>Exactly N evaluators.</td>
+</tr>
+<tr>
+<td><code>--max-cost USD</code></td>
+<td>Refuse to start if it could cost more.</td>
+</tr>
+<tr>
+<td><code>--store &lt;postgres url&gt;</code></td>
+<td>Record the run and its predictions.</td>
+</tr>
+</tbody></table></div>
+<p>With <code>--store</code>, each prediction (the winner, the top objection, the share who would buy) is saved. Record what really happened with <code>npx debutly predictions record &lt;id&gt; &lt;actual&gt;</code>, and <code>npx debutly predictions accuracy</code> shows how often the evaluators were right.</p>
+
+      </article>
+      <nav class="pager" aria-label="Previous and next page">
+        <a class="pager-prev" href="/docs/teams"><span>Previous</span>Teams and invites</a>
+        <a class="pager-next" href="/docs/dashboard"><span>Next</span>The dashboard</a>
+      </nav>
+      <p class="edit"><a href="https://github.com/sroay/debutly/edit/master/site/docs-src/buyers.md">Edit this page on GitHub</a></p>
+    </main>
+  </div>
+
+  <footer class="foot">
+    <p>Debutly is made by <a href="https://github.com/sroay">Chetan Sroay</a>.</p>
+    <p class="foot-links"><a href="https://github.com/sroay/debutly">Source on GitHub</a> <a href="https://github.com/sroay/debutly/blob/master/LICENSE">AGPL-3.0 licence</a> <a href="https://github.com/sroay/debutly/security">Report a security issue</a></p>
+  </footer>
+</body>
+</html>

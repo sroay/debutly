@@ -1,0 +1,135 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Debutly docs</title>
+  <meta name="description" content="How to rehearse your launch with Debutly. AI agents use a test copy of your web app like its first customers and report what broke.">
+  <link rel="canonical" href="https://debutly.dev/docs">
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+  <meta property="og:type" content="article">
+  <meta property="og:url" content="https://debutly.dev/docs">
+  <meta property="og:title" content="Debutly docs">
+  <meta property="og:description" content="How to rehearse your launch with Debutly. AI agents use a test copy of your web app like its first customers and report what broke.">
+  <meta property="og:image" content="https://debutly.dev/og.png">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="theme-color" content="#ECEEF0">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible+Mono:wght@400;700&family=Atkinson+Hyperlegible+Next:wght@400;700&family=Big+Shoulders+Display:wght@800;900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/styles.css">
+  <link rel="stylesheet" href="/docs.css">
+</head>
+<body class="docs">
+  <a class="skip" href="#content">Skip to content</a>
+
+  <header class="top">
+    <a class="wordmark" href="/" aria-label="Debutly home">
+      <span class="mark" aria-hidden="true"></span>Debutly
+    </a>
+    <nav aria-label="Main">
+      <a href="/docs" aria-current="page">Docs</a>
+      <a href="https://github.com/sroay/debutly">GitHub</a>
+    </nav>
+  </header>
+
+  <div class="docs-layout">
+    <details class="docs-menu">
+      <summary>Docs menu</summary>
+      <nav aria-label="Docs">
+<h2 class="nav-section">Start</h2>
+<ul>
+<li class="here"><a href="/docs" aria-current="page">Overview</a></li>
+<li><a href="/docs/quick-start">Quick start</a></li>
+<li><a href="/docs/configuration">Configuration</a></li>
+<li><a href="/docs/github-actions">GitHub Actions</a></li>
+</ul>
+<h2 class="nav-section">Guides</h2>
+<ul>
+<li><a href="/docs/test-environments">Test environments</a></li>
+<li><a href="/docs/reports">Reading the report</a></li>
+<li><a href="/docs/teams">Teams and invites</a></li>
+<li><a href="/docs/buyers">What buyers think</a></li>
+<li><a href="/docs/dashboard">The dashboard</a></li>
+<li><a href="/docs/models-and-costs">Models and costs</a></li>
+</ul>
+<h2 class="nav-section">Tutorials</h2>
+<ul>
+<li><a href="/docs/tutorial-nextjs-supabase">Next.js and Supabase</a></li>
+</ul>
+<h2 class="nav-section">Help</h2>
+<ul>
+<li><a href="/docs/troubleshooting">Troubleshooting</a></li>
+</ul>
+      </nav>
+    </details>
+    <nav class="docs-nav" aria-label="Docs">
+<h2 class="nav-section">Start</h2>
+<ul>
+<li class="here"><a href="/docs" aria-current="page">Overview</a></li>
+<li><a href="/docs/quick-start">Quick start</a></li>
+<li><a href="/docs/configuration">Configuration</a></li>
+<li><a href="/docs/github-actions">GitHub Actions</a></li>
+</ul>
+<h2 class="nav-section">Guides</h2>
+<ul>
+<li><a href="/docs/test-environments">Test environments</a></li>
+<li><a href="/docs/reports">Reading the report</a></li>
+<li><a href="/docs/teams">Teams and invites</a></li>
+<li><a href="/docs/buyers">What buyers think</a></li>
+<li><a href="/docs/dashboard">The dashboard</a></li>
+<li><a href="/docs/models-and-costs">Models and costs</a></li>
+</ul>
+<h2 class="nav-section">Tutorials</h2>
+<ul>
+<li><a href="/docs/tutorial-nextjs-supabase">Next.js and Supabase</a></li>
+</ul>
+<h2 class="nav-section">Help</h2>
+<ul>
+<li><a href="/docs/troubleshooting">Troubleshooting</a></li>
+</ul>
+    </nav>
+
+    <main id="content" class="docs-page">
+      <article class="prose">
+<h1>Debutly docs</h1>
+<p>Debutly sends AI agents through a test copy of your web app, as if they were your first customers. In a real browser they sign up, confirm their email, pick a plan, invite teammates and use the product. Then they tell you what broke, where they got stuck and where they gave up, with the steps to reproduce each problem and screenshots.</p>
+<p>It runs on your machine or in your own GitHub Actions, with your own model key. A quick run costs a few cents.</p>
+<h2 id="start-here"><a class="anchor" href="#start-here">Start here</a></h2>
+<ul>
+<li><strong><a href="/docs/quick-start">Quick start</a>.</strong> Your first run in about five minutes: <code>npx debutly init</code>, a key, <code>npx debutly</code>.</li>
+<li><strong><a href="/docs/github-actions">GitHub Actions</a>.</strong> Run the agents on a schedule against a throwaway copy of your app.</li>
+<li><strong><a href="/docs/reports">Reading the report</a>.</strong> What each finding means, how sure Debutly is, and what it leaves out.</li>
+</ul>
+<h2 id="what-you-need"><a class="anchor" href="#what-you-need">What you need</a></h2>
+<ul>
+<li>Node.js 20.12 or later.</li>
+<li>A model key. An <a href="https://openrouter.ai/keys">OpenRouter</a> key is the simplest: one key, and Debutly picks models that are cheap and good at this. An Anthropic key works too.</li>
+<li>A test copy of your app: on your machine, a staging site, or one built fresh in CI.</li>
+</ul>
+<aside class="callout"><p><strong>Never point Debutly at production.</strong> Agents create accounts, submit forms and pay with test cards. Use a local, staging or throwaway copy with test keys. <a href="/docs/test-environments">Test environments</a> explains how to set one up.</p>
+</aside>
+<h2 id="how-a-run-works"><a class="anchor" href="#how-a-run-works">How a run works</a></h2>
+<ol>
+<li>Debutly reads who your customers are and what they should get done, and casts made-up customers like them: owners with budgets, their teammates, and people who use the web differently.</li>
+<li>Each agent gets its own browser and, if you have a mail catcher, its own inbox. It reads the screen, decides what that person would do next and does it, one step at a time.</li>
+<li>Debutly watches for server errors, page errors, controls that can&#39;t be pressed, unlabeled buttons, slow pages and agents going round in circles.</li>
+<li>You get a report: every problem with how many agents hit it, the steps to reproduce it and screenshots. Failures your test environment caused are listed apart.</li>
+</ol>
+<p>Every run includes a screen-reader user, someone with low vision, someone on a slow connection and a non-native English speaker, so accessibility problems show up next to the rest.</p>
+
+      </article>
+      <nav class="pager" aria-label="Previous and next page">
+        <span></span>
+        <a class="pager-next" href="/docs/quick-start"><span>Next</span>Quick start</a>
+      </nav>
+      <p class="edit"><a href="https://github.com/sroay/debutly/edit/master/site/docs-src/index.md">Edit this page on GitHub</a></p>
+    </main>
+  </div>
+
+  <footer class="foot">
+    <p>Debutly is made by <a href="https://github.com/sroay">Chetan Sroay</a>.</p>
+    <p class="foot-links"><a href="https://github.com/sroay/debutly">Source on GitHub</a> <a href="https://github.com/sroay/debutly/blob/master/LICENSE">AGPL-3.0 licence</a> <a href="https://github.com/sroay/debutly/security">Report a security issue</a></p>
+  </footer>
+</body>
+</html>

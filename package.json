@@ -52,7 +52,8 @@
     "debutly:costs": "tsx src/costs.ts",
     "debutly:import": "tsx src/import.ts",
     "dashboard": "npm run dev -w dashboard",
-    "dashboard:build": "npm run build -w dashboard"
+    "dashboard:build": "npm run build -w dashboard",
+    "docs": "tsx scripts/build-docs.ts"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.128.0",
@@ -71,6 +72,7 @@
     "@types/express": "^5.0.6",
     "@types/node": "^26.6.3",
     "drizzle-kit": "^0.31.11",
+    "marked": "18.0.14",
     "typescript": "^7.0.2",
     "vitest": "^5.0.2"
   },

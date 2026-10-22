@@ -22,6 +22,8 @@ jobs:
       - run: npm run typecheck
       - run: npm run typecheck -w dashboard
       - run: npm test
+      # The built docs pages must match their Markdown: run npm run docs after editing site/docs-src.
+      - run: npm run docs && git diff --exit-code site/docs
 
   # The GitHub Action itself, end to end against the seeded-bug fixture: one agent, a few steps,
   # well under a cent. Needs the DEBUTLY_API_KEY secret, so it skips on forks.

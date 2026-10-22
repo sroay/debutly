@@ -29,6 +29,7 @@
     <nav aria-label="Main">
       <a href="#how">How it works</a>
       <a href="#report">Sample report</a>
+      <a href="/docs">Docs</a>
       <a href="https://github.com/sroay/debutly">GitHub</a>
     </nav>
   </header>
@@ -39,7 +40,7 @@
       <div class="hero-text">
         <p class="lede">Debutly sends AI agents through your web app as its first customers. In a real browser they sign up, confirm their email, pick a plan, invite their team and use the product. Then they tell you what broke, and where they gave up.</p>
         <div class="actions">
-          <a class="button button-primary" href="https://github.com/sroay/debutly#quick-start">Get started on GitHub</a>
+          <a class="button button-primary" href="/docs/quick-start">Start your first rehearsal</a>
           <a class="button" href="#report">See a sample report</a>
         </div>
       </div>
@@ -179,17 +180,19 @@
         <h2 id="start-title">Free and open source</h2>
         <p>Debutly is licensed under AGPL-3.0. Run it on your machine or in your own GitHub Actions, with your own model key: your code and keys stay with you.</p>
         <p>A hosted version is in the works. Watch the repository to hear when it's ready.</p>
-        <a class="button button-primary" href="https://github.com/sroay/debutly">View on GitHub</a>
+        <div class="actions">
+          <a class="button button-primary" href="/docs/quick-start">Read the quick start</a>
+          <a class="button" href="https://github.com/sroay/debutly">View on GitHub</a>
+        </div>
       </div>
-      <pre class="code" aria-label="Quick start commands"><code>git clone https://github.com/sroay/debutly.git
-cd debutly && npm install
-npx playwright install chromium
-cp .env.example .env   <span class="comment"># add your model key</span>
-
-node --env-file=.env --import tsx src/cli.ts \
-  --url http://localhost:3000 \
-  --goal "Sign up, choose a plan and invite a teammate" \
-  --icp "Owners of small design studios" --agents 3</code></pre>
+      <div>
+      <pre class="code" aria-label="Quick start commands"><code><span class="comment"># in your app's folder</span>
+npx debutly init     <span class="comment"># a few questions about your app</span>
+echo "DEBUTLY_API_KEY=sk-or-…" >> .env
+npx debutly doctor   <span class="comment"># checks the key, the browser and the app</span>
+npx debutly          <span class="comment"># the rehearsal</span></code></pre>
+      <p class="note code-note">Until the first npm release, type <code>npx github:sroay/debutly</code> in place of <code>npx debutly</code>.</p>
+      </div>
     </section>
   </main>
 

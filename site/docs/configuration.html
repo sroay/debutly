@@ -1,0 +1,341 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Configuration · Debutly docs</title>
+  <meta name="description" content="Every Debutly setting, in debutly.json and as a command-line flag, and the environment variables for keys, models and the run store.">
+  <link rel="canonical" href="https://debutly.dev/docs/configuration">
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+  <meta property="og:type" content="article">
+  <meta property="og:url" content="https://debutly.dev/docs/configuration">
+  <meta property="og:title" content="Configuration">
+  <meta property="og:description" content="Every Debutly setting, in debutly.json and as a command-line flag, and the environment variables for keys, models and the run store.">
+  <meta property="og:image" content="https://debutly.dev/og.png">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="theme-color" content="#ECEEF0">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible+Mono:wght@400;700&family=Atkinson+Hyperlegible+Next:wght@400;700&family=Big+Shoulders+Display:wght@800;900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/styles.css">
+  <link rel="stylesheet" href="/docs.css">
+</head>
+<body class="docs">
+  <a class="skip" href="#content">Skip to content</a>
+
+  <header class="top">
+    <a class="wordmark" href="/" aria-label="Debutly home">
+      <span class="mark" aria-hidden="true"></span>Debutly
+    </a>
+    <nav aria-label="Main">
+      <a href="/docs" aria-current="false">Docs</a>
+      <a href="https://github.com/sroay/debutly">GitHub</a>
+    </nav>
+  </header>
+
+  <div class="docs-layout">
+    <details class="docs-menu">
+      <summary>Docs menu</summary>
+      <nav aria-label="Docs">
+<h2 class="nav-section">Start</h2>
+<ul>
+<li><a href="/docs">Overview</a></li>
+<li><a href="/docs/quick-start">Quick start</a></li>
+<li class="here"><a href="/docs/configuration" aria-current="page">Configuration</a></li>
+<li><a href="/docs/github-actions">GitHub Actions</a></li>
+</ul>
+<h2 class="nav-section">Guides</h2>
+<ul>
+<li><a href="/docs/test-environments">Test environments</a></li>
+<li><a href="/docs/reports">Reading the report</a></li>
+<li><a href="/docs/teams">Teams and invites</a></li>
+<li><a href="/docs/buyers">What buyers think</a></li>
+<li><a href="/docs/dashboard">The dashboard</a></li>
+<li><a href="/docs/models-and-costs">Models and costs</a></li>
+</ul>
+<h2 class="nav-section">Tutorials</h2>
+<ul>
+<li><a href="/docs/tutorial-nextjs-supabase">Next.js and Supabase</a></li>
+</ul>
+<h2 class="nav-section">Help</h2>
+<ul>
+<li><a href="/docs/troubleshooting">Troubleshooting</a></li>
+</ul>
+      </nav>
+    </details>
+    <nav class="docs-nav" aria-label="Docs">
+<h2 class="nav-section">Start</h2>
+<ul>
+<li><a href="/docs">Overview</a></li>
+<li><a href="/docs/quick-start">Quick start</a></li>
+<li class="here"><a href="/docs/configuration" aria-current="page">Configuration</a></li>
+<li><a href="/docs/github-actions">GitHub Actions</a></li>
+</ul>
+<h2 class="nav-section">Guides</h2>
+<ul>
+<li><a href="/docs/test-environments">Test environments</a></li>
+<li><a href="/docs/reports">Reading the report</a></li>
+<li><a href="/docs/teams">Teams and invites</a></li>
+<li><a href="/docs/buyers">What buyers think</a></li>
+<li><a href="/docs/dashboard">The dashboard</a></li>
+<li><a href="/docs/models-and-costs">Models and costs</a></li>
+</ul>
+<h2 class="nav-section">Tutorials</h2>
+<ul>
+<li><a href="/docs/tutorial-nextjs-supabase">Next.js and Supabase</a></li>
+</ul>
+<h2 class="nav-section">Help</h2>
+<ul>
+<li><a href="/docs/troubleshooting">Troubleshooting</a></li>
+</ul>
+    </nav>
+
+    <main id="content" class="docs-page">
+      <article class="prose">
+<h1>Configuration</h1>
+<p>A run reads its settings from <code>debutly.json</code> in the folder you run it in. Flags on the command line override the file for that run, so <code>npx debutly --tier standard</code> runs a bigger rehearsal without editing anything.</p>
+<pre><code class="language-json">{
+  &quot;$schema&quot;: &quot;https://debutly.dev/schema.json&quot;,
+  &quot;url&quot;: &quot;http://localhost:3000&quot;,
+  &quot;goal&quot;: &quot;Sign up, choose a plan and invite a teammate&quot;,
+  &quot;icp&quot;: &quot;Owners of small marketing agencies, 2 to 15 people&quot;,
+  &quot;unit&quot;: &quot;business&quot;,
+  &quot;employees&quot;: 2,
+  &quot;tier&quot;: &quot;quick&quot;,
+  &quot;maxCost&quot;: 1
+}
+</code></pre>
+<p>The <code>$schema</code> line gives you completion and checking in editors that support JSON Schema, such as VS Code.</p>
+<h2 id="settings"><a class="anchor" href="#settings">Settings</a></h2>
+<p>In <code>debutly.json</code> a setting is camelCased; as a flag it is written with dashes: <code>maxCost</code> is <code>--max-cost</code>.</p>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>Setting</th>
+<th>Default</th>
+<th>What it does</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>url</code></td>
+<td>(required)</td>
+<td>Where the test copy of your app runs.</td>
+</tr>
+<tr>
+<td><code>goal</code></td>
+<td>(required)</td>
+<td>What the agents try to get done, in a sentence.</td>
+</tr>
+<tr>
+<td><code>icp</code></td>
+<td>(required)</td>
+<td>Who your customers are. Debutly casts people like them.</td>
+</tr>
+<tr>
+<td><code>unit</code></td>
+<td><code>individual</code></td>
+<td><code>individual</code>: one person per customer. <code>business</code>: an owner and teammates per customer. See <a href="/docs/teams">Teams and invites</a>.</td>
+</tr>
+<tr>
+<td><code>tier</code></td>
+<td><code>quick</code></td>
+<td>Run size. <code>quick</code>: 3 customers, owners only. <code>standard</code>: 10 customers with 2 teammates each. <code>deep</code>: 30 with 3 each.</td>
+</tr>
+<tr>
+<td><code>agents</code></td>
+<td>from the tier</td>
+<td>How many customers (people or businesses).</td>
+</tr>
+<tr>
+<td><code>employees</code></td>
+<td>from the tier</td>
+<td>Teammates per business, 0 to 4.</td>
+</tr>
+<tr>
+<td><code>maxCost</code></td>
+<td>none</td>
+<td>Refuse to start a run that could cost more than this, in US dollars.</td>
+</tr>
+<tr>
+<td><code>maxSteps</code></td>
+<td><code>30</code></td>
+<td>Most actions one agent takes before it stops.</td>
+</tr>
+<tr>
+<td><code>inclusion</code></td>
+<td><code>on</code></td>
+<td><code>off</code> leaves out the screen-reader, low-vision, slow-connection and non-native English agents.</td>
+</tr>
+<tr>
+<td><code>concurrency</code></td>
+<td><code>3</code></td>
+<td>How many agents use the app at once.</td>
+</tr>
+<tr>
+<td><code>mailpit</code></td>
+<td>none</td>
+<td>Address of a Mailpit mail catcher, which gives each agent an inbox for confirmation links and invites.</td>
+</tr>
+<tr>
+<td><code>emailDomain</code></td>
+<td><code>agents.test</code></td>
+<td>The domain of the agents&#39; email addresses.</td>
+</tr>
+<tr>
+<td><code>sandboxOutbox</code></td>
+<td>none</td>
+<td>Your app&#39;s sandbox outbox, so failures the test environment caused are listed apart. See <a href="/docs/test-environments">Test environments</a>.</td>
+</tr>
+<tr>
+<td><code>app</code></td>
+<td>the repo name in GitHub Actions</td>
+<td>The app&#39;s name in the dashboard.</td>
+</tr>
+<tr>
+<td><code>evaluators</code></td>
+<td>none</td>
+<td>After the run, this many skeptical-buyer evaluators judge the pages the agents saw. See <a href="/docs/buyers">What buyers think</a>.</td>
+</tr>
+<tr>
+<td><code>agentTokenCap</code></td>
+<td>none</td>
+<td>Most model tokens one agent may use.</td>
+</tr>
+<tr>
+<td><code>agentMinutes</code></td>
+<td>none</td>
+<td>Most minutes one agent may run.</td>
+</tr>
+<tr>
+<td><code>screenshotDays</code></td>
+<td><code>7</code></td>
+<td>Days to keep screenshots stored in the database.</td>
+</tr>
+</tbody></table></div>
+<p>Only on the command line:</p>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>Flag</th>
+<th>What it does</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>--out &lt;folder&gt;</code></td>
+<td>Where the report goes. Default: <code>.debutly/runs/&lt;time&gt;</code>.</td>
+</tr>
+<tr>
+<td><code>--store &lt;postgres url&gt;</code></td>
+<td>Record the run in a database for the dashboard. <code>DEBUTLY_STORE_URL</code> does the same and keeps the address out of your shell history.</td>
+</tr>
+<tr>
+<td><code>--queue &lt;redis url&gt;</code></td>
+<td>Hand the agents to workers (<code>npx debutly worker</code>) instead of running them here.</td>
+</tr>
+<tr>
+<td><code>--trigger</code>, <code>--ci-url</code></td>
+<td>What started the run and its CI page, for the dashboard. GitHub Actions fills these in.</td>
+</tr>
+</tbody></table></div>
+<p>The address of a database holds a password, so <code>debutly.json</code> can&#39;t name one: set <code>DEBUTLY_STORE_URL</code> instead.</p>
+<h2 id="environment-variables"><a class="anchor" href="#environment-variables">Environment variables</a></h2>
+<p>Debutly reads these from your shell and from a <code>.env</code> file in the folder it runs in. Values already set in your shell win.</p>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>Variable</th>
+<th>What it does</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>DEBUTLY_API_KEY</code></td>
+<td>Your model key. <code>OPENROUTER_API_KEY</code> or <code>ANTHROPIC_API_KEY</code> is used when this isn&#39;t set.</td>
+</tr>
+<tr>
+<td><code>DEBUTLY_STORE_URL</code></td>
+<td>A Postgres address to record runs in, for the dashboard.</td>
+</tr>
+<tr>
+<td><code>DEBUTLY_SANDBOX_TOKEN</code></td>
+<td>The token for your app&#39;s sandbox outbox.</td>
+</tr>
+<tr>
+<td><code>DEBUTLY_PROVIDER</code></td>
+<td><code>openai-compatible</code> or <code>anthropic</code>. Worked out from the key when unset.</td>
+</tr>
+<tr>
+<td><code>DEBUTLY_BASE_URL</code></td>
+<td>The provider&#39;s API address, for <code>openai-compatible</code>. OpenRouter when the key is an OpenRouter key.</td>
+</tr>
+<tr>
+<td><code>DEBUTLY_NAV_MODEL</code></td>
+<td>The model that drives the agents. Default with OpenRouter: <code>z-ai/glm-5.3-flash</code>.</td>
+</tr>
+<tr>
+<td><code>DEBUTLY_JUDGE_MODEL</code></td>
+<td>The model that casts the customers and judges pages. Default with OpenRouter: <code>deepseek/deepseek-v4-flash</code>.</td>
+</tr>
+<tr>
+<td><code>DEBUTLY_REASONING_EFFORT</code></td>
+<td><code>low</code>, <code>medium</code> or <code>high</code>: how much the agents&#39; model thinks before each step. Default with OpenRouter: <code>low</code>.</td>
+</tr>
+<tr>
+<td><code>DEBUTLY_NAV_ROUTING</code></td>
+<td>OpenRouter provider routing as JSON, e.g. <code>{&quot;order&quot;:[&quot;google-ai-studio/flex&quot;]}</code>.</td>
+</tr>
+</tbody></table></div>
+<p>A <code>.env</code> in the folder can only change where your key is sent (<code>DEBUTLY_BASE_URL</code>) if it holds the key too. That way a <code>.env</code> in a repository you cloned can&#39;t send the key from your shell somewhere else.</p>
+<h2 id="commands"><a class="anchor" href="#commands">Commands</a></h2>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>Command</th>
+<th>What it does</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>npx debutly init</code></td>
+<td>Asks a few questions and writes <code>debutly.json</code>, and a GitHub workflow if you want one.</td>
+</tr>
+<tr>
+<td><code>npx debutly</code></td>
+<td>Runs the agents (the same as <code>npx debutly run</code>).</td>
+</tr>
+<tr>
+<td><code>npx debutly doctor</code></td>
+<td>Checks the key, the browser, the config and that the app answers.</td>
+</tr>
+<tr>
+<td><code>npx debutly perceive</code></td>
+<td>Skeptical-buyer evaluators judge your pages, two versions of a page, or an idea.</td>
+</tr>
+<tr>
+<td><code>npx debutly cancel &lt;run id&gt; --store &lt;url&gt;</code></td>
+<td>Stops a recorded run from anywhere.</td>
+</tr>
+<tr>
+<td><code>npx debutly import</code></td>
+<td>Loads earlier runs from GitHub Actions report artifacts into the dashboard&#39;s database.</td>
+</tr>
+<tr>
+<td><code>npx debutly costs</code></td>
+<td>Your OpenRouter key&#39;s spend, and what each app&#39;s latest run cost.</td>
+</tr>
+</tbody></table></div>
+<p>Press Ctrl+C once during a run and the agents stop at their next step and the report is still written. Press it again to quit at once.</p>
+
+      </article>
+      <nav class="pager" aria-label="Previous and next page">
+        <a class="pager-prev" href="/docs/quick-start"><span>Previous</span>Quick start</a>
+        <a class="pager-next" href="/docs/github-actions"><span>Next</span>GitHub Actions</a>
+      </nav>
+      <p class="edit"><a href="https://github.com/sroay/debutly/edit/master/site/docs-src/configuration.md">Edit this page on GitHub</a></p>
+    </main>
+  </div>
+
+  <footer class="foot">
+    <p>Debutly is made by <a href="https://github.com/sroay">Chetan Sroay</a>.</p>
+    <p class="foot-links"><a href="https://github.com/sroay/debutly">Source on GitHub</a> <a href="https://github.com/sroay/debutly/blob/master/LICENSE">AGPL-3.0 licence</a> <a href="https://github.com/sroay/debutly/security">Report a security issue</a></p>
+  </footer>
+</body>
+</html>

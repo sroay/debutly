@@ -6,7 +6,7 @@ Run it before a launch, on every pull request, or on a schedule against a throwa
 
 > **Only point Debutly at a test, staging or throwaway copy of your app, never production.** Agents create accounts, submit forms and, in test mode, pay.
 
-Website: [debutly.dev](https://debutly.dev). Created by [Chetan Sroay](https://github.com/sroay). Status: early. Flags, the report format and the database schema may still change.
+Website and docs: [debutly.dev](https://debutly.dev) ([quick start](https://debutly.dev/docs/quick-start)). Created by [Chetan Sroay](https://github.com/sroay). Status: early. Flags, the report format and the database schema may still change.
 
 ## What it does
 
@@ -21,7 +21,7 @@ Website: [debutly.dev](https://debutly.dev). Created by [Chetan Sroay](https://g
 
 ## Quick start
 
-Needs Node.js 20.12 or later. In your app's folder:
+Needs Node.js 20.12 or later. Until the first npm release, type `npx github:sroay/debutly` wherever this says `npx debutly`. In your app's folder:
 
 ```bash
 npx debutly init     # a few questions, then a debutly.json

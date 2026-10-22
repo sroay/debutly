@@ -1,0 +1,31 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://debutly.dev/schema.json",
+  "title": "debutly.json",
+  "description": "Settings for a Debutly run. Flags on the command line override them. https://debutly.dev/docs/configuration",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["url", "goal", "icp"],
+  "properties": {
+    "$schema": { "type": "string" },
+    "url": { "type": "string", "format": "uri", "description": "Where the test copy of your app runs. Never production." },
+    "goal": { "type": "string", "description": "What the agents try to get done, in a sentence." },
+    "icp": { "type": "string", "description": "Who your customers are. Debutly casts people like them." },
+    "unit": { "enum": ["individual", "business"], "default": "individual", "description": "individual: one person per customer. business: an owner and teammates per customer." },
+    "tier": { "enum": ["quick", "standard", "deep"], "default": "quick", "description": "Run size. quick: 3 customers, owners only. standard: 10 with 2 teammates each. deep: 30 with 3 each." },
+    "agents": { "type": "integer", "minimum": 1, "description": "How many customers (people or businesses). Overrides the tier." },
+    "employees": { "type": "integer", "minimum": 0, "maximum": 4, "description": "Teammates per business. Overrides the tier." },
+    "maxCost": { "type": "number", "exclusiveMinimum": 0, "description": "Refuse to start a run that could cost more than this, in US dollars." },
+    "maxSteps": { "type": "integer", "minimum": 1, "default": 30, "description": "Most actions one agent takes before it stops." },
+    "inclusion": { "oneOf": [{ "type": "boolean" }, { "enum": ["on", "off"] }], "default": "on", "description": "off leaves out the screen-reader, low-vision, slow-connection and non-native English agents." },
+    "concurrency": { "type": "integer", "minimum": 1, "default": 3, "description": "How many agents use the app at once." },
+    "mailpit": { "type": "string", "format": "uri", "description": "Address of a Mailpit mail catcher, which gives each agent an inbox." },
+    "emailDomain": { "type": "string", "default": "agents.test", "description": "The domain of the agents' email addresses." },
+    "sandboxOutbox": { "type": "string", "format": "uri", "description": "Your app's sandbox outbox, so failures the test environment caused are listed apart." },
+    "app": { "type": "string", "description": "The app's name in the dashboard." },
+    "evaluators": { "type": "integer", "minimum": 1, "description": "After the run, this many skeptical-buyer evaluators judge the pages the agents saw." },
+    "agentTokenCap": { "type": "integer", "minimum": 1, "description": "Most model tokens one agent may use." },
+    "agentMinutes": { "type": "number", "exclusiveMinimum": 0, "description": "Most minutes one agent may run." },
+    "screenshotDays": { "type": "integer", "minimum": 1, "default": 7, "description": "Days to keep screenshots stored in the database." }
+  }
+}

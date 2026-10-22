@@ -1,0 +1,138 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Troubleshooting · Debutly docs</title>
+  <meta name="description" content="Fixes for the problems people hit most with Debutly. Keys and credits, agents that can't get past email or sign-in, slow pages and the browser download.">
+  <link rel="canonical" href="https://debutly.dev/docs/troubleshooting">
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+  <meta property="og:type" content="article">
+  <meta property="og:url" content="https://debutly.dev/docs/troubleshooting">
+  <meta property="og:title" content="Troubleshooting">
+  <meta property="og:description" content="Fixes for the problems people hit most with Debutly. Keys and credits, agents that can't get past email or sign-in, slow pages and the browser download.">
+  <meta property="og:image" content="https://debutly.dev/og.png">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="theme-color" content="#ECEEF0">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible+Mono:wght@400;700&family=Atkinson+Hyperlegible+Next:wght@400;700&family=Big+Shoulders+Display:wght@800;900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/styles.css">
+  <link rel="stylesheet" href="/docs.css">
+</head>
+<body class="docs">
+  <a class="skip" href="#content">Skip to content</a>
+
+  <header class="top">
+    <a class="wordmark" href="/" aria-label="Debutly home">
+      <span class="mark" aria-hidden="true"></span>Debutly
+    </a>
+    <nav aria-label="Main">
+      <a href="/docs" aria-current="false">Docs</a>
+      <a href="https://github.com/sroay/debutly">GitHub</a>
+    </nav>
+  </header>
+
+  <div class="docs-layout">
+    <details class="docs-menu">
+      <summary>Docs menu</summary>
+      <nav aria-label="Docs">
+<h2 class="nav-section">Start</h2>
+<ul>
+<li><a href="/docs">Overview</a></li>
+<li><a href="/docs/quick-start">Quick start</a></li>
+<li><a href="/docs/configuration">Configuration</a></li>
+<li><a href="/docs/github-actions">GitHub Actions</a></li>
+</ul>
+<h2 class="nav-section">Guides</h2>
+<ul>
+<li><a href="/docs/test-environments">Test environments</a></li>
+<li><a href="/docs/reports">Reading the report</a></li>
+<li><a href="/docs/teams">Teams and invites</a></li>
+<li><a href="/docs/buyers">What buyers think</a></li>
+<li><a href="/docs/dashboard">The dashboard</a></li>
+<li><a href="/docs/models-and-costs">Models and costs</a></li>
+</ul>
+<h2 class="nav-section">Tutorials</h2>
+<ul>
+<li><a href="/docs/tutorial-nextjs-supabase">Next.js and Supabase</a></li>
+</ul>
+<h2 class="nav-section">Help</h2>
+<ul>
+<li class="here"><a href="/docs/troubleshooting" aria-current="page">Troubleshooting</a></li>
+</ul>
+      </nav>
+    </details>
+    <nav class="docs-nav" aria-label="Docs">
+<h2 class="nav-section">Start</h2>
+<ul>
+<li><a href="/docs">Overview</a></li>
+<li><a href="/docs/quick-start">Quick start</a></li>
+<li><a href="/docs/configuration">Configuration</a></li>
+<li><a href="/docs/github-actions">GitHub Actions</a></li>
+</ul>
+<h2 class="nav-section">Guides</h2>
+<ul>
+<li><a href="/docs/test-environments">Test environments</a></li>
+<li><a href="/docs/reports">Reading the report</a></li>
+<li><a href="/docs/teams">Teams and invites</a></li>
+<li><a href="/docs/buyers">What buyers think</a></li>
+<li><a href="/docs/dashboard">The dashboard</a></li>
+<li><a href="/docs/models-and-costs">Models and costs</a></li>
+</ul>
+<h2 class="nav-section">Tutorials</h2>
+<ul>
+<li><a href="/docs/tutorial-nextjs-supabase">Next.js and Supabase</a></li>
+</ul>
+<h2 class="nav-section">Help</h2>
+<ul>
+<li class="here"><a href="/docs/troubleshooting" aria-current="page">Troubleshooting</a></li>
+</ul>
+    </nav>
+
+    <main id="content" class="docs-page">
+      <article class="prose">
+<h1>Troubleshooting</h1>
+<p>Start with <code>npx debutly doctor</code>: it checks most of what can go wrong and says what to do.</p>
+<h2 id="no-model-api-key"><a class="anchor" href="#no-model-api-key">&quot;No model API key&quot;</a></h2>
+<p>Put <code>DEBUTLY_API_KEY=…</code> in a <code>.env</code> file in the folder you run Debutly in, or set <code>OPENROUTER_API_KEY</code> in your shell. Get a key at <a href="https://openrouter.ai/keys">openrouter.ai/keys</a>.</p>
+<h2 id="the-provider-rejects-the-api-key"><a class="anchor" href="#the-provider-rejects-the-api-key">&quot;The provider rejects the API key&quot;</a></h2>
+<p>The key is wrong, revoked or cut short. Copy it again in full, or create a new one.</p>
+<h2 id="the-ai-provider-account-is-out-of-credits"><a class="anchor" href="#the-ai-provider-account-is-out-of-credits">&quot;The AI provider account is out of credits&quot;</a></h2>
+<p>Top up on OpenRouter, or raise the key&#39;s limit, and run again. If it happened part-way, the report starts with <strong>Run cut short</strong> and names the agents that stopped. Debutly checks a key&#39;s limit before a run, so give your key one to be told before a run starts instead.</p>
+<h2 id="refusing-to-start-this-run-could-cost-up-to"><a class="anchor" href="#refusing-to-start-this-run-could-cost-up-to">&quot;Refusing to start: this run could cost up to…&quot;</a></h2>
+<p>The estimate is above <code>maxCost</code>. Raise <code>maxCost</code>, or make the run smaller with <code>--agents</code>, <code>--max-steps</code> or a smaller <code>--tier</code>.</p>
+<h2 id="nothing-answers-at-http-localhost-3000"><a class="anchor" href="#nothing-answers-at-http-localhost-3000">&quot;Nothing answers at <a href="http://localhost:3000">http://localhost:3000</a>&quot;</a></h2>
+<p>Start your app first, and check the address and port in <code>debutly.json</code>. In GitHub Actions, the step before the action must leave the app running; the action waits up to <code>wait-seconds</code> (180) for it.</p>
+<h2 id="agents-never-confirm-their-email"><a class="anchor" href="#agents-never-confirm-their-email">Agents never confirm their email</a></h2>
+<p>They need a mail catcher: set <code>mailpit</code> to your Mailpit&#39;s address, and make sure your test copy sends its email there. Without one, they can&#39;t open confirmation links or invites. See <a href="/docs/test-environments#email">Test environments</a>.</p>
+<h2 id="agents-can-39-t-sign-in-with-google-github-and-the-like"><a class="anchor" href="#agents-can-39-t-sign-in-with-google-github-and-the-like">Agents can&#39;t sign in with Google, GitHub and the like</a></h2>
+<p>Social sign-in goes to another company&#39;s real sign-in page, which agents can&#39;t and shouldn&#39;t get through. Give your test copy email sign-up, or a test-only sign-in.</p>
+<h2 id="teammates-are-not-invited"><a class="anchor" href="#teammates-are-not-invited">Teammates are &quot;not_invited&quot;</a></h2>
+<p>Their invite email didn&#39;t reach Mailpit by the time the owner finished. Check that the owner reached the invite step (its steps are in the report), and that invite emails go to the mail catcher. If the owner did invite them, that is a finding.</p>
+<h2 id="an-agent-ran-out-of-steps"><a class="anchor" href="#an-agent-ran-out-of-steps">An agent ran out of steps</a></h2>
+<p><code>budget_exhausted</code> means it used all of <code>maxSteps</code> (30). A long journey may need more: <code>--max-steps 50</code>. If it spent them going round in circles, the findings usually say why, such as a control something covers.</p>
+<h2 id="lots-of-caused-by-the-test-environment"><a class="anchor" href="#lots-of-caused-by-the-test-environment">Lots of &quot;Caused by the test environment&quot;</a></h2>
+<p>That is your test copy working as intended: no real keys, outside calls blocked. Those failures are kept out of your findings. If one hides a real bug, check it on a staging copy with the real integration in test mode.</p>
+<h2 id="downloading-chromium-fails"><a class="anchor" href="#downloading-chromium-fails">Downloading Chromium fails</a></h2>
+<p>The first run downloads it with Playwright. Behind a proxy or firewall, run <code>npx playwright install chromium</code> yourself, or set <code>PLAYWRIGHT_DOWNLOAD_HOST</code>. On Linux CI, <code>npx playwright install --with-deps chromium</code> adds the system libraries it needs; the GitHub Action does this for you.</p>
+<h2 id="env-here-sets-debutly-base-url-but-your-key-comes-from-your-environment"><a class="anchor" href="#env-here-sets-debutly-base-url-but-your-key-comes-from-your-environment">&quot;.env here sets DEBUTLY_BASE_URL, but your key comes from your environment&quot;</a></h2>
+<p>A <code>.env</code> in the folder tried to change where your key is sent while the key itself came from your shell. Debutly ignores the address so a <code>.env</code> in a repository you cloned can&#39;t send your key elsewhere. Put the key in the same <code>.env</code> if you meant it.</p>
+<h2 id="still-stuck"><a class="anchor" href="#still-stuck">Still stuck</a></h2>
+<p><a href="https://github.com/sroay/debutly/issues">Open an issue</a> with the command you ran and its output. Leave out your key and any database addresses.</p>
+
+      </article>
+      <nav class="pager" aria-label="Previous and next page">
+        <a class="pager-prev" href="/docs/tutorial-nextjs-supabase"><span>Previous</span>Next.js and Supabase</a>
+        <span></span>
+      </nav>
+      <p class="edit"><a href="https://github.com/sroay/debutly/edit/master/site/docs-src/troubleshooting.md">Edit this page on GitHub</a></p>
+    </main>
+  </div>
+
+  <footer class="foot">
+    <p>Debutly is made by <a href="https://github.com/sroay">Chetan Sroay</a>.</p>
+    <p class="foot-links"><a href="https://github.com/sroay/debutly">Source on GitHub</a> <a href="https://github.com/sroay/debutly/blob/master/LICENSE">AGPL-3.0 licence</a> <a href="https://github.com/sroay/debutly/security">Report a security issue</a></p>
+  </footer>
+</body>
+</html>

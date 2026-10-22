@@ -1,0 +1,199 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Reading the report · Debutly docs</title>
+  <meta name="description" content="What Debutly's report says: findings and their severity, how sure each one is, where agents stopped, and failures the test environment caused.">
+  <link rel="canonical" href="https://debutly.dev/docs/reports">
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+  <meta property="og:type" content="article">
+  <meta property="og:url" content="https://debutly.dev/docs/reports">
+  <meta property="og:title" content="Reading the report">
+  <meta property="og:description" content="What Debutly's report says: findings and their severity, how sure each one is, where agents stopped, and failures the test environment caused.">
+  <meta property="og:image" content="https://debutly.dev/og.png">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="theme-color" content="#ECEEF0">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible+Mono:wght@400;700&family=Atkinson+Hyperlegible+Next:wght@400;700&family=Big+Shoulders+Display:wght@800;900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/styles.css">
+  <link rel="stylesheet" href="/docs.css">
+</head>
+<body class="docs">
+  <a class="skip" href="#content">Skip to content</a>
+
+  <header class="top">
+    <a class="wordmark" href="/" aria-label="Debutly home">
+      <span class="mark" aria-hidden="true"></span>Debutly
+    </a>
+    <nav aria-label="Main">
+      <a href="/docs" aria-current="false">Docs</a>
+      <a href="https://github.com/sroay/debutly">GitHub</a>
+    </nav>
+  </header>
+
+  <div class="docs-layout">
+    <details class="docs-menu">
+      <summary>Docs menu</summary>
+      <nav aria-label="Docs">
+<h2 class="nav-section">Start</h2>
+<ul>
+<li><a href="/docs">Overview</a></li>
+<li><a href="/docs/quick-start">Quick start</a></li>
+<li><a href="/docs/configuration">Configuration</a></li>
+<li><a href="/docs/github-actions">GitHub Actions</a></li>
+</ul>
+<h2 class="nav-section">Guides</h2>
+<ul>
+<li><a href="/docs/test-environments">Test environments</a></li>
+<li class="here"><a href="/docs/reports" aria-current="page">Reading the report</a></li>
+<li><a href="/docs/teams">Teams and invites</a></li>
+<li><a href="/docs/buyers">What buyers think</a></li>
+<li><a href="/docs/dashboard">The dashboard</a></li>
+<li><a href="/docs/models-and-costs">Models and costs</a></li>
+</ul>
+<h2 class="nav-section">Tutorials</h2>
+<ul>
+<li><a href="/docs/tutorial-nextjs-supabase">Next.js and Supabase</a></li>
+</ul>
+<h2 class="nav-section">Help</h2>
+<ul>
+<li><a href="/docs/troubleshooting">Troubleshooting</a></li>
+</ul>
+      </nav>
+    </details>
+    <nav class="docs-nav" aria-label="Docs">
+<h2 class="nav-section">Start</h2>
+<ul>
+<li><a href="/docs">Overview</a></li>
+<li><a href="/docs/quick-start">Quick start</a></li>
+<li><a href="/docs/configuration">Configuration</a></li>
+<li><a href="/docs/github-actions">GitHub Actions</a></li>
+</ul>
+<h2 class="nav-section">Guides</h2>
+<ul>
+<li><a href="/docs/test-environments">Test environments</a></li>
+<li class="here"><a href="/docs/reports" aria-current="page">Reading the report</a></li>
+<li><a href="/docs/teams">Teams and invites</a></li>
+<li><a href="/docs/buyers">What buyers think</a></li>
+<li><a href="/docs/dashboard">The dashboard</a></li>
+<li><a href="/docs/models-and-costs">Models and costs</a></li>
+</ul>
+<h2 class="nav-section">Tutorials</h2>
+<ul>
+<li><a href="/docs/tutorial-nextjs-supabase">Next.js and Supabase</a></li>
+</ul>
+<h2 class="nav-section">Help</h2>
+<ul>
+<li><a href="/docs/troubleshooting">Troubleshooting</a></li>
+</ul>
+    </nav>
+
+    <main id="content" class="docs-page">
+      <article class="prose">
+<h1>Reading the report</h1>
+<p>Every run writes <code>report.md</code>, with <code>findings.json</code>, <code>sessions.json</code> (every step of every agent) and a <code>screenshots</code> folder beside it. In GitHub Actions the report is on the workflow run&#39;s summary page. The report is labelled as simulated evidence: it comes from AI agents, not real customers.</p>
+<h2 id="the-top"><a class="anchor" href="#the-top">The top</a></h2>
+<p>How many agents ran, what the run cost, and the count of findings by severity. If the model provider ran out of credit part-way, a <strong>Run cut short</strong> note comes first: the agents it stopped are named, and the findings cover only the steps they took.</p>
+<h2 id="agent-outcomes"><a class="anchor" href="#agent-outcomes">Agent outcomes</a></h2>
+<p>One line per agent: who it was, any access need, and how it ended.</p>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>Outcome</th>
+<th>Meaning</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>success</code></td>
+<td>It reached the goal, and said so.</td>
+</tr>
+<tr>
+<td><code>gave_up</code></td>
+<td>It stopped where that person would have given up, and says why. Often the most useful line in the report.</td>
+</tr>
+<tr>
+<td><code>budget_exhausted</code></td>
+<td>It used all its steps (<code>maxSteps</code>) or a token or time cap first.</td>
+</tr>
+<tr>
+<td><code>not_invited</code></td>
+<td>A teammate whose invite email never arrived.</td>
+</tr>
+<tr>
+<td><code>error</code></td>
+<td>Something outside your app stopped it: the model provider, or the browser.</td>
+</tr>
+<tr>
+<td><code>cancelled</code></td>
+<td>The run was stopped with Ctrl+C or <code>npx debutly cancel</code>.</td>
+</tr>
+</tbody></table></div>
+<p><strong>Where agents stopped</strong> lists each agent that didn&#39;t succeed, the page it was on, and its own words.</p>
+<h2 id="findings"><a class="anchor" href="#findings">Findings</a></h2>
+<p>Each finding says what went wrong, how many of the agents who reached that page ran into it, and how to reproduce it: the agent&#39;s steps, each with its reason, and a screenshot.</p>
+<div class="table-wrap"><table>
+<thead>
+<tr>
+<th>Finding</th>
+<th>What it means</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>HTTP error</td>
+<td>A request returned 4xx or 5xx. 404s at addresses an agent made up itself are left out.</td>
+</tr>
+<tr>
+<td>JavaScript error</td>
+<td>An uncaught error on the page.</td>
+</tr>
+<tr>
+<td>Console error</td>
+<td>The page logged an error.</td>
+</tr>
+<tr>
+<td>Can&#39;t click</td>
+<td>Something kept covering a control, such as a cookie banner, a tour popup or a fixed bar, so a person can&#39;t press it either.</td>
+</tr>
+<tr>
+<td>Unlabeled control</td>
+<td>A button, link or field with no name, which a screen reader announces only as &quot;button&quot;.</td>
+</tr>
+<tr>
+<td>Slow page</td>
+<td>The page took over 10 seconds to arrive.</td>
+</tr>
+<tr>
+<td>Agent stuck</td>
+<td>An agent did the same thing three times on one page and nothing changed.</td>
+</tr>
+</tbody></table></div>
+<h3 id="severity"><a class="anchor" href="#severity">Severity</a></h3>
+<ul>
+<li><strong>Blocker</strong>: a serious problem on a page customers must get through: sign-up, sign-in, onboarding, pricing, checkout, billing, payment or invites.</li>
+<li><strong>Major</strong>: server errors and JavaScript errors, controls something covers, agents stuck, and pages over 30 seconds or that never arrived. A minor problem on one of the critical pages above is major too.</li>
+<li><strong>Minor</strong>: everything else, such as a 404 for an image or an unlabeled icon button.</li>
+</ul>
+<h3 id="confidence"><a class="anchor" href="#confidence">Confidence</a></h3>
+<p>Confidence is the share of agents who reached that page and ran into the problem. Half or more is <strong>high</strong>, a quarter or more is <strong>medium</strong>, anything less is <strong>low</strong>. Low-confidence findings get their own section: they may be the agent&#39;s own mistake rather than your app&#39;s.</p>
+<h2 id="caused-by-the-test-environment"><a class="anchor" href="#caused-by-the-test-environment">Caused by the test environment</a></h2>
+<p>Failures your test copy caused, not your app: a server error saying a key is missing, a website an agent invented that the app couldn&#39;t reach, or an outside call your sandbox blocked at the same moment. They are listed last with the reason, and left out of the counts at the top. <a href="/docs/test-environments">Test environments</a> explains how Debutly decides.</p>
+<h2 id="in-the-dashboard"><a class="anchor" href="#in-the-dashboard">In the dashboard</a></h2>
+<p>Recorded runs also appear in the <a href="/docs/dashboard">dashboard</a>, where each finding links to a step-by-step replay of the moment it happened, and findings are marked new, recurring or gone from one run to the next.</p>
+
+      </article>
+      <nav class="pager" aria-label="Previous and next page">
+        <a class="pager-prev" href="/docs/test-environments"><span>Previous</span>Test environments</a>
+        <a class="pager-next" href="/docs/teams"><span>Next</span>Teams and invites</a>
+      </nav>
+      <p class="edit"><a href="https://github.com/sroay/debutly/edit/master/site/docs-src/reports.md">Edit this page on GitHub</a></p>
+    </main>
+  </div>
+
+  <footer class="foot">
+    <p>Debutly is made by <a href="https://github.com/sroay">Chetan Sroay</a>.</p>
+    <p class="foot-links"><a href="https://github.com/sroay/debutly">Source on GitHub</a> <a href="https://github.com/sroay/debutly/blob/master/LICENSE">AGPL-3.0 licence</a> <a href="https://github.com/sroay/debutly/security">Report a security issue</a></p>
+  </footer>
+</body>
+</html>
