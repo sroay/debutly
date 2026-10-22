@@ -10,7 +10,9 @@ import { DbArtifactStore, TeeArtifactStore } from "./artifacts/db";
 import { S3ArtifactStore } from "./artifacts/s3";
 import { LocalArtifactStore, type ArtifactStore } from "./artifacts/store";
 import { MailpitInbox } from "./inbox/mailpit";
+import { creditCheck, keyCreditsLeft } from "./llm/credits";
 import { createLlms } from "./llm/factory";
+import { OUT_OF_CREDITS } from "./llm/types";
 import { generateUnits } from "./persona/generate";
 import { withInclusion } from "./persona/inclusion";
 import { exhibitsFromSessions } from "./perception/exhibits";
@@ -114,6 +116,14 @@ if (values["max-cost"] !== undefined) {
     process.exit(1);
   }
 }
+
+// A key with a spending limit says what it has left: don't start a run it can't finish.
+const credits = creditCheck(await keyCreditsLeft(process.env.DEBUTLY_BASE_URL ?? "", process.env.DEBUTLY_API_KEY ?? ""), estimate);
+if (credits.refuse) {
+  console.error(`Refusing to start: ${credits.refuse}`);
+  process.exit(1);
+}
+if (credits.warn) console.warn(`Warning: ${credits.warn}`);
 
 const { nav, judge } = createLlms(process.env);
 console.log(`Generating ${count} ${unitKind === "business" ? `business crew(s) with ${employees} employees each` : "individual(s)"}...`);
@@ -227,5 +237,11 @@ if (evaluatorCount > 0) {
   console.log(`Launch Readiness: ${readiness}`);
 }
 
+const noCredit = result.sessions.filter((s) => s.outcome === "error" && s.outcomeNote.startsWith(OUT_OF_CREDITS)).length;
+if (noCredit) {
+  const message = `The AI provider account ran out of credits: ${noCredit} of ${result.sessions.length} agents stopped early. Top up and run again.`;
+  // On GitHub Actions, an annotation puts it on the run's summary page.
+  console.error(process.env.GITHUB_ACTIONS ? `::error title=Debutly run cut short::${message}` : message);
+}
 const cost = result.usage.costUsd !== undefined ? `, cost $${result.usage.costUsd.toFixed(4)}` : "";
 console.log(`Done: ${result.findings.length} findings${cost}. Report: ${result.reportPath}${runId ? ` (run ${runId})` : ""}`);

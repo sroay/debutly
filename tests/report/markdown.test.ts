@@ -90,6 +90,21 @@ it("quotes what the app said when a missing key explains a failure", () => {
   expect(md).not.toContain("Blocked at the same moment");
 });
 
+it("says up front when the AI provider ran out of credits part-way", () => {
+  const stopped: Session = { ...session, agentId: "p2", personaName: "Ben", outcome: "error", outcomeNote: "The AI provider account is out of credits: 402" };
+  const md = renderReport({ targetUrl: "http://a.test", goal: "Buy", sessions: [session, stopped], findings: [] });
+  expect(md).toContain("## Run cut short");
+  expect(md).toContain("so 1 of 2 agents stopped early: Ben.");
+  expect(renderReport({ targetUrl: "http://a.test", goal: "Buy", sessions: [session], findings: [] })).not.toContain("Run cut short");
+});
+
+it("says when the app couldn't reach the website an agent made up", () => {
+  const caused: Finding = { ...finding("high", "HTTP 502 from /api/smart/analyze-business"), kind: "http_error", sandboxCause: ["made-up site: pulsehr.io"] };
+  const md = renderReport({ targetUrl: "http://a.test", goal: "Buy", sessions: [session], findings: [caused] });
+  expect(md).toContain("The app couldn't reach the website the agent made up for its company: pulsehr.io.");
+  expect(md).not.toContain("Blocked at the same moment");
+});
+
 it("summarises each business crew and shows role and inclusion need per agent", () => {
   const acme: CustomerUnit = {
     kind: "business",

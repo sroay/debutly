@@ -2,6 +2,7 @@ import { describe, expect, it, vi } from "vitest";
 import { AnthropicLlm, type MessagesClient } from "../../src/llm/anthropic";
 import { OpenAiCompatibleLlm } from "../../src/llm/openai-compatible";
 import { createLlms, parseRouting } from "../../src/llm/factory";
+import { OutOfCreditsError } from "../../src/llm/types";
 
 const req = { system: "be brief", messages: [{ role: "user" as const, content: "hi" }], maxTokens: 100 };
 
@@ -25,6 +26,14 @@ describe("AnthropicLlm", () => {
     const create = vi.fn().mockResolvedValue({ stop_reason: "refusal", content: [] });
     const llm = new AnthropicLlm({ messages: { create } } as unknown as MessagesClient, "m");
     await expect(llm.complete(req)).rejects.toThrow(/refused/);
+  });
+
+  it("stops at the first low-balance error and asks no more", async () => {
+    const create = vi.fn().mockRejectedValue(new Error("400 Your credit balance is too low to access the Anthropic API."));
+    const llm = new AnthropicLlm({ messages: { create } } as unknown as MessagesClient, "m");
+    await expect(llm.complete(req)).rejects.toBeInstanceOf(OutOfCreditsError);
+    await expect(llm.complete(req)).rejects.toBeInstanceOf(OutOfCreditsError);
+    expect(create).toHaveBeenCalledTimes(1);
   });
 });
 
@@ -61,6 +70,15 @@ describe("OpenAiCompatibleLlm", () => {
     expect(await llm.complete(req)).toBe("ok");
     expect(fetchFn).toHaveBeenCalledTimes(3);
     expect(sleep.mock.calls[0][0]).toBe(2000);
+  });
+
+  it("stops at the first out-of-credits reply and asks no more (2026-10-21)", async () => {
+    const fetchFn = vi.fn(async () => new Response('{"error":{"message":"This request would exceed your available credits","code":402}}', { status: 402 }));
+    const llm = new OpenAiCompatibleLlm({ baseUrl: "https://x.test/v1", apiKey: "k", model: "m", fetchFn, sleep: async () => {} });
+    await expect(llm.complete(req)).rejects.toBeInstanceOf(OutOfCreditsError);
+    // Every agent shares the client: the others stop at their next step, without paying for a request each.
+    await expect(llm.complete(req)).rejects.toThrow(/out of credits/);
+    expect(fetchFn).toHaveBeenCalledTimes(1);
   });
 
   it("gives up after repeated rate limits", async () => {

@@ -1,5 +1,6 @@
 import { expect, it } from "vitest";
 import { detectFindings } from "../../src/detect/findings";
+import { blockedCalls } from "../../src/sandbox/outbox";
 import type { Action, Session, Signal, Step } from "../../src/types";
 
 const B = "http://app.test";
@@ -113,6 +114,54 @@ it("in a test environment, puts a server error that says a key is missing down t
   ]);
   expect(findings.find((f) => f.title.includes("/api/smart/analyze-business"))?.sandboxCause).toEqual(["missing key: No AI API configured"]);
   expect(findings.find((f) => f.title.includes("/api/briefing"))?.sandboxCause).toBeUndefined();
+});
+
+it("recognises a missing key however the app words it (2026-10-20)", () => {
+  const body = (error: string) => JSON.stringify({ error });
+  const at = (path: string, error: string): Signal => ({ kind: "http_error", status: 503, requestUrl: `${B}${path}`, url: `${B}/`, body: body(error) });
+  const signals = [
+    at("/api/a", "No Gemini API key configured. Set GEMINI_API_KEY or add a BYOK key in settings."),
+    at("/api/b", "OPENAI_API_KEY is not set"),
+    at("/api/c", "Set ANTHROPIC_API_KEY to enable this feature"),
+    at("/api/d", "Failed to generate briefing"),
+  ];
+  const findings = detectFindings([session("a", [step(0, "/", signals)])], { blocked: [], sandbox: true });
+  const env = (path: string) => findings.find((f) => f.title.endsWith(path))?.sandboxCause !== undefined;
+  expect([env("/api/a"), env("/api/b"), env("/api/c"), env("/api/d")]).toEqual([true, true, true, false]);
+});
+
+it("in a test environment, puts a failure to read the website the agent made up down to the environment (2026-10-17)", () => {
+  // The agent's company and its site are invented: pulsehr.io has no DNS records, so the app's
+  // website read fails before the sandbox ever sees a call.
+  const unreadable = (site: string): Signal => ({
+    kind: "http_error",
+    status: 502,
+    requestUrl: `${B}/api/smart/analyze-business`,
+    url: `${B}/onboarding`,
+    body: JSON.stringify({ error: "Could not read that website", details: `unsafe target: DNS lookup failed for ${site}: getaddrinfo ENOTFOUND ${site}` }),
+  });
+  const typed = (site: string) => step(0, "/onboarding", [], { type: "fill", id: 1, text: site });
+  const echoed: Signal = { kind: "http_error", status: 500, requestUrl: `${B}/api/profile`, url: `${B}/onboarding`, body: '{"error":"null value in column \\"plan\\" for pulsehr.io"}' };
+  const findings = detectFindings(
+    [session("a", [typed("https://www.pulsehr.io/"), step(1, "/onboarding", [unreadable("pulsehr.io"), echoed])]), session("b", [typed("nimbusly.io"), step(1, "/onboarding", [unreadable("nimbusly.io")])])],
+    { blocked: [], sandbox: true },
+  );
+  expect(findings.find((f) => f.title.endsWith("/api/smart/analyze-business"))?.sandboxCause).toEqual(["made-up site: nimbusly.io", "made-up site: pulsehr.io"]);
+  // Naming the site is not enough: the app has to say it couldn't reach it.
+  expect(findings.find((f) => f.title.endsWith("/api/profile"))?.sandboxCause).toBeUndefined();
+  // A site this agent never typed is the app's own problem.
+  const other = detectFindings([session("a", [typed("pulsehr.io"), step(1, "/onboarding", [unreadable("stripe.com")])])], { blocked: [], sandbox: true });
+  expect(other[0].sandboxCause).toBeUndefined();
+  // Against a real deployment the app must cope with a bad address itself.
+  const real = detectFindings([session("a", [typed("pulsehr.io"), step(1, "/onboarding", [unreadable("pulsehr.io")])])], { blocked: [] });
+  expect(real[0].sandboxCause).toBeUndefined();
+});
+
+it("counts AI calls the sandbox answered with a stand-in, but not emails it said were sent", () => {
+  const at = new Date(1_000_000);
+  const effect = (outcome: string, channel: string, host: string) => ({ outcome, channel, host, url: `https://${host}/`, at, rule: null, recipient: null, summary: null });
+  const calls = blockedCalls([effect("faked", "ai", "ai.sandbox.invalid"), effect("faked", "email", "api.resend.com"), effect("blocked", "unknown", "site.example")] as never);
+  expect(calls.map((c) => c.host)).toEqual(["ai.sandbox.invalid", "site.example"]);
 });
 
 it("against a real deployment, a missing key is the app's bug", () => {

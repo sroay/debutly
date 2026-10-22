@@ -14,6 +14,9 @@ export const SCAN_SCRIPT = `(() => {
   const textOf = (el) => (el && (el.innerText || el.textContent)) || '';
   const out = [];
   let next = 0;
+  // Ids from the last look stay on elements that have since gone out of sight; the same number
+  // given to another element then matches two ("strict mode violation"). Start clean each time.
+  for (const el of document.querySelectorAll('[data-debutly-id]')) el.removeAttribute('data-debutly-id');
   for (const el of document.querySelectorAll(selector)) {
     // Apps hide the real file field behind a styled button or drop zone; files can still be
     // attached to it, so list it.

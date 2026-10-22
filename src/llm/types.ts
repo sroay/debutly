@@ -21,3 +21,16 @@ export interface LlmRequest {
 export interface LlmClient {
   complete(req: LlmRequest): Promise<string>;
 }
+
+export const OUT_OF_CREDITS = "The AI provider account is out of credits";
+
+/**
+ * The provider refused for lack of credit (OpenRouter's 402, Anthropic's "credit balance is too
+ * low"). Every later call would be refused too, so clients raise it again without asking.
+ */
+export class OutOfCreditsError extends Error {
+  constructor(detail: string) {
+    super(`${OUT_OF_CREDITS}: ${detail.slice(0, 300)}`);
+    this.name = "OutOfCreditsError";
+  }
+}

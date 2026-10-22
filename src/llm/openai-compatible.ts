@@ -1,4 +1,4 @@
-import type { LlmClient, LlmRequest } from "./types";
+import { OutOfCreditsError, type LlmClient, type LlmRequest } from "./types";
 
 export interface OpenAiCompatibleOptions {
   baseUrl: string;
@@ -20,6 +20,8 @@ const MAX_WAIT_MS = 30_000;
 const isRetryable = (status: number) => status === 429 || status >= 500;
 
 export class OpenAiCompatibleLlm implements LlmClient {
+  private outOfCredits?: OutOfCreditsError;
+
   constructor(private readonly opts: OpenAiCompatibleOptions) {}
 
   get reasoningEffort(): string | undefined {
@@ -27,6 +29,7 @@ export class OpenAiCompatibleLlm implements LlmClient {
   }
 
   async complete(req: LlmRequest): Promise<string> {
+    if (this.outOfCredits) throw this.outOfCredits;
     const fetchFn = this.opts.fetchFn ?? fetch;
     const openRouter = /openrouter.ai/.test(this.opts.baseUrl);
     const sleep = this.opts.sleep ?? ((ms: number) => new Promise<void>((r) => setTimeout(r, ms)));
@@ -58,6 +61,11 @@ export class OpenAiCompatibleLlm implements LlmClient {
         return data.choices?.[0]?.message?.content ?? "";
       }
       const text = await res.text();
+      // OpenRouter: the account (or the key's limit) can't cover this request.
+      if (res.status === 402) {
+        this.outOfCredits = new OutOfCreditsError(text);
+        throw this.outOfCredits;
+      }
       if (!isRetryable(res.status) || attempt >= MAX_ATTEMPTS) {
         throw new Error(`LLM HTTP ${res.status}: ${text}`);
       }

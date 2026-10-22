@@ -121,8 +121,9 @@ export interface Finding {
   evidence: { agentId: string; stepIndex: number }[];
   /**
    * Why every occurrence of this failure is the test environment's doing: hosts it blocked at the
-   * same moment, and/or `missing key: <what the app said>` when the app reported a key the test
-   * environment leaves out on purpose.
+   * same moment, `missing key: <what the app said>` when the app reported a key the test
+   * environment leaves out on purpose, and/or `made-up site: <host>` when the app couldn't reach
+   * the website an agent invented for its company.
    */
   sandboxCause?: string[];
 }

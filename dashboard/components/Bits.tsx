@@ -22,7 +22,7 @@ export function FindingCountChips({ counts }: { counts: FindingCounts }) {
       {counts.minor > 0 && <span className="chip info">{counts.minor} minor</span>}
       {real === 0 && <span className="chip good">No app bugs</span>}
       {counts.env > 0 && (
-        <span className="chip" title="Caused by the test environment (blocked outside calls, missing keys)">
+        <span className="chip" title="Caused by the test environment (blocked outside calls, missing keys, made-up websites)">
           {counts.env} test env
         </span>
       )}
@@ -65,7 +65,12 @@ export function FindingItem({ f, runId, agentNames }: { f: StoredFinding; runId:
           <strong>{f.title}</strong>
         </div>
         <p className="detail">{f.detail}</p>
-        {f.sandboxCause && <p className="detail">Test environment: {f.sandboxCause.map((c) => c.replace(/^missing key: /, "the app said a key is missing: ")).join("; ")}</p>}
+        {f.sandboxCause && (
+          <p className="detail">
+            Test environment:{" "}
+            {f.sandboxCause.map((c) => c.replace(/^missing key: /, "the app said a key is missing: ").replace(/^made-up site: /, "couldn't reach the agent's made-up website ")).join("; ")}
+          </p>
+        )}
         <div className="row small muted">
           <span>
             Hit by {f.hitBy.length} of {f.visitors} agents on <code>{f.pagePath}</code>

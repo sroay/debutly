@@ -1,4 +1,5 @@
 import { describeAction } from "../agent/describe";
+import { OUT_OF_CREDITS } from "../llm/types";
 import type { CustomerUnit, Finding, Session } from "../types";
 
 export interface ReportInput {
@@ -93,19 +94,34 @@ function renderStops(sessions: Session[]): string {
 }
 
 const MISSING_KEY_PREFIX = "missing key: ";
+const MADE_UP_SITE_PREFIX = "made-up site: ";
 
-/** Why the test environment, not the app, explains a failure: blocked hosts and/or a missing key. */
+/** Why the test environment, not the app, explains a failure: blocked hosts, a missing key, a made-up site. */
 function sandboxCauseLine(f: Finding): string {
   const causes = f.sandboxCause ?? [];
-  const hosts = causes.filter((c) => !c.startsWith(MISSING_KEY_PREFIX));
+  const hosts = causes.filter((c) => !c.startsWith(MISSING_KEY_PREFIX) && !c.startsWith(MADE_UP_SITE_PREFIX));
   const said = causes.filter((c) => c.startsWith(MISSING_KEY_PREFIX)).map((c) => `"${c.slice(MISSING_KEY_PREFIX.length)}"`);
+  const sites = causes.filter((c) => c.startsWith(MADE_UP_SITE_PREFIX)).map((c) => c.slice(MADE_UP_SITE_PREFIX.length));
   return [
     hosts.length ? `Blocked at the same moment: ${hosts.join(", ")}.` : "",
     said.length ? `The app said a key or setting is missing: ${said.join("; ")}.` : "",
+    sites.length ? `The app couldn't reach the website the agent made up for its company: ${sites.join(", ")}.` : "",
     `Hit by ${f.hitBy.length} of ${f.visitors} agents who visited ${f.pagePath}.`,
   ]
     .filter(Boolean)
     .join(" ");
+}
+
+// Agents the AI provider stopped for lack of credit: the run is incomplete, and not because of the app.
+function renderOutOfCredits(sessions: Session[]): string[] {
+  const stopped = sessions.filter((s) => s.outcome === "error" && s.outcomeNote.startsWith(OUT_OF_CREDITS));
+  if (!stopped.length) return [];
+  return [
+    `## Run cut short`,
+    "",
+    `The AI provider account ran out of credits, so ${stopped.length} of ${sessions.length} agents stopped early: ${stopped.map((s) => s.personaName).join(", ")}. That is not the app's doing. Findings cover only the steps they took. Top up the account and run again.`,
+    "",
+  ];
 }
 
 // Failures the test environment explains (it blocked an outbound call, or has no key the app
@@ -115,7 +131,7 @@ function renderSandboxCaused(caused: Finding[]): string[] {
   return [
     `## Caused by the test environment`,
     "",
-    `The test environment blocks the app from reaching real outside services and has none of its secret keys, so nothing leaks and nothing is charged. Each of these failures happened while it was blocking a call, or the app said a key was missing, so they probably don't happen on the real app. Check there if in doubt.`,
+    `The test environment blocks the app from reaching real outside services and has none of its secret keys, so nothing leaks and nothing is charged. Each of these failures happened while it was blocking a call, or the app said a key was missing, or it couldn't reach a website the agent made up, so they probably don't happen on the real app. Check there if in doubt.`,
     "",
     ...caused.flatMap((f) => [`### ${f.title}`, "", f.detail, "", sandboxCauseLine(f), ""]),
   ];
@@ -139,6 +155,7 @@ export function renderReport(input: ReportInput): string {
     ...renderCost(input.usage, input.model),
     `Findings: ${count("blocker")} blocker, ${count("major")} major, ${count("minor")} minor (${low.length} low-confidence${caused.length ? `, ${caused.length} caused by the test environment` : ""})`,
     "",
+    ...renderOutOfCredits(input.sessions),
     ...renderUnits(input.units ?? [], input.sessions),
     `## Agent outcomes`,
     "",

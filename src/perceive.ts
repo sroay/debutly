@@ -16,6 +16,7 @@ import { chromium } from "playwright";
 import { estimatePerceptionCost } from "./cost/estimate";
 import { fetchModelPrice } from "./cost/prices";
 import { EVALUATORS, type Tier } from "./cost/tiers";
+import { creditCheck, keyCreditsLeft } from "./llm/credits";
 import { createLlms } from "./llm/factory";
 import { captureExhibits, exhibitFromFile, exhibitsFromSessions, type Exhibit } from "./perception/exhibits";
 import { buildMarketContext, type MarketContext } from "./perception/market-context";
@@ -72,6 +73,12 @@ if (values["max-cost"] !== undefined && (!estimate || estimate.high > Number(val
   console.error(`Refusing to start: ${estimate ? `this could cost up to $${estimate.high.toFixed(2)}` : "the price is unknown"}, and --max-cost is $${values["max-cost"]}.`);
   process.exit(1);
 }
+const credits = creditCheck(await keyCreditsLeft(process.env.DEBUTLY_BASE_URL ?? "", process.env.DEBUTLY_API_KEY ?? ""), estimate);
+if (credits.refuse) {
+  console.error(`Refusing to start: ${credits.refuse}`);
+  process.exit(1);
+}
+if (credits.warn) console.warn(`Warning: ${credits.warn}`);
 
 const { nav, judge } = createLlms(process.env);
 const browser = await chromium.launch();

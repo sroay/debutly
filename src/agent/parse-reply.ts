@@ -25,27 +25,52 @@ export function parseAgentReply(raw: string): { reasoning: string; action: Actio
 // Some models (GLM 5.3 Flash) send the action as a string. Unescaped,
 // {"reasoning":"…","action":"{"type":"fill","id":1,"text":"x"}"} is not JSON at all, and asking
 // again got the same reply three times, ending the agent. An action is a flat object, so its
-// quotes can be dropped and the rest parsed as meant.
+// quotes can be dropped and the rest parsed as meant. Sometimes the closing quote and brace never
+// come at all; then the reasoning and the action are read out separately.
 function parseQuotedAction(text: string): unknown {
   try {
     return JSON.parse(text);
   } catch (err) {
     const unquoted = text.replace(/("action"\s*:\s*)"(\{[^{}]*\})"/, "$1$2");
-    if (unquoted === text) throw err;
-    try {
-      return JSON.parse(unquoted);
-    } catch {
-      throw err;
+    if (unquoted !== text) {
+      try {
+        return JSON.parse(unquoted);
+      } catch {
+        // fall through to reading the parts
+      }
     }
+    const parts = readParts(text);
+    if (!parts) throw err;
+    return parts;
   }
 }
 
-// Escaped, the same mistake parses, with the action as a string holding its JSON.
+function readParts(text: string): { reasoning: string; action: unknown } | undefined {
+  const action = text.match(/"action"\s*:\s*"?\s*(\{[^{}]*\})/)?.[1];
+  if (!action) return undefined;
+  const reasoning = text.match(/"reasoning"\s*:\s*"((?:[^"\\]|\\.)*)"/)?.[1];
+  try {
+    return { reasoning: reasoning ? JSON.parse(`"${reasoning}"`) : "", action: JSON.parse(action.replace(/\\"/g, '"')) };
+  } catch {
+    return undefined;
+  }
+}
+
+const ACTION_TYPES = new Set(["click", "fill", "upload", "goto", "check_email", "press", "wait", "done"]);
+const ACTION_FIELDS = ["id", "text", "file", "path", "key", "success", "note"] as const;
+
+// Escaped, the same mistake parses, with the action as a string holding its JSON. Or the action is
+// flattened into the reply, {"reasoning":"…","action":"click","id":40}: its type as a string, its
+// fields beside it (2026-10-18; asking again got the same reply).
 function actionAsObject(reply: unknown): unknown {
   if (!reply || typeof reply !== "object" || typeof (reply as { action?: unknown }).action !== "string") return reply;
+  const r = reply as Record<string, unknown> & { action: string };
   try {
-    return { ...reply, action: JSON.parse((reply as { action: string }).action) };
+    return { ...r, action: JSON.parse(r.action) };
   } catch {
-    return reply; // the schema says what is wrong with it
+    if (!ACTION_TYPES.has(r.action)) return reply; // the schema says what is wrong with it
+    const action: Record<string, unknown> = { type: r.action };
+    for (const field of ACTION_FIELDS) if (field in r) action[field] = r[field];
+    return { reasoning: r.reasoning, action };
   }
 }

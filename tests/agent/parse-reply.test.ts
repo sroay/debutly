@@ -51,7 +51,22 @@ it("reads an action a model sent as a string, quoted or escaped (GLM 5.3 Flash d
   expect(parseAgentReply(escaped).action).toEqual({ type: "wait" });
 });
 
+it("reads a quoted action whose closing quote and brace never came (2026-10-17)", () => {
+  const unclosed = `{"reasoning":"Filling phone field, then location, then save.","action":"{"type":"fill","id":35,"text":"+1 555 0142"}`;
+  expect(parseAgentReply(unclosed)).toEqual({ reasoning: "Filling phone field, then location, then save.", action: { type: "fill", id: 35, text: "+1 555 0142" } });
+});
+
+it("reads an action flattened into the reply, its type as a string beside its fields (2026-10-18)", () => {
+  const click = `{"reasoning":"Submit the form to create the content.","action":"click","id":50}`;
+  expect(parseAgentReply(click)).toEqual({ reasoning: "Submit the form to create the content.", action: { type: "click", id: 50 } });
+  expect(parseAgentReply(`{"reasoning":"x","action":"fill","id":7,"text":"hello"}`).action).toEqual({ type: "fill", id: 7, text: "hello" });
+  expect(parseAgentReply(`{"reasoning":"x","action":"done","success":true,"note":"ok"}`).action).toEqual({ type: "done", success: true, note: "ok" });
+  expect(parseAgentReply(`{"reasoning":"x","action":"press","key":"Escape"}`).action).toEqual({ type: "press", key: "Escape" });
+});
+
 it("still refuses a string action that isn't an action", () => {
   expect(() => parseAgentReply(`{"reasoning":"x","action":"click the button"}`)).toThrow();
   expect(() => parseAgentReply(`{"reasoning":"x","action":"{"type":"explode"}"}`)).toThrow();
+  // A flattened action still needs its fields.
+  expect(() => parseAgentReply(`{"reasoning":"x","action":"click"}`)).toThrow();
 });

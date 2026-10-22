@@ -60,6 +60,18 @@ it("keeps the start of a server error's response, which can say why it failed", 
   await expect.poll(() => (error?.kind === "http_error" ? error.body : undefined)).toBe('{"error":"internal"}');
 });
 
+it("waits for a server error's response before the step is stored (2026-10-17)", async () => {
+  const page = await browser.newPage();
+  const signals = new SignalCollector(page);
+  await page.goto(`${fx.url}/dashboard`);
+  const response = page.waitForResponse((r) => r.url().endsWith("/api/invite"));
+  await page.evaluate(() => fetch("/api/invite", { method: "POST", headers: { "content-type": "application/json" }, body: "{}" }));
+  await response;
+  await signals.settle();
+  const error = signals.drain().find((s) => s.kind === "http_error");
+  expect(error?.kind === "http_error" ? error.body : undefined).toBe('{"error":"internal"}');
+});
+
 it("does not read the response of an error below 500", async () => {
   const page = await browser.newPage();
   const signals = new SignalCollector(page);

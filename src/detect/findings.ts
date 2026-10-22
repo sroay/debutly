@@ -18,7 +18,15 @@ const COVERED_REPEATS = 2;
 const VERY_SLOW_MS = 30_000;
 // How an app says it lacks a key or setting. A test environment leaves every secret out on
 // purpose, so there a server error saying this is the environment's doing, not a bug.
-const MISSING_KEY = /no (?:ai |llm )?api[ _]?key|api[ _]?key (?:is )?(?:not set|missing)|no ai api configured|not configured|configure [a-z0-9_]*key\b/i;
+// "No Gemini API key configured. Set GEMINI_API_KEY…" (2026-10-20) names the provider between
+// "no" and "API key", and the variable it wants.
+const MISSING_KEY =
+  /no (?:[\w-]+ ){0,2}api[ _-]?key|api[ _-]?key (?:is )?(?:not set|missing|not configured|required)|no ai api configured|not configured|configure [a-z0-9_]*key\b|\bset [a-z0-9]+_[a-z0-9_]*key\b|\b[a-z0-9]+_api_key (?:is )?(?:not set|missing|undefined)/i;
+// A web address typed in on its own, as an agent gives its company's site ("https://www.pulsehr.io/").
+const TYPED_SITE = /^(?:https?:\/\/)?(?:www\.)?((?:[a-z0-9-]+\.)+[a-z]{2,})(?:[/?#]\S*)?$/i;
+// How an app says it couldn't get at a site: "Could not read that website", "DNS lookup failed".
+const UNREACHABLE =
+  /\b(?:could ?n[o']t|cannot|can't|unable to|failed to) (?:read|reach|fetch|load|access|scrape|crawl|connect|resolve)\b|\bdns\b|enotfound|getaddrinfo|econnrefused|unreachable|timed? ?out\b/i;
 const QUOTE_CHARS = 160;
 const SEVERITY_RANK: Record<Severity, number> = { blocker: 0, major: 1, minor: 2 };
 const CONFIDENCE_RANK: Record<Confidence, number> = { high: 0, medium: 1, low: 2 };
@@ -157,6 +165,21 @@ function missingKey(signal: Signal, sandbox: boolean): string | undefined {
   return said(signal.body);
 }
 
+/** The site an agent typed in for its company, which is made up like the company. */
+function typedSite(step: Step): string | undefined {
+  return step.action.type === "fill" ? step.action.text.trim().match(TYPED_SITE)?.[1]?.toLowerCase() : undefined;
+}
+
+/**
+ * In a test environment, the made-up site a server error says it couldn't reach. The site doesn't
+ * exist, or the environment won't let the app out to it; a real customer's would load.
+ */
+function madeUpSite(signal: Signal, sites: Set<string>, sandbox: boolean): string | undefined {
+  if (!sandbox || signal.kind !== "http_error" || signal.status < 500 || !signal.body || !UNREACHABLE.test(signal.body)) return undefined;
+  const body = signal.body.toLowerCase();
+  return [...sites].find((site) => body.includes(site));
+}
+
 // An address the agent made up that does not exist (e.g. /settings when the app has
 // /dashboard/settings) is the agent's guess, not a broken link. Links from emails still count.
 function guessedMissing(step: Step, signal: Signal): boolean {
@@ -190,7 +213,8 @@ export function detectFindings(sessions: Session[], opts: DetectOptions = {}): F
   const visitors = new Map<string, Set<string>>();
   const found = new Map<string, Finding>();
   // Per HTTP-error signature: how often it happened, and how often the test environment explains
-  // it (it was blocking an outbound call at the time, or the app said a key was missing).
+  // it (it was blocking an outbound call at the time, the app said a key was missing, or it
+  // couldn't reach the site the agent made up).
   const sandbox = new Map<string, { occurrences: number; explained: number; causes: Set<string> }>();
 
   const record = (c: Candidate, agentId: string, stepIndex: number) => {
@@ -210,8 +234,12 @@ export function detectFindings(sessions: Session[], opts: DetectOptions = {}): F
     let repeats = 0;
     // Per control: how often a click on it was refused because another element lay on top.
     const covered = new Map<string, number>();
+    // Websites this agent gave for its company so far.
+    const sites = new Set<string>();
     for (const step of s.steps) {
       const pagePath = pathOf(step.observation.url);
+      const site = typedSite(step);
+      if (site) sites.add(site);
       if (!visitors.has(pagePath)) visitors.set(pagePath, new Set());
       visitors.get(pagePath)!.add(s.agentId);
 
@@ -224,10 +252,12 @@ export function detectFindings(sessions: Session[], opts: DetectOptions = {}): F
           const tally = sandbox.get(c.signature) ?? { occurrences: 0, explained: 0, causes: new Set<string>() };
           const hosts = blockedDuring(signal, opts.blocked ?? []);
           const missing = missingKey(signal, opts.sandbox ?? false);
+          const madeUp = madeUpSite(signal, sites, opts.sandbox ?? false);
           tally.occurrences++;
-          if (hosts.length || missing) tally.explained++;
+          if (hosts.length || missing || madeUp) tally.explained++;
           for (const h of hosts) tally.causes.add(h);
           if (missing) tally.causes.add(`missing key: ${missing}`);
+          if (madeUp) tally.causes.add(`made-up site: ${madeUp}`);
           sandbox.set(c.signature, tally);
         }
       }

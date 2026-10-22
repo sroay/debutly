@@ -101,6 +101,27 @@ export async function runSession(o: RunSessionOptions): Promise<Session> {
 
   await openFirstPage(o.page, o.origin, signals, o.persona.inclusion === "slow_connection", o.firstLoad);
 
+  // A failure part-way (the provider out of credits, the browser gone) still ends the session
+  // with the steps it took: they hold findings, and they were paid for.
+  try {
+    return await takeSteps(o, { signals, system, steps, history, emailedLinks, meter, startedAt, end });
+  } catch (err) {
+    return end("error", err instanceof Error ? err.message : String(err));
+  }
+}
+
+interface SessionState {
+  signals: SignalCollector;
+  system: string;
+  steps: Step[];
+  history: string[];
+  emailedLinks: Set<string>;
+  meter: Meter;
+  startedAt: number;
+  end: (outcome: Session["outcome"], outcomeNote: string) => Session;
+}
+
+async function takeSteps(o: RunSessionOptions, { signals, system, steps, history, emailedLinks, meter, startedAt, end }: SessionState): Promise<Session> {
   for (let index = 0; index < o.maxSteps; index++) {
     if (o.shouldStop && (await o.shouldStop())) return end("cancelled", "run cancelled");
     const { inputTokens, outputTokens } = meter.total;
@@ -179,6 +200,7 @@ export async function runSession(o: RunSessionOptions): Promise<Session> {
     }
 
     const guessedUrl = reply.action.type === "goto" && !emailedLinks.has(reply.action.path);
+    await signals.settle();
     const step: Step = {
       index,
       observation,

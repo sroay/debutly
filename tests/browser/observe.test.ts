@@ -17,6 +17,20 @@ afterAll(async () => {
   await fx.close();
 });
 
+it("never leaves two elements with the same id after the page changes (2026-10-16)", async () => {
+  await page.goto("about:blank");
+  await page.setContent(`<button id="a">Open menu</button><button id="b">Save</button>`);
+  await observe(page);
+  // The first button goes out of sight and a new one appears before it: ids shift on the next look.
+  await page.evaluate(() => {
+    document.getElementById("a")!.style.display = "none";
+    document.body.insertAdjacentHTML("afterbegin", "<button>Cancel</button>");
+  });
+  await observe(page);
+  const ids = await page.$$eval("[data-debutly-id]", (els) => els.map((e) => e.getAttribute("data-debutly-id")));
+  expect(new Set(ids).size).toBe(ids.length);
+});
+
 it("names a field by the label wrapped around it, without the field's own text", async () => {
   await page.setContent(`
     <label>Bulk action <select><option>Archive</option><option>Delete</option></select></label>

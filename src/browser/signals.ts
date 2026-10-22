@@ -2,9 +2,12 @@ import type { Page } from "playwright";
 import type { Signal } from "../types";
 
 const BODY_CHARS = 500;
+/** How long a step waits for server-error bodies still being read before it is stored without them. */
+const BODY_WAIT_MS = 2000;
 
 export class SignalCollector {
   private buffer: Signal[] = [];
+  private reading = new Set<Promise<void>>();
 
   constructor(page: Page) {
     page.on("console", (msg) => {
@@ -23,12 +26,14 @@ export class SignalCollector {
       // A server error often says why (e.g. "No API key found"). Read the start of it; it lands on
       // the same signal object, which findings read once the run is over.
       if (res.status() >= 500) {
-        res
+        const read = res
           .text()
           .then((text) => {
             if (signal.kind === "http_error") signal.body = text.slice(0, BODY_CHARS);
           })
-          .catch(() => {});
+          .catch(() => {})
+          .finally(() => this.reading.delete(read));
+        this.reading.add(read);
       }
     });
     // Generating a report often only downloads a file; without this the agent saw "nothing
@@ -47,6 +52,17 @@ export class SignalCollector {
   /** A signal the agent loop observed itself, such as a slow page. */
   note(signal: Signal): void {
     this.buffer.push(signal);
+  }
+
+  /**
+   * Waits, briefly, for the server-error bodies still being read. A step is stored as soon as it
+   * ends; a fast 502 was stored without the body that said why it failed (2026-10-17).
+   */
+  async settle(): Promise<void> {
+    if (!this.reading.size) return;
+    let timer: ReturnType<typeof setTimeout> | undefined;
+    await Promise.race([Promise.allSettled([...this.reading]), new Promise((r) => (timer = setTimeout(r, BODY_WAIT_MS)))]);
+    clearTimeout(timer);
   }
 
   drain(): Signal[] {

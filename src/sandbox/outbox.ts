@@ -13,8 +13,13 @@ export interface SandboxOutbox {
   entriesSince(since: Date): Promise<SideEffect[]>;
 }
 
+// Calls a failure can come from: ones the sandbox refused, and AI calls it answered with a stand-in
+// (an app's AI proxy failed on the stand-in answers, 2026-10-16 to 18). A faked email is not
+// one: the app is told it was sent.
 export const blockedCalls = (entries: SideEffect[]): BlockedCall[] =>
-  entries.filter((e) => e.outcome === "blocked").map((e) => ({ host: e.host, url: e.url, at: e.at.getTime() }));
+  entries
+    .filter((e) => e.outcome === "blocked" || (e.outcome === "faked" && e.channel === "ai"))
+    .map((e) => ({ host: e.host, url: e.url, at: e.at.getTime() }));
 
 interface OutboxEntry {
   outcome?: string;

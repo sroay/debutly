@@ -3,6 +3,7 @@ import { chromium, type Browser } from "playwright";
 import { startFixture, type RunningFixture } from "../../fixture/server";
 import { runSession } from "../../src/agent/loop";
 import { ScriptedLlm } from "../../src/llm/scripted";
+import { OutOfCreditsError } from "../../src/llm/types";
 import { persona, scriptedAgents } from "../helpers/scripted-agents";
 
 let fx: RunningFixture;
@@ -145,6 +146,19 @@ it("ends with error, keeping the raw reply, when the model stays unreadable", as
   expect(session.outcomeNote).toMatch(/no JSON/);
   expect(session.outcomeNote).toContain("I refuse to answer in JSON");
   expect(llm.calls).toHaveLength(3);
+});
+
+it("keeps the steps already taken when the model provider fails mid-session (2026-10-21)", async () => {
+  const llm = new ScriptedLlm((_req, i) => {
+    if (i > 0) throw new OutOfCreditsError("This request would exceed your available credits");
+    return JSON.stringify({ reasoning: "look around", action: { type: "wait" } });
+  });
+  const session = await runSession({ page: await browser.newPage(), llm, persona: persona("p4", "Dev"), goal: "Anything", origin: fx.url, maxSteps: 5 });
+  expect(session.outcome).toBe("error");
+  expect(session.outcomeNote).toMatch(/^The AI provider account is out of credits/);
+  // Its steps still count towards the findings.
+  expect(session.steps).toHaveLength(1);
+  expect(session.usage?.inputTokens).toBeGreaterThan(0);
 });
 
 it("records the session's token usage and cost", async () => {
