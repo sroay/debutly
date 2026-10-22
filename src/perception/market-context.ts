@@ -11,7 +11,7 @@ const MarketContextSchema = z.object({
   switchingTriggers: z.array(z.string()),
 });
 
-/** Design §8: what buyers in this market compare against, built before personas and verdicts. */
+/** What buyers in this market compare against, built before personas and verdicts. */
 export type MarketContext = z.infer<typeof MarketContextSchema> & { sources: string[] };
 
 const SYSTEM = `You build a Market Context bundle for a product simulation from competitors' own pages.

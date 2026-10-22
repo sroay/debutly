@@ -27,7 +27,7 @@ function isCorrect(metric: string, predicted: Record<string, unknown>, actual: s
   return null;
 }
 
-/** Design §8 Calibration Loop: verdicts as predictions, checked against real outcomes. */
+/** Calibration loop: verdicts as predictions, checked against real outcomes. */
 export class PgPredictionStore {
   constructor(private readonly db: Db) {}
 

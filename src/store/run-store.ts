@@ -60,7 +60,7 @@ export interface StoredRun {
   sideEffects: SideEffect[];
 }
 
-/** Records a run while it happens, so it can be watched live (M5), compared and audited. */
+/** Records a run while it happens, so it can be watched live, compared and audited. */
 export interface RunStore {
   createRun(r: NewRun): Promise<string>;
   recordUnits(runId: string, units: CustomerUnit[]): Promise<void>;

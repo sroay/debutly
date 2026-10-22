@@ -1,4 +1,4 @@
-// Design §12. Units are individuals or business crews; breadth evaluators arrive with M4.
+// Run sizes. Units are individuals or business crews; breadth evaluators judge pages on top.
 export const TIERS = {
   quick: { units: 3, employees: 0 }, // CI / pre-deploy smoke: owners only
   standard: { units: 10, employees: 2 },

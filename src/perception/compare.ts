@@ -25,7 +25,7 @@ export interface PairJudgment {
 const SHAPE = `Reply with one JSON object: {"objections1":[{"category","text","exhibitId"}],"objections2":[...],"preferred":"1"|"2"|"neither","reasons":[string]}. Name at least one objection to each option before choosing. "neither" is a valid answer.`;
 
 /**
- * Design §3 experiment mode: one buyer sees two variants and picks one (or neither). Variants
+ * Experiment mode: one buyer sees two variants and picks one (or neither). Variants
  * appear as Option 1/2 in random order so position bias averages out across evaluators.
  */
 export async function comparePair(

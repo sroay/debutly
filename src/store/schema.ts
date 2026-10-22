@@ -1,5 +1,5 @@
 // Postgres schema for stored runs. Organizations, apps as records and
-// multi-tenancy arrive later; runs name their app, and the M5 dashboard reads all of this.
+// multi-tenancy arrive later; runs name their app, and the dashboard reads all of this.
 import { sql } from "drizzle-orm";
 import { boolean, customType, doublePrecision, index, integer, jsonb, pgTable, primaryKey, text, timestamp, uuid } from "drizzle-orm/pg-core";
 
@@ -170,7 +170,7 @@ export const sideEffects = pgTable(
 );
 
 /**
- * Design §8 Calibration Loop: every verdict is a prediction; when the real outcome is known it
+ * Calibration loop: every verdict is a prediction; when the real outcome is known it
  * is recorded, and accuracy is tracked over time.
  */
 export const predictions = pgTable(

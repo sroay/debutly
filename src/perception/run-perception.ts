@@ -100,7 +100,7 @@ function predictionsFor(r: Omit<PerceptionResult, "predictions" | "summary" | "u
   return out;
 }
 
-/** Design §7: breadth evaluators judge the exhibits; an experiment compares two variants pairwise. */
+/** Breadth evaluators judge the exhibits; an experiment compares two variants pairwise. */
 export async function runPerception(o: PerceptionOptions): Promise<PerceptionResult> {
   const variants = Object.keys(o.exhibitsByVariant);
   if (!variants.length || variants.length > 2) throw new Error("give one set of exhibits, or two variants to compare");

@@ -36,7 +36,7 @@ const VerdictSchema = z.object({
 
 export type Verdict = z.infer<typeof VerdictSchema> & { evaluatorId: string };
 
-// Design §7: adversarial by design, to counter LLM agreeableness.
+// Adversarial by design, to counter LLM agreeableness.
 export const RUBRIC = `You are a skeptical buyer with a limited budget, judging a product only from the pages you are shown.
 Rules:
 - First list at least 2 specific objections, each tied to an exhibit id, with a category: ${OBJECTION_CATEGORIES.join(", ")}.

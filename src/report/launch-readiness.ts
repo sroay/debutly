@@ -65,7 +65,7 @@ function renderSingle(r: PerceptionResult): string[] {
   ].filter((line, i, all) => line !== "" || all[i - 1] !== "");
 }
 
-/** Design §9: the top-level artifact. Comparative, grounded in counts, never a fake percentage. */
+/** The top-level artifact. Comparative, grounded in counts, never a fake percentage. */
 export function renderLaunchReadiness(i: LaunchReadinessInput): string {
   const r = i.result;
   const blockers = (i.functional ?? []).filter((f) => f.severity !== "minor" && f.confidence !== "low" && !f.sandboxCause);
