@@ -86,3 +86,12 @@ it("leaves runs recorded before these checks alone", () => {
   const old: Observation = { url: `${B}/`, title: "", text: "", elements: [button(0, "Save")] };
   expect(detectFindings([session("a", [step(0, old)])])).toEqual([]);
 });
+
+it("keeps a few pixels of sideways scroll minor, even on a sign-up page", () => {
+  const check = (overflowPx: number) => ({ url: `${B}/signup`, widthPx: 320, overflowPx, widest: "", exception: "" });
+  const at = (overflowPx: number) =>
+    detectFindings([session("lv", [step(0, page("/signup"))], "low_vision", { reflow: [check(overflowPx)] })]).find((f) => f.kind === "reflow");
+  expect(at(4)?.severity).toBe("minor");
+  expect(at(4)?.detail).toContain("only 4 px");
+  expect(at(300)?.severity).toBe("major");
+});

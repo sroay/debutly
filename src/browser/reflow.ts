@@ -25,10 +25,14 @@ const MEASURE_SCRIPT = `(() => {
     }
     return false;
   };
-  let widest = null, right = view + 2;
+  // Past the right edge, or on a right-to-left page past the left one. (A left-to-right page
+  // can't scroll left, so menus parked off its left edge don't count.)
+  const rtl = getComputedStyle(document.body).direction === 'rtl';
+  let widest = null, furthest = 2;
   for (const el of document.body.querySelectorAll('*')) {
     const r = el.getBoundingClientRect();
-    if (r.width > 0 && r.right > right && !inScroller(el)) { widest = el; right = r.right; }
+    const out = rtl ? -r.left : r.right - view;
+    if (r.width > 0 && out > furthest && !inScroller(el)) { widest = el; furthest = out; }
   }
   // WCAG lets content that needs two dimensions scroll: data tables, maps, diagrams, video, code.
   const twoD = widest && widest.closest('table, [role="grid"], [role="table"], pre, canvas, video, iframe, svg, map');

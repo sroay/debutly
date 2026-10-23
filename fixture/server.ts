@@ -135,6 +135,12 @@ document.getElementById('generate').addEventListener('click', () => {
     );
   });
 
+  // The same banner on a right-to-left page, where it spills out to the left.
+  app.get("/ar/team", (req, res) => {
+    res.send(`<!doctype html><html lang="ar" dir="rtl"><head><meta charset="utf-8"><title>الفريق</title></head>
+<body><h1>فريقك</h1><div class="banner" style="width:900px;background:#eef">ادعُ فريقك بالكامل ووفّر ٢٠٪</div><p>لا يوجد أحد هنا بعد.</p></body></html>`);
+  });
+
   // Wide too, but only inside a data table, which WCAG 1.4.10 allows to scroll.
   app.get("/usage", (req, res) => {
     res.send(

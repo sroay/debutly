@@ -38,3 +38,14 @@ it("measures each page at 320 pixels wide where it is, says what sticks out, and
   ]);
   expect(meter.checks[0].overflowPx).toBeGreaterThan(500);
 });
+
+it("finds what sticks out on a right-to-left page, where it spills to the left", async () => {
+  const context = await browser.newContext({ viewport: { width: 640, height: 400 } });
+  const page = await context.newPage();
+  const meter = new ReflowMeter();
+  await page.goto(`${fx.url}/ar/team`);
+  await meter.measure(page);
+  await context.close();
+  expect(meter.checks[0].overflowPx).toBeGreaterThan(500);
+  expect(meter.checks[0].widest).toMatch(/^div\.banner \("ادعُ فريقك بالكامل ووفّر ٢٠٪"\), 900 px wide$/);
+});

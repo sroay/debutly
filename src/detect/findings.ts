@@ -19,6 +19,8 @@ const BASE_SEVERITY: Record<FindingKind, Severity> = {
 };
 // What the browser measures, not what an agent made of the page: one measurement is enough.
 export const MEASURED: ReadonlySet<FindingKind> = new Set(["a11y_unlabeled", "covered", "keyboard", "focus_obscured", "reflow", "language"]);
+/** Sideways overflow this small is reported, but never raised above minor. */
+const SLIGHT_OVERFLOW_PX = 20;
 /** A page whose letters are at least this share Arabic is an Arabic page. */
 const ARABIC_PAGE = 0.5;
 /** Clicks on one control that something else covered, in one session, before it is a finding. */
@@ -431,9 +433,10 @@ export function detectFindings(sessions: Session[], opts: DetectOptions = {}): F
           signature: `reflow:${pagePath}`,
           kind: "reflow",
           title: `${pagePath} scrolls sideways at ${check.widthPx} pixels wide`,
-          detail: `At ${check.widthPx} CSS pixels wide (a 1280-pixel screen zoomed to 400%), the page is ${check.overflowPx} px wider than the window, so reading it means scrolling both ways.${check.widest ? ` Widest: ${check.widest}.` : ""}${check.exception ? ` It may be allowed: ${check.exception}.` : ""}`,
+          detail: `At ${check.widthPx} CSS pixels wide (a 1280-pixel screen zoomed to 400%), the page is ${check.overflowPx < SLIGHT_OVERFLOW_PX ? `only ${check.overflowPx} px` : `${check.overflowPx} px`} wider than the window, so reading it means scrolling both ways.${check.widest ? ` Widest: ${check.widest}.` : ""}${check.exception ? ` It may be allowed: ${check.exception}.` : ""}`,
           pagePath,
-          severity: severityFor("reflow", [pagePath]),
+          // A few pixels still scrolls, but hardly hides anything: not raised on critical pages.
+          severity: check.overflowPx < SLIGHT_OVERFLOW_PX ? "minor" : severityFor("reflow", [pagePath]),
           wcag: ["1.4.10"],
         },
         s.agentId,
