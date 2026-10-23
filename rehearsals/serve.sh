@@ -2,7 +2,8 @@
 # serve.sh: opens temporary https addresses (Cloudflare quick tunnels, no account) to the app at
 # localhost:3000 and its Mailpit at localhost:8025, so a person can check findings by hand in
 # their own browser and screen reader. Run before the app's start.sh, which takes PUBLIC_URL as
-# the app's own address. The addresses are masked in the log and uploaded sealed, like reports.
+# the app's own address. The addresses are masked in the log and uploaded sealed, like reports:
+# for report-key.pem's holder, or for SEAL_KEY (a public key) when another job reads them.
 set -euo pipefail
 VERSION=2026.10.0
 
@@ -33,6 +34,6 @@ echo "::add-mask::$mail_login"
 # A run's log can only be read once it ends, so the addresses go out as a file the run uploads.
 mkdir -p "$RUNNER_TEMP/addresses"
 printf 'app %s\nmail %s\nmail login %s\n' "$app" "$mail" "$mail_login" |
-  openssl pkeyutl -encrypt -pubin -inkey "$(dirname "$0")/report-key.pem" -pkeyopt rsa_padding_mode:oaep -pkeyopt rsa_oaep_md:sha256 |
+  openssl pkeyutl -encrypt -pubin -inkey "${SEAL_KEY:-$(dirname "$0")/report-key.pem}" -pkeyopt rsa_padding_mode:oaep -pkeyopt rsa_oaep_md:sha256 |
   base64 -w0 > "$RUNNER_TEMP/addresses/sealed.txt"
 echo "Addresses sealed for the holder of report-key.pem."

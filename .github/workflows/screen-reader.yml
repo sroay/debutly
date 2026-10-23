@@ -1,27 +1,83 @@
 name: screen-reader
 # Checks rehearsal findings with a real screen reader: NVDA on Windows, driven by Guidepup.
-# Started by hand. The "smoke" check needs no app; the others hear a rehearsed app's pages.
+# Started by hand. "smoke" needs no app. For an app, a Linux job runs it (as rehearse.yml does)
+# behind temporary addresses while the Windows job hears its pages. The Windows job makes a key
+# pair for this run alone; the Linux job seals the addresses to it, so they never appear in a log.
+# The transcripts are sealed for report-key.pem's holder, like rehearsal reports.
 on:
   workflow_dispatch:
     inputs:
       check:
-        description: Which check to run
+        description: Which check to run (an app in rehearsals/, or smoke)
         type: choice
-        options: [smoke]
+        options: [smoke, chatwoot]
         default: smoke
 
 permissions:
   contents: read
+  actions: read
+
+concurrency: screen-reader
+
+env:
+  GH_TOKEN: ${{ github.token }}
 
 jobs:
-  nvda:
-    runs-on: windows-2025
-    timeout-minutes: 60
+  serve:
+    if: ${{ inputs.check != 'smoke' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
     defaults:
       run:
+        shell: bash
+    steps:
+      - uses: actions/checkout@v4
+      - name: Wait for the screen reader's key
+        run: |
+          for _ in $(seq 90); do
+            if gh api "repos/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID/artifacts" --jq '.artifacts[].name' | grep -qx nvda-key; then break; fi
+            sleep 10
+          done
+          gh run download "$GITHUB_RUN_ID" -n nvda-key -D "$RUNNER_TEMP/nvda-key"
+      - name: Open temporary addresses
+        run: SEAL_KEY="$RUNNER_TEMP/nvda-key/nvda.pem" bash rehearsals/serve.sh
+      - name: Start ${{ inputs.check }}
+        run: bash "rehearsals/${{ inputs.check }}/start.sh"
+      - name: Check the app
+        run: bash "rehearsals/${{ inputs.check }}/check.sh"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: nvda-addresses
+          path: ${{ runner.temp }}/addresses
+          retention-days: 1
+      - name: Stay online until the screen reader is done
+        run: |
+          for _ in $(seq 360); do
+            if gh api "repos/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID/artifacts" --jq '.artifacts[].name' | grep -qx nvda-done; then exit 0; fi
+            sleep 10
+          done
+
+  nvda:
+    runs-on: windows-2025
+    timeout-minutes: 90
+    defaults:
+      run:
+        shell: bash
         working-directory: rehearsals/screen-reader
     steps:
       - uses: actions/checkout@v4
+      - name: Make this run's key
+        if: ${{ inputs.check != 'smoke' }}
+        run: |
+          mkdir -p "$RUNNER_TEMP/nvda-key"
+          openssl genpkey -algorithm RSA -pkeyopt rsa_keygen_bits:3072 -out "$RUNNER_TEMP/nvda.key" 2>/dev/null
+          openssl pkey -in "$RUNNER_TEMP/nvda.key" -pubout -out "$RUNNER_TEMP/nvda-key/nvda.pem"
+      - uses: actions/upload-artifact@v4
+        if: ${{ inputs.check != 'smoke' }}
+        with:
+          name: nvda-key
+          path: ${{ runner.temp }}/nvda-key
+          retention-days: 1
       - uses: actions/setup-node@v4
         with:
           node-version: 24
@@ -29,13 +85,41 @@ jobs:
       - run: npm install --no-audit --no-fund
       - run: npx playwright install chromium
       - run: npx -y @guidepup/setup@0.29.2 install
+      - name: Wait for the app's addresses
+        if: ${{ inputs.check != 'smoke' }}
+        run: |
+          for _ in $(seq 120); do
+            if gh api "repos/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID/artifacts" --jq '.artifacts[].name' | grep -qx nvda-addresses; then break; fi
+            sleep 10
+          done
+          gh run download "$GITHUB_RUN_ID" -n nvda-addresses -D "$RUNNER_TEMP/addresses"
+          opened=$(base64 -d < "$RUNNER_TEMP/addresses/sealed.txt" |
+            openssl pkeyutl -decrypt -inkey "$RUNNER_TEMP/nvda.key" -pkeyopt rsa_padding_mode:oaep -pkeyopt rsa_oaep_md:sha256)
+          app=$(awk '$1=="app" {print $2}' <<< "$opened")
+          mail=$(awk '$1=="mail" && $2 ~ /^https/ {print $2}' <<< "$opened")
+          login=$(awk '$1=="mail" && $2=="login" {print $3}' <<< "$opened")
+          echo "::add-mask::$app"; echo "::add-mask::$mail"; echo "::add-mask::$login"
+          { echo "APP_URL=$app"; echo "MAIL_URL=$mail"; echo "MAIL_LOGIN=$login"; } >> "$GITHUB_ENV"
       - run: npx playwright test checks/${{ inputs.check }}.spec.ts
+      - name: Seal what NVDA said
+        if: always()
+        run: |
+          mkdir -p out transcripts test-results
+          cp -r transcripts test-results out/
+          bash ../seal.sh out "$RUNNER_TEMP/sealed"
       - uses: actions/upload-artifact@v4
         if: always()
         with:
-          name: screen-reader-${{ inputs.check }}
-          path: |
-            rehearsals/screen-reader/transcripts
-            rehearsals/screen-reader/test-results
+          name: sealed-screen-reader-${{ inputs.check }}
+          path: ${{ runner.temp }}/sealed
           if-no-files-found: ignore
           retention-days: 14
+      - name: Tell the app it can stop
+        if: ${{ always() && inputs.check != 'smoke' }}
+        run: mkdir -p "$RUNNER_TEMP/done" && echo done > "$RUNNER_TEMP/done/done.txt"
+      - uses: actions/upload-artifact@v4
+        if: ${{ always() && inputs.check != 'smoke' }}
+        with:
+          name: nvda-done
+          path: ${{ runner.temp }}/done
+          retention-days: 1
