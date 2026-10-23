@@ -26,8 +26,8 @@ It runs on your machine or in your own GitHub Actions, with your own model key. 
 ## How a run works
 
 1. Debutly reads who your customers are and what they should get done, and casts made-up customers like them: owners with budgets, their teammates, and people who use the web differently.
-2. Each agent gets its own browser and, if you have a mail catcher, its own inbox. It reads the screen, decides what that person would do next and does it, one step at a time.
+2. Each agent gets its own browser and, if you have a mail catcher, its own inbox. It reads the page, decides what that person would do next and does it, one step at a time.
 3. Debutly watches for server errors, page errors, controls that can't be pressed, unlabeled buttons, slow pages and agents going round in circles.
 4. You get a report: every problem with how many agents hit it, the steps to reproduce it and screenshots. Failures your test environment caused are listed apart.
 
-Every run includes a screen-reader user, someone with low vision, someone on a slow connection and a non-native English speaker, so accessibility problems show up next to the rest.
+The first agents in each run act out an access need: one knows controls only by their names, as a screen-reader user does; one works at about 200% zoom; one is on a slow connection; one reads as a non-native English speaker. Problems they hit show up next to the rest, for a person to check. They are not an accessibility audit; [Reading the report](/docs/reports#access-needs-what-is-measured-and-what-is-acted-out) says what is measured and what is acted out.

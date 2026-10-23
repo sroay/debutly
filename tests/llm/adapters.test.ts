@@ -147,6 +147,39 @@ describe("createLlms", () => {
   it("requires base url and models for openai-compatible", () => {
     expect(() => createLlms({ DEBUTLY_API_KEY: "k", DEBUTLY_PROVIDER: "openai-compatible" })).toThrow(/DEBUTLY_BASE_URL/);
   });
+
+  it("on OpenRouter, sends pages only to providers that keep no data, unless told otherwise", async () => {
+    const bodies: Record<string, unknown>[] = [];
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async (_url: string, init: RequestInit) => {
+        bodies.push(JSON.parse(init.body as string));
+        return new Response(JSON.stringify({ choices: [{ message: { content: "ok" } }] }));
+      }),
+    );
+    const env = { DEBUTLY_API_KEY: "k", DEBUTLY_PROVIDER: "openai-compatible", DEBUTLY_BASE_URL: "https://openrouter.ai/api/v1", DEBUTLY_NAV_MODEL: "a", DEBUTLY_JUDGE_MODEL: "b" };
+    const providers = async (over: Record<string, string>) => {
+      bodies.length = 0;
+      const { nav, judge } = createLlms({ ...env, ...over });
+      await nav.complete(req);
+      await judge.complete(req);
+      return bodies.map((b) => b.provider);
+    };
+    try {
+      const noRetention = { zdr: true, data_collection: "deny" };
+      expect(await providers({})).toEqual([noRetention, noRetention]);
+      // Routing of its own is added to the policy, for the judge too.
+      expect(await providers({ DEBUTLY_NAV_ROUTING: '{"sort":"throughput"}', DEBUTLY_JUDGE_ROUTING: '{"order":["deepinfra"]}' })).toEqual([
+        { ...noRetention, sort: "throughput" },
+        { ...noRetention, order: ["deepinfra"] },
+      ]);
+      expect(await providers({ DEBUTLY_ZERO_RETENTION: "off" })).toEqual([undefined, undefined]);
+      // Another provider has its own terms; OpenRouter's settings mean nothing there.
+      expect(await providers({ DEBUTLY_BASE_URL: "https://api.deepseek.com/v1" })).toEqual([undefined, undefined]);
+    } finally {
+      vi.unstubAllGlobals();
+    }
+  });
 });
 
 describe("usage reporting", () => {

@@ -47,6 +47,7 @@
 <h2 class="nav-section">Guides</h2>
 <ul>
 <li><a href="/docs/test-environments">Test environments</a></li>
+<li><a href="/docs/data-and-privacy">Data and privacy</a></li>
 <li><a href="/docs/reports">Reading the report</a></li>
 <li><a href="/docs/teams">Teams and invites</a></li>
 <li><a href="/docs/buyers">What buyers think</a></li>
@@ -74,6 +75,7 @@
 <h2 class="nav-section">Guides</h2>
 <ul>
 <li><a href="/docs/test-environments">Test environments</a></li>
+<li><a href="/docs/data-and-privacy">Data and privacy</a></li>
 <li><a href="/docs/reports">Reading the report</a></li>
 <li><a href="/docs/teams">Teams and invites</a></li>
 <li><a href="/docs/buyers">What buyers think</a></li>
@@ -281,7 +283,15 @@
 </tr>
 <tr>
 <td><code>DEBUTLY_NAV_ROUTING</code></td>
-<td>OpenRouter provider routing as JSON, e.g. <code>{&quot;order&quot;:[&quot;google-ai-studio/flex&quot;]}</code>.</td>
+<td>OpenRouter provider routing for the agents&#39; model, as JSON, e.g. <code>{&quot;order&quot;:[&quot;google-ai-studio/flex&quot;]}</code>.</td>
+</tr>
+<tr>
+<td><code>DEBUTLY_JUDGE_ROUTING</code></td>
+<td>The same for the judge model.</td>
+</tr>
+<tr>
+<td><code>DEBUTLY_ZERO_RETENTION</code></td>
+<td>With OpenRouter, requests go only to providers that keep no copy of prompts and don&#39;t train on them. <code>off</code> allows any provider. See <a href="/docs/data-and-privacy">Data and privacy</a>.</td>
 </tr>
 </tbody></table></div>
 <p>A <code>.env</code> in the folder can only change where your key is sent (<code>DEBUTLY_BASE_URL</code>) if it holds the key too. That way a <code>.env</code> in a repository you cloned can&#39;t send the key from your shell somewhere else.</p>

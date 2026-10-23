@@ -19,6 +19,10 @@ The key is wrong, revoked or cut short. Copy it again in full, or create a new o
 
 Top up on OpenRouter, or raise the key's limit, and run again. If it happened part-way, the report starts with **Run cut short** and names the agents that stopped. Debutly checks a key's limit before a run, so give your key one to be told before a run starts instead.
 
+## "No allowed providers are available for the selected model"
+
+With OpenRouter, Debutly only uses providers that keep no copy of your prompts, and the model you chose has none. Pick one of the recommended models, or set `DEBUTLY_ZERO_RETENTION=off` to allow any provider. See [Data and privacy](/docs/data-and-privacy).
+
 ## "Refusing to start: this run could cost up to…"
 
 The estimate is above `maxCost`. Raise `maxCost`, or make the run smaller with `--agents`, `--max-steps` or a smaller `--tier`.

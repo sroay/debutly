@@ -73,7 +73,9 @@ Debutly reads these from your shell and from a `.env` file in the folder it runs
 | `DEBUTLY_NAV_MODEL` | The model that drives the agents. Default with OpenRouter: `z-ai/glm-5.3-flash`. |
 | `DEBUTLY_JUDGE_MODEL` | The model that casts the customers and judges pages. Default with OpenRouter: `deepseek/deepseek-v4-flash`. |
 | `DEBUTLY_REASONING_EFFORT` | `low`, `medium` or `high`: how much the agents' model thinks before each step. Default with OpenRouter: `low`. |
-| `DEBUTLY_NAV_ROUTING` | OpenRouter provider routing as JSON, e.g. `{"order":["google-ai-studio/flex"]}`. |
+| `DEBUTLY_NAV_ROUTING` | OpenRouter provider routing for the agents' model, as JSON, e.g. `{"order":["google-ai-studio/flex"]}`. |
+| `DEBUTLY_JUDGE_ROUTING` | The same for the judge model. |
+| `DEBUTLY_ZERO_RETENTION` | With OpenRouter, requests go only to providers that keep no copy of prompts and don't train on them. `off` allows any provider. See [Data and privacy](/docs/data-and-privacy). |
 
 A `.env` in the folder can only change where your key is sent (`DEBUTLY_BASE_URL`) if it holds the key too. That way a `.env` in a repository you cloned can't send the key from your shell somewhere else.
 

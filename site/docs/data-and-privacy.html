@@ -1,0 +1,151 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Data and privacy · Debutly docs</title>
+  <meta name="description" content="What leaves your machine when Debutly runs, where it goes, how to keep model providers from storing it, and how to keep real data out of a rehearsal.">
+  <link rel="canonical" href="https://debutly.dev/docs/data-and-privacy">
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+  <meta property="og:type" content="article">
+  <meta property="og:url" content="https://debutly.dev/docs/data-and-privacy">
+  <meta property="og:title" content="Data and privacy">
+  <meta property="og:description" content="What leaves your machine when Debutly runs, where it goes, how to keep model providers from storing it, and how to keep real data out of a rehearsal.">
+  <meta property="og:image" content="https://debutly.dev/og.png">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="theme-color" content="#ECEEF0">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible+Mono:wght@400;700&family=Atkinson+Hyperlegible+Next:wght@400;700&family=Big+Shoulders+Display:wght@800;900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/styles.css">
+  <link rel="stylesheet" href="/docs.css">
+</head>
+<body class="docs">
+  <a class="skip" href="#content">Skip to content</a>
+
+  <header class="top">
+    <a class="wordmark" href="/" aria-label="Debutly home">
+      <span class="mark" aria-hidden="true"></span>Debutly
+    </a>
+    <nav aria-label="Main">
+      <a href="/docs" aria-current="false">Docs</a>
+      <a href="https://github.com/sroay/debutly">GitHub</a>
+    </nav>
+  </header>
+
+  <div class="docs-layout">
+    <details class="docs-menu">
+      <summary>Docs menu</summary>
+      <nav aria-label="Docs">
+<h2 class="nav-section">Start</h2>
+<ul>
+<li><a href="/docs">Overview</a></li>
+<li><a href="/docs/quick-start">Quick start</a></li>
+<li><a href="/docs/configuration">Configuration</a></li>
+<li><a href="/docs/github-actions">GitHub Actions</a></li>
+</ul>
+<h2 class="nav-section">Guides</h2>
+<ul>
+<li><a href="/docs/test-environments">Test environments</a></li>
+<li class="here"><a href="/docs/data-and-privacy" aria-current="page">Data and privacy</a></li>
+<li><a href="/docs/reports">Reading the report</a></li>
+<li><a href="/docs/teams">Teams and invites</a></li>
+<li><a href="/docs/buyers">What buyers think</a></li>
+<li><a href="/docs/dashboard">The dashboard</a></li>
+<li><a href="/docs/models-and-costs">Models and costs</a></li>
+</ul>
+<h2 class="nav-section">Tutorials</h2>
+<ul>
+<li><a href="/docs/tutorial-nextjs-supabase">Next.js and Supabase</a></li>
+</ul>
+<h2 class="nav-section">Help</h2>
+<ul>
+<li><a href="/docs/troubleshooting">Troubleshooting</a></li>
+</ul>
+      </nav>
+    </details>
+    <nav class="docs-nav" aria-label="Docs">
+<h2 class="nav-section">Start</h2>
+<ul>
+<li><a href="/docs">Overview</a></li>
+<li><a href="/docs/quick-start">Quick start</a></li>
+<li><a href="/docs/configuration">Configuration</a></li>
+<li><a href="/docs/github-actions">GitHub Actions</a></li>
+</ul>
+<h2 class="nav-section">Guides</h2>
+<ul>
+<li><a href="/docs/test-environments">Test environments</a></li>
+<li class="here"><a href="/docs/data-and-privacy" aria-current="page">Data and privacy</a></li>
+<li><a href="/docs/reports">Reading the report</a></li>
+<li><a href="/docs/teams">Teams and invites</a></li>
+<li><a href="/docs/buyers">What buyers think</a></li>
+<li><a href="/docs/dashboard">The dashboard</a></li>
+<li><a href="/docs/models-and-costs">Models and costs</a></li>
+</ul>
+<h2 class="nav-section">Tutorials</h2>
+<ul>
+<li><a href="/docs/tutorial-nextjs-supabase">Next.js and Supabase</a></li>
+</ul>
+<h2 class="nav-section">Help</h2>
+<ul>
+<li><a href="/docs/troubleshooting">Troubleshooting</a></li>
+</ul>
+    </nav>
+
+    <main id="content" class="docs-page">
+      <article class="prose">
+<h1>Data and privacy</h1>
+<p>Debutly runs on your machine or in your own CI. It has no server of its own and sends nothing to its authors. A run talks only to places you choose: your app&#39;s test copy, your model provider, and, if you set them up, your mail catcher, your sandbox outbox, your database and your S3 storage. Before a run it also reads OpenRouter&#39;s public list of model prices.</p>
+<h2 id="what-the-model-provider-receives"><a class="anchor" href="#what-the-model-provider-receives">What the model provider receives</a></h2>
+<p>The agents read pages as text, not pictures. For every step, the agents&#39; model receives:</p>
+<ul>
+<li>the agent&#39;s made-up persona, its goal and the rules it follows;</li>
+<li>the page&#39;s address and title, its buttons, links and fields with their names and current values, and up to 2,000 characters of its visible text;</li>
+<li>a one-line note of each earlier step.</li>
+</ul>
+<p>The judge model receives your description of your customers, to cast the agents. When evaluators judge pages, it receives those pages&#39; text. <code>npx debutly init</code> sends up to 4,000 characters of your app&#39;s home page to it, to suggest who your customers are.</p>
+<p>Screenshots never go to a model. They stay in the run&#39;s folder, your database or your S3 storage.</p>
+<h2 id="keeping-providers-from-storing-it"><a class="anchor" href="#keeping-providers-from-storing-it">Keeping providers from storing it</a></h2>
+<p>With an OpenRouter key, Debutly asks OpenRouter to route every request only to providers that <strong>keep no copy of prompts</strong> (zero data retention) and <strong>don&#39;t use them for training</strong>. On 23 October 2026 the recommended models (<code>z-ai/glm-5.3-flash</code>, <code>deepseek/deepseek-v4-flash</code> and <code>google/gemini-3.8-flash</code>) were all served that way at their usual price.</p>
+<ul>
+<li><code>DEBUTLY_ZERO_RETENTION=off</code> allows any provider, for a model that has no such provider. Without it, a request for such a model fails with &quot;No allowed providers are available for the selected model&quot;.</li>
+<li><code>DEBUTLY_NAV_ROUTING</code> and <code>DEBUTLY_JUDGE_ROUTING</code> add OpenRouter routing of your own (JSON) to the agents&#39; and the judge&#39;s requests.</li>
+<li>With Anthropic or another provider, that provider&#39;s own data terms apply; check them. Any OpenAI-compatible API works, including one you host yourself, though Debutly hasn&#39;t been tested against a self-hosted model yet.</li>
+</ul>
+<h2 id="what-the-agents-type"><a class="anchor" href="#what-the-agents-type">What the agents type</a></h2>
+<ul>
+<li>Made-up names and details, written by the model for each persona.</li>
+<li>Email addresses at <code>agents.test</code>, or the domain you set with <code>emailDomain</code>. <code>.test</code> addresses can&#39;t receive real mail; your mail catcher picks it up.</li>
+<li>Passwords they make up, and the test card <code>4242 4242 4242 4242</code>.</li>
+<li>A sample photo and a sample document when a page asks for a file.</li>
+</ul>
+<h2 id="keep-real-data-out"><a class="anchor" href="#keep-real-data-out">Keep real data out</a></h2>
+<p>Whatever is on a page the agents visit goes to the model provider and into screenshots. So:</p>
+<ul>
+<li><strong>Never point Debutly at production</strong>, or at a copy holding real customers&#39; data. Seed the test copy with made-up data.</li>
+<li><strong>Give the test copy test keys only</strong>, so nothing it does reaches a real payment, email or AI account.</li>
+<li><strong>Mind who can see reports.</strong> In a public GitHub repository, workflow run summaries and the <code>debutly-report</code> artifact, screenshots included, can be seen by anyone. Use a private repository, or leave the artifact out, if pages show anything you wouldn&#39;t publish.</li>
+</ul>
+<h2 id="keys-and-passwords"><a class="anchor" href="#keys-and-passwords">Keys and passwords</a></h2>
+<ul>
+<li>Your model key is read from your environment or a <code>.env</code> file and is never printed, not even by <code>npx debutly doctor</code>.</li>
+<li>A <code>.env</code> file can only change where the key is sent if it holds the key itself, so one in a repository you cloned can&#39;t send the key from your shell somewhere else.</li>
+<li>A database address holds a password, so it goes in <code>DEBUTLY_STORE_URL</code>, never in <code>debutly.json</code>.</li>
+<li>A deployed dashboard turns everyone away unless <code>DASHBOARD_PASSWORD</code> is set.</li>
+</ul>
+
+      </article>
+      <nav class="pager" aria-label="Previous and next page">
+        <a class="pager-prev" href="/docs/test-environments"><span>Previous</span>Test environments</a>
+        <a class="pager-next" href="/docs/reports"><span>Next</span>Reading the report</a>
+      </nav>
+      <p class="edit"><a href="https://github.com/sroay/debutly/edit/master/site/docs-src/data-and-privacy.md">Edit this page on GitHub</a></p>
+    </main>
+  </div>
+
+  <footer class="foot">
+    <p>Debutly is made by <a href="https://github.com/sroay">Chetan Sroay</a>.</p>
+    <p class="foot-links"><a href="https://github.com/sroay/debutly">Source on GitHub</a> <a href="https://github.com/sroay/debutly/blob/master/LICENSE">AGPL-3.0 licence</a> <a href="https://github.com/sroay/debutly/security">Report a security issue</a></p>
+  </footer>
+</body>
+</html>

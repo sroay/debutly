@@ -26,9 +26,11 @@ const BusinessUnitSchema = z.object({
   employees: z.array(PersonaSchema.extend({ role: z.string().min(1) })),
 });
 
-const SYSTEM = `You design realistic, diverse customer personas for product simulation. Vary role, company size, budget, urgency, patience and technical skill. Include skeptical and hard-to-please people, not just enthusiasts. Output only a JSON array.`;
-const INDIVIDUAL_SYSTEM = `You design realistic, diverse individual consumers for product simulation. Vary life and career stage, urgency, price sensitivity, region and technical skill. Include skeptical and hard-to-please people, not just enthusiasts. Output only a JSON array.`;
-const BUSINESS_SYSTEM = `You design realistic, diverse businesses for product simulation. Vary archetype (agency, SME, small business, freelancer, startup, enterprise team), industry, size, budget and urgency. Give employees distinct everyday roles. Include skeptical and hard-to-please people, not just enthusiasts. Output only a JSON array.`;
+// Personas describe customers, not their beliefs: no politics or religion.
+const NEUTRAL = "Leave out politics and religion.";
+const SYSTEM = `You design realistic, diverse customer personas for product simulation. Vary role, company size, budget, urgency, patience and technical skill. Include skeptical and hard-to-please people, not just enthusiasts. ${NEUTRAL} Output only a JSON array.`;
+const INDIVIDUAL_SYSTEM = `You design realistic, diverse individual consumers for product simulation. Vary life and career stage, urgency, price sensitivity, region and technical skill. Include skeptical and hard-to-please people, not just enthusiasts. ${NEUTRAL} Output only a JSON array.`;
+const BUSINESS_SYSTEM = `You design realistic, diverse businesses for product simulation. Vary archetype (agency, SME, small business, freelancer, startup, enterprise team), industry, size, budget and urgency. Give employees distinct everyday roles. Include skeptical and hard-to-please people, not just enthusiasts. ${NEUTRAL} Output only a JSON array.`;
 const PERSONA_SHAPE = `{"name": first name only, "background": 1-2 sentences, "goal": what they want from this product, "patience": "low"|"medium"|"high", "techSavvy": "low"|"medium"|"high"}`;
 
 function extractJsonArray(raw: string): unknown {

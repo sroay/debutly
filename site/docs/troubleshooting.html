@@ -47,6 +47,7 @@
 <h2 class="nav-section">Guides</h2>
 <ul>
 <li><a href="/docs/test-environments">Test environments</a></li>
+<li><a href="/docs/data-and-privacy">Data and privacy</a></li>
 <li><a href="/docs/reports">Reading the report</a></li>
 <li><a href="/docs/teams">Teams and invites</a></li>
 <li><a href="/docs/buyers">What buyers think</a></li>
@@ -74,6 +75,7 @@
 <h2 class="nav-section">Guides</h2>
 <ul>
 <li><a href="/docs/test-environments">Test environments</a></li>
+<li><a href="/docs/data-and-privacy">Data and privacy</a></li>
 <li><a href="/docs/reports">Reading the report</a></li>
 <li><a href="/docs/teams">Teams and invites</a></li>
 <li><a href="/docs/buyers">What buyers think</a></li>
@@ -100,6 +102,8 @@
 <p>The key is wrong, revoked or cut short. Copy it again in full, or create a new one.</p>
 <h2 id="the-ai-provider-account-is-out-of-credits"><a class="anchor" href="#the-ai-provider-account-is-out-of-credits">&quot;The AI provider account is out of credits&quot;</a></h2>
 <p>Top up on OpenRouter, or raise the key&#39;s limit, and run again. If it happened part-way, the report starts with <strong>Run cut short</strong> and names the agents that stopped. Debutly checks a key&#39;s limit before a run, so give your key one to be told before a run starts instead.</p>
+<h2 id="no-allowed-providers-are-available-for-the-selected-model"><a class="anchor" href="#no-allowed-providers-are-available-for-the-selected-model">&quot;No allowed providers are available for the selected model&quot;</a></h2>
+<p>With OpenRouter, Debutly only uses providers that keep no copy of your prompts, and the model you chose has none. Pick one of the recommended models, or set <code>DEBUTLY_ZERO_RETENTION=off</code> to allow any provider. See <a href="/docs/data-and-privacy">Data and privacy</a>.</p>
 <h2 id="refusing-to-start-this-run-could-cost-up-to"><a class="anchor" href="#refusing-to-start-this-run-could-cost-up-to">&quot;Refusing to start: this run could cost up to…&quot;</a></h2>
 <p>The estimate is above <code>maxCost</code>. Raise <code>maxCost</code>, or make the run smaller with <code>--agents</code>, <code>--max-steps</code> or a smaller <code>--tier</code>.</p>
 <h2 id="nothing-answers-at-http-localhost-3000"><a class="anchor" href="#nothing-answers-at-http-localhost-3000">&quot;Nothing answers at <a href="http://localhost:3000">http://localhost:3000</a>&quot;</a></h2>

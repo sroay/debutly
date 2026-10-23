@@ -24,6 +24,7 @@ const NAV: { section: string; pages: { slug: string; label: string }[] }[] = [
     section: "Guides",
     pages: [
       { slug: "test-environments", label: "Test environments" },
+      { slug: "data-and-privacy", label: "Data and privacy" },
       { slug: "reports", label: "Reading the report" },
       { slug: "teams", label: "Teams and invites" },
       { slug: "buyers", label: "What buyers think" },

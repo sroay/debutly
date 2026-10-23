@@ -40,6 +40,18 @@ Each finding says what went wrong, how many of the agents who reached that page 
 | Slow page | The page took over 10 seconds to arrive. |
 | Agent stuck | An agent did the same thing three times on one page and nothing changed. |
 
+### Access needs: what is measured and what is acted out
+
+The first agents in each run take on one access need each, rotating daily, so a quick run of three agents covers three of the four.
+
+- **Measured, the same for every agent.** Controls with no name. Debutly works the name out from labels, ARIA attributes, text and titles, close to what browsers give assistive technology. Also: clicks that land on something covering the control, and how long the first page takes to arrive.
+- **The screen-reader agent** is told it knows controls only by their names and avoids unnamed ones. It reads the same summary of the page as the other agents, without a screen reader's reading order, keyboard movement or announcements.
+- **The low-vision agent** works in a 640×400 window, which lays pages out as 200% zoom does on a laptop. It doesn't model eyesight or contrast.
+- **The slow-connection agent's** network really is throttled, to 500 kbit/s with 400 ms round trips.
+- **The non-native English agent** is acted out entirely by the model.
+
+So these findings point to things a person should check, with assistive technology where it matters. A run with no such findings says nothing about conformance with WCAG or any accessibility standard.
+
 ### Severity
 
 - **Blocker**: a serious problem on a page customers must get through: sign-up, sign-in, onboarding, pricing, checkout, billing, payment or invites.

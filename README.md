@@ -14,7 +14,7 @@ Website and docs: [debutly.dev](https://debutly.dev) ([quick start](https://debu
 
 - **Customers in a real browser.** Agents (Playwright and Chromium) click, type, pick options in native and custom dropdowns, upload files (a sample photo or CV made up on the spot), follow links from emails, and wait for slow pages like a person would.
 - **Business crews.** With `--unit business`, an owner signs up, chooses a plan within a budget and invites teammates. Each teammate accepts by email and uses the product in their own login, so invites, roles and shared workspaces get tested too.
-- **Inclusion built in.** Every run includes a screen-reader user, someone with low vision (a zoomed-in viewport), someone on a slow connection and a non-native English speaker.
+- **Agents with access needs.** The first agents in each run act out an access need: one knows controls only by their names, as a screen-reader user does; one works at about 200% zoom; one is on a throttled connection; one reads as a non-native English speaker. They point to problems for a person to check. They are not an accessibility audit or a test with assistive technology.
 - **Findings with evidence.** Server and page errors, broken journeys, pages that take over 10 s to arrive, controls that something keeps covering, unlabeled buttons and fields, and agents going round in circles. Each comes with repro steps, screenshots and a confidence level.
 - **Knows a test environment from a bug.** If your app has a sandbox that records what it blocked (emails, payments, outside APIs), Debutly reads it and files failures the test environment caused separately from real bugs.
 - **What buyers think.** Cheap "skeptical buyer" evaluators judge your landing and pricing pages, grounded in competitors' own pricing pages. They compare A/B variants and work at the idea stage, before anything is built.
@@ -144,9 +144,9 @@ Then add `--store postgres://debutly:debutly@localhost:5433/debutly` and `--queu
 
 ## Models and costs
 
-Any OpenAI-compatible provider works (`DEBUTLY_PROVIDER=openai-compatible`, for example OpenRouter), or Anthropic (`DEBUTLY_PROVIDER=anthropic`). Set the model that drives the agents with `DEBUTLY_NAV_MODEL` and the one that judges and evaluates with `DEBUTLY_JUDGE_MODEL`.
+Any OpenAI-compatible provider works (`DEBUTLY_PROVIDER=openai-compatible`, for example OpenRouter), or Anthropic (`DEBUTLY_PROVIDER=anthropic`). With OpenRouter, requests go only to providers that keep no copy of prompts and don't train on them (`DEBUTLY_ZERO_RETENTION=off` allows any); [Data and privacy](https://debutly.dev/docs/data-and-privacy) lists what leaves your machine. Set the model that drives the agents with `DEBUTLY_NAV_MODEL` and the one that judges and evaluates with `DEBUTLY_JUDGE_MODEL`.
 
-What has worked well: `z-ai/glm-5.3-flash` with `DEBUTLY_REASONING_EFFORT=low` for the agents (allow about 40% more `--max-steps` than Gemini needs), and `deepseek/deepseek-v4-flash` for the judge and evaluators. `google/gemini-3.8-flash` is faster and needs fewer steps but costs about 4× as much per run; `DEBUTLY_NAV_ROUTING='{"order":["google-ai-studio/flex"]}'` halves its price.
+What has worked well: `z-ai/glm-5.3-flash` with `DEBUTLY_REASONING_EFFORT=low` for the agents (allow about 40% more `--max-steps` than Gemini needs), and `deepseek/deepseek-v4-flash` for the judge and evaluators. `google/gemini-3.8-flash` is faster and needs fewer steps but costs about 4× as much per run; `DEBUTLY_NAV_ROUTING='{"order":["google-ai-studio/flex"]}'` halves its price, but Google AI Studio isn't among the providers that keep no data, so it also needs `DEBUTLY_ZERO_RETENTION=off`.
 
 Models compared on the seeded-bug fixture (5 planted bugs, 3 agents), September 2026:
 

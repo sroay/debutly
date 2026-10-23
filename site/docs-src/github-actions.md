@@ -66,4 +66,6 @@ The step before the action has to leave your app running. A command ending in `&
 - **On pull requests** that touch sign-up, billing or onboarding, with `on: pull_request` and a `paths:` filter.
 - **Before a launch**, from the Actions tab with **Run workflow**.
 
+In a public repository, anyone can see a workflow run's summary and download the `debutly-report` artifact, screenshots included. If the pages show anything you wouldn't publish, run it from a private repository.
+
 A quick run takes 5 to 15 minutes of runner time. GitHub Actions is free for public repositories; private repositories use your plan's minutes.

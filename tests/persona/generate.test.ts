@@ -51,6 +51,17 @@ it("builds individuals with life context and keeps p1… ids", async () => {
   expect(llm.calls[0].system).toMatch(/life and career stage/);
 });
 
+it("keeps politics and religion out of every kind of persona", async () => {
+  const people = new ScriptedLlm(() => JSON.stringify([person("Priya")]));
+  await generateUnits(people, "job seekers", { kind: "individual", count: 1, employees: 0 });
+  await generatePersonas(people, "buyers", 1);
+  const crews = new ScriptedLlm(() =>
+    JSON.stringify([{ business: { name: "Solo Co", archetype: "freelancer", size: 1, monthlyBudget: 50, goal: "g" }, owner: person("Sam"), employees: [] }]),
+  );
+  await generateUnits(crews, "agencies", { kind: "business", count: 1, employees: 0 });
+  for (const call of [...people.calls, ...crews.calls]) expect(call.system).toContain("Leave out politics and religion.");
+});
+
 it("asks for owner-only businesses when there are no employees", async () => {
   const llm = new ScriptedLlm(() =>
     JSON.stringify([{ business: { name: "Solo Co", archetype: "freelancer", size: 1, monthlyBudget: 50, goal: "g" }, owner: person("Sam"), employees: [] }]),

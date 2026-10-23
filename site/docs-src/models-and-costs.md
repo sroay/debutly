@@ -45,4 +45,4 @@ Models compared on the seeded-bug fixture (5 planted bugs, 3 agents), September 
 | inclusionai/ling-3.0-flash | 3 | 5.8 | $0.003 |
 | bytedance-seed/seed-2.0-mini | 2 | 6.3 | $0.009 |
 
-`google/gemini-3.8-flash` is the fastest and needs the fewest steps; `DEBUTLY_NAV_ROUTING='{"order":["google-ai-studio/flex"]}'` halves its price. To compare models on your own app, see `scripts/compare-models.ts` in the repository.
+`google/gemini-3.8-flash` is the fastest and needs the fewest steps; `DEBUTLY_NAV_ROUTING='{"order":["google-ai-studio/flex"]}'` halves its price, but Google AI Studio isn't among the providers that keep no data, so that also needs `DEBUTLY_ZERO_RETENTION=off` (see [Data and privacy](/docs/data-and-privacy)). To compare models on your own app, see `scripts/compare-models.ts` in the repository.

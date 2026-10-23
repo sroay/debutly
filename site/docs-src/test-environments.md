@@ -7,6 +7,8 @@ description: Where to point Debutly's agents, never production, and how a sandbo
 
 > **Never point Debutly at production.** The agents create accounts, fill in forms, upload files and pay. They do it the way customers would, so on your real app they would leave real accounts, send real emails and, without test keys, try to charge real cards.
 
+Whatever is on the pages the agents visit is sent to your model provider and kept in screenshots, so give the test copy made-up data only. [Data and privacy](/docs/data-and-privacy) lists exactly what leaves your machine.
+
 ## Good places to run
 
 - **Your machine.** Your app running locally with a local database and test keys.
