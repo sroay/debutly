@@ -25,6 +25,8 @@ test("Twenty: the sign-in page and the Companies table", async ({ page, nvda }) 
       page,
       (url) => url.pathname.startsWith("/objects/"),
       /^(create workspace|continue|continue without sync|skip|finish|get started)$/i,
+      undefined,
+      20,
     );
     await page.goto(`${APP}/objects/companies`);
     await page.waitForTimeout(5000);

@@ -23,7 +23,12 @@ export async function finishSetup(
     for (const field of await page.locator("input[type='text']:visible, input:not([type]):visible, textarea:visible").all()) {
       if (!(await field.inputValue().catch(() => "x"))) await field.fill("Screen Reader Check").catch(() => {});
     }
-    const next = page.getByRole("button", { name: moveOn }).first();
-    if (await next.isVisible().catch(() => false)) await next.click().catch(() => {});
+    // The first one a person could press: a page may keep hidden copies of its buttons.
+    for (const next of await page.getByRole("button", { name: moveOn }).all()) {
+      if ((await next.isVisible().catch(() => false)) && (await next.isEnabled().catch(() => false))) {
+        await next.click().catch(() => {});
+        break;
+      }
+    }
   }
 }

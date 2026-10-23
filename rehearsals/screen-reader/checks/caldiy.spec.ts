@@ -37,16 +37,13 @@ test("Cal.diy: sign-up, set-up, weekly hours and the public booking page", async
     await page.waitForURL((url) => !url.pathname.startsWith("/auth/login"), { timeout: 60_000 });
   });
 
-  await test.step("go through set-up, hearing the screen about the person", async () => {
-    await finishSetup(
-      page,
-      (url) => !url.pathname.startsWith("/onboarding") && !url.pathname.startsWith("/getting-started"),
-      /^(continue|next|next step|skip|finish|finish setup|set up later|i'll connect later|connect later)$/i,
-      async (url) => {
-        if (/personal|user-settings|settings/.test(url.pathname)) await hear(page, nvda, 12, "caldiy-2-setup-about-you");
-      },
-      12,
-    );
+  await test.step("go through set-up as the agents did, hearing the screen about the person", async () => {
+    await page.getByRole("radio", { name: /personal use/i }).click();
+    await page.getByRole("button", { name: /^continue$/i }).click();
+    await page.waitForURL(/\/onboarding\/personal\/settings/, { timeout: 60_000 });
+    await page.waitForLoadState("networkidle");
+    await hear(page, nvda, 12, "caldiy-2-setup-about-you");
+    await finishSetup(page, (url) => !url.pathname.startsWith("/onboarding"), /^(continue|skip for now|skip|finish)$/i);
   });
 
   await test.step("open the first schedule's weekly hours", async () => {
@@ -57,7 +54,16 @@ test("Cal.diy: sign-up, set-up, weekly hours and the public booking page", async
   });
   await hear(page, nvda, 40, "caldiy-3-weekly-hours");
 
-  await page.goto(`${APP}/${username}/30min`);
+  await test.step("make a 30-minute appointment type, as the agents did", async () => {
+    await page.goto(`${APP}/event-types`);
+    await page.getByRole("link", { name: /^new$/i }).or(page.getByRole("button", { name: /^new$/i })).first().click();
+    await page.getByLabel(/^title$/i).fill("Consultation");
+    await page.getByRole("button", { name: /^continue$/i }).click();
+    await page.waitForURL(/\/event-types\/\d+/, { timeout: 60_000 });
+  });
+  await page.goto(`${APP}/${username}/consultation`);
   await page.waitForLoadState("networkidle");
+  // Only this app's own page: a missing one must not send NVDA off to another site.
+  expect(new URL(page.url()).origin).toBe(new URL(APP).origin);
   await hear(page, nvda, 30, "caldiy-4-booking-page");
 });
