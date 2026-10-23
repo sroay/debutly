@@ -1,6 +1,11 @@
 #!/usr/bin/env bash
 # unseal.sh <private key> <downloaded artifact dir> <out dir>: the reverse of seal.sh.
+# unseal.sh --links <private key> <sealed text>: the addresses serve.sh printed.
 set -euo pipefail
+if [ "$1" = "--links" ]; then
+  printf '%s' "$3" | base64 -d | openssl pkeyutl -decrypt -inkey "$2" -pkeyopt rsa_padding_mode:oaep -pkeyopt rsa_oaep_md:sha256
+  exit 0
+fi
 private_key=$1 sealed=$2 out=$3
 work=$(mktemp -d)
 trap 'rm -rf "$work"' EXIT

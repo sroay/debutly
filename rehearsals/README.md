@@ -7,6 +7,14 @@ Debutly rehearses well-known open-source apps here, each started from its own re
 - `<app>/check.sh` checks the app before any model calls: for Chatwoot, a sign-up through its own API must send a confirmation email that reaches Mailpit.
 - `<app>/debutly.json` holds the run's settings: who the customers are, what they try to do, and their first languages.
 
+## Checking findings by hand
+
+Set "serve-minutes" (up to 90) to keep the app online instead of running agents. `serve.sh` gives the app and its Mailpit temporary https addresses (Cloudflare quick tunnels), so a person can sign up, read the emails and check each finding in their own browser and screen reader. The addresses are masked in the log and printed sealed; read them with:
+
+```bash
+bash rehearsals/unseal.sh --links <private key> "<sealed text from the log>"
+```
+
 ## Reports are sealed
 
 This repository is public, and so are its workflow artifacts. Findings on someone else's app shouldn't be published before a person has checked them, so `seal.sh` encrypts each report for the holder of the private half of `report-key.pem`. To read one, download the artifact, unzip it and run:

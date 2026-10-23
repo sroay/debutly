@@ -8,7 +8,7 @@ pg_password=$(secret 16)
 redis_password=$(secret 16)
 cat > app.env <<EOF
 SECRET_KEY_BASE=$(secret 64)
-FRONTEND_URL=http://localhost:3000
+FRONTEND_URL=${PUBLIC_URL:-http://localhost:3000}
 FORCE_SSL=false
 ENABLE_ACCOUNT_SIGNUP=true
 DISABLE_TELEMETRY=true

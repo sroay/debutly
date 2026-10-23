@@ -5,7 +5,7 @@ cd "$(dirname "$0")"
 
 pg_password=$(openssl rand -hex 16)
 cat > app.env <<EOF
-SERVER_URL=http://localhost:3000
+SERVER_URL=${PUBLIC_URL:-http://localhost:3000}
 PG_DATABASE_URL=postgres://postgres:$pg_password@db:5432/default
 POSTGRES_DB=default
 POSTGRES_USER=postgres

@@ -21,6 +21,9 @@ on:
         description: Start the app and check sign-up email works, without agents or model calls
         type: boolean
         default: false
+      serve-minutes:
+        description: Keep the app online for a person to check by hand, for this many minutes (up to 90; no agents)
+        default: "0"
 
 permissions:
   contents: read
@@ -41,6 +44,11 @@ jobs:
           node-version: 22
           cache: npm
 
+      # The app's own address becomes a temporary https one, with another for its test mailbox.
+      - name: Open temporary addresses
+        if: ${{ inputs.serve-minutes != '0' }}
+        run: bash rehearsals/serve.sh
+
       - name: Start ${{ inputs.app }}
         run: bash "$APP_DIR/start.sh"
 
@@ -48,13 +56,13 @@ jobs:
         run: bash "$APP_DIR/check.sh"
 
       - name: Install Debutly
-        if: ${{ !inputs.check-only }}
+        if: ${{ !inputs.check-only && inputs.serve-minutes == '0' }}
         run: |
           npm ci --no-audit --no-fund
           npx playwright install --with-deps chromium
 
       - name: Run the agents
-        if: ${{ !inputs.check-only }}
+        if: ${{ !inputs.check-only && inputs.serve-minutes == '0' }}
         working-directory: ${{ env.APP_DIR }}
         env:
           DEBUTLY_API_KEY: ${{ secrets.DEBUTLY_API_KEY }}
@@ -68,18 +76,27 @@ jobs:
           node "$GITHUB_WORKSPACE/bin/debutly.mjs" run "${args[@]}"
 
       - name: Seal the report
-        if: ${{ always() && !inputs.check-only }}
+        if: ${{ always() && !inputs.check-only && inputs.serve-minutes == '0' }}
         run: |
           if [ ! -d "$RUNNER_TEMP/report" ]; then echo "No report was written."; exit 0; fi
           bash rehearsals/seal.sh "$RUNNER_TEMP/report" "$RUNNER_TEMP/sealed"
 
       - uses: actions/upload-artifact@v4
-        if: ${{ always() && !inputs.check-only }}
+        if: ${{ always() && !inputs.check-only && inputs.serve-minutes == '0' }}
         with:
           name: sealed-report-${{ inputs.app }}
           path: ${{ runner.temp }}/sealed
           if-no-files-found: ignore
           retention-days: 14
+
+      - name: Keep the app online
+        if: ${{ inputs.serve-minutes != '0' }}
+        env:
+          MINUTES: ${{ inputs.serve-minutes }}
+        run: |
+          minutes=$(( MINUTES > 90 ? 90 : MINUTES ))
+          echo "Online for $minutes minutes; cancel the run to stop sooner."
+          sleep $(( minutes * 60 ))
 
       - name: App logs
         if: failure()
