@@ -28,6 +28,8 @@ test("Twenty: the sign-in page and the Companies table", async ({ page, nvda }) 
       undefined,
       20,
     );
+    // Where set-up ended, for a person to see if it stopped short.
+    await page.screenshot({ path: "transcripts/twenty-setup-ended.png" });
     await page.goto(`${APP}/objects/companies`);
     await page.waitForTimeout(5000);
   });
