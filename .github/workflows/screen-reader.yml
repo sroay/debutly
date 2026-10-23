@@ -10,7 +10,7 @@ on:
       check:
         description: Which check to run (an app in rehearsals/, or smoke)
         type: choice
-        options: [smoke, chatwoot]
+        options: [smoke, chatwoot, twenty, caldiy]
         default: smoke
 
 permissions:
