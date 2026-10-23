@@ -1,0 +1,41 @@
+name: screen-reader
+# Checks rehearsal findings with a real screen reader: NVDA on Windows, driven by Guidepup.
+# Started by hand. The "smoke" check needs no app; the others hear a rehearsed app's pages.
+on:
+  workflow_dispatch:
+    inputs:
+      check:
+        description: Which check to run
+        type: choice
+        options: [smoke]
+        default: smoke
+
+permissions:
+  contents: read
+
+jobs:
+  nvda:
+    runs-on: windows-2025
+    timeout-minutes: 60
+    defaults:
+      run:
+        working-directory: rehearsals/screen-reader
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+      - run: npx -y @guidepup/setup@0.29.2 setup --ci
+      - run: npm install --no-audit --no-fund
+      - run: npx playwright install chromium
+      - run: npx -y @guidepup/setup@0.29.2 install
+      - run: npx playwright test checks/${{ inputs.check }}.spec.ts
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: screen-reader-${{ inputs.check }}
+          path: |
+            rehearsals/screen-reader/transcripts
+            rehearsals/screen-reader/test-results
+          if-no-files-found: ignore
+          retention-days: 14

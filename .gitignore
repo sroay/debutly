@@ -23,3 +23,6 @@ dashboard/tsconfig.tsbuildinfo
 # Rehearsals: each app's generated secrets
 rehearsals/*/app.env
 rehearsals/*/src/
+rehearsals/screen-reader/node_modules/
+rehearsals/screen-reader/transcripts/
+rehearsals/screen-reader/test-results/

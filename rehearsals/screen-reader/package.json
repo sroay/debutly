@@ -1,0 +1,14 @@
+{
+  "name": "rehearsal-screen-reader",
+  "private": true,
+  "description": "Checks rehearsal findings with a real screen reader (NVDA on Windows), through Guidepup.",
+  "type": "module",
+  "scripts": {
+    "check": "playwright test"
+  },
+  "devDependencies": {
+    "@guidepup/guidepup": "0.36.4",
+    "@guidepup/playwright": "0.20.0",
+    "@playwright/test": "1.63.0"
+  }
+}
