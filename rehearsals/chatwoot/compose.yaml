@@ -36,5 +36,8 @@ services:
 
   mailpit:
     image: axllent/mailpit:v1.31.4
+    environment:
+      # Set by serve.sh when the mailbox gets a public address; empty means no login locally.
+      MP_UI_AUTH: ${MAILPIT_AUTH:-}
     ports:
       - "127.0.0.1:8025:8025"

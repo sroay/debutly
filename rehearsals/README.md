@@ -9,10 +9,10 @@ Debutly rehearses well-known open-source apps here, each started from its own re
 
 ## Checking findings by hand
 
-Set "serve-minutes" (up to 90) to keep the app online instead of running agents. `serve.sh` gives the app and its Mailpit temporary https addresses (Cloudflare quick tunnels), so a person can sign up, read the emails and check each finding in their own browser and screen reader. The addresses are masked in the log and printed sealed; read them with:
+Set "serve-minutes" (up to 90) to keep the app online instead of running agents. `serve.sh` gives the app and its Mailpit temporary https addresses (Cloudflare quick tunnels), so a person can sign up, read the emails and check each finding in their own browser and screen reader. The mailbox takes a generated login. The addresses and that login are masked in the log and uploaded sealed (artifact "sealed-addresses"); read them with:
 
 ```bash
-bash rehearsals/unseal.sh --links <private key> "<sealed text from the log>"
+bash rehearsals/unseal.sh --links <private key> "$(cat sealed.txt)"
 ```
 
 ## Reports are sealed

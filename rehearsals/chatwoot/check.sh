@@ -9,7 +9,7 @@ curl -sf -X POST http://localhost:3000/api/v1/accounts -H "Content-Type: applica
   -d "{\"account_name\":\"Setup check\",\"user_full_name\":\"Setup check\",\"email\":\"$email\",\"password\":\"$password\"}" > /dev/null
 
 for _ in $(seq 30); do
-  count=$(curl -sf "http://localhost:8025/api/v1/search?query=to:%22$email%22" | node -p '(JSON.parse(require("fs").readFileSync(0)).messages ?? []).length')
+  count=$(curl -sf ${MAILPIT_AUTH:+-u "$MAILPIT_AUTH"} "http://localhost:8025/api/v1/search?query=to:%22$email%22" | node -p '(JSON.parse(require("fs").readFileSync(0)).messages ?? []).length')
   if [ "$count" -gt 0 ]; then echo "Sign-up works and its confirmation email arrives."; exit 0; fi
   sleep 2
 done

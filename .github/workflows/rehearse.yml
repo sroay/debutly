@@ -49,6 +49,13 @@ jobs:
         if: ${{ inputs.serve-minutes != '0' }}
         run: bash rehearsals/serve.sh
 
+      - uses: actions/upload-artifact@v4
+        if: ${{ inputs.serve-minutes != '0' }}
+        with:
+          name: sealed-addresses
+          path: ${{ runner.temp }}/addresses
+          retention-days: 1
+
       - name: Start ${{ inputs.app }}
         run: bash "$APP_DIR/start.sh"
 

@@ -2,7 +2,7 @@
 # serve.sh: opens temporary https addresses (Cloudflare quick tunnels, no account) to the app at
 # localhost:3000 and its Mailpit at localhost:8025, so a person can check findings by hand in
 # their own browser and screen reader. Run before the app's start.sh, which takes PUBLIC_URL as
-# the app's own address. The addresses are masked in the log and printed sealed, like reports.
+# the app's own address. The addresses are masked in the log and uploaded sealed, like reports.
 set -euo pipefail
 VERSION=2026.10.0
 
@@ -24,9 +24,15 @@ tunnel() {
 
 app=$(tunnel 3000)
 mail=$(tunnel 8025)
+# The mailbox holds every sign-up link, so it takes a password (Mailpit's own, for its pages and API).
+mail_login="checker:$(openssl rand -hex 12)"
 echo "::add-mask::$app"
 echo "::add-mask::$mail"
-{ echo "PUBLIC_URL=$app"; echo "MAIL_URL=$mail"; } >> "$GITHUB_ENV"
-sealed=$(printf 'app %s\nmail %s\n' "$app" "$mail" |
-  openssl pkeyutl -encrypt -pubin -inkey "$(dirname "$0")/report-key.pem" -pkeyopt rsa_padding_mode:oaep -pkeyopt rsa_oaep_md:sha256 | base64 -w0)
-echo "Sealed addresses (open with unseal.sh --links): $sealed"
+echo "::add-mask::$mail_login"
+{ echo "PUBLIC_URL=$app"; echo "MAIL_URL=$mail"; echo "MAILPIT_AUTH=$mail_login"; } >> "$GITHUB_ENV"
+# A run's log can only be read once it ends, so the addresses go out as a file the run uploads.
+mkdir -p "$RUNNER_TEMP/addresses"
+printf 'app %s\nmail %s\nmail login %s\n' "$app" "$mail" "$mail_login" |
+  openssl pkeyutl -encrypt -pubin -inkey "$(dirname "$0")/report-key.pem" -pkeyopt rsa_padding_mode:oaep -pkeyopt rsa_oaep_md:sha256 |
+  base64 -w0 > "$RUNNER_TEMP/addresses/sealed.txt"
+echo "Addresses sealed for the holder of report-key.pem."

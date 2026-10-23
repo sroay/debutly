@@ -5,5 +5,5 @@ set -euo pipefail
 
 curl -sf -o /dev/null http://localhost:3000/healthz
 curl -sf http://localhost:3000/ | grep -qi "<title>Twenty" || { echo "::error title=Rehearsal setup::Twenty's front page didn't load."; exit 1; }
-curl -sf -o /dev/null http://localhost:8025/api/v1/messages
+curl -sf -o /dev/null ${MAILPIT_AUTH:+-u "$MAILPIT_AUTH"} http://localhost:8025/api/v1/messages
 echo "Twenty and Mailpit answer."

@@ -8,5 +8,5 @@ case "$final" in
   */auth/setup*) echo "::error title=Rehearsal setup::Cal.diy still sends visitors to its first-run setup."; exit 1 ;;
 esac
 curl -sf -o /dev/null http://localhost:3000/signup || { echo "::error title=Rehearsal setup::Cal.diy's sign-up page didn't load."; exit 1; }
-curl -sf -o /dev/null http://localhost:8025/api/v1/messages
+curl -sf -o /dev/null ${MAILPIT_AUTH:+-u "$MAILPIT_AUTH"} http://localhost:8025/api/v1/messages
 echo "Cal.diy and Mailpit answer, and sign-up is open."

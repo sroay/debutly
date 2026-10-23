@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # unseal.sh <private key> <downloaded artifact dir> <out dir>: the reverse of seal.sh.
-# unseal.sh --links <private key> <sealed text>: the addresses serve.sh printed.
+# unseal.sh --links <private key> <sealed text>: the addresses and mailbox login serve.sh sealed.
 set -euo pipefail
 if [ "$1" = "--links" ]; then
   printf '%s' "$3" | base64 -d | openssl pkeyutl -decrypt -inkey "$2" -pkeyopt rsa_padding_mode:oaep -pkeyopt rsa_oaep_md:sha256
