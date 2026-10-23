@@ -204,8 +204,8 @@
 </ul>
 </li>
 <li><strong>The low-vision agent</strong> works in a 640×400 window, which lays pages out as 200% zoom does on a laptop.<ul>
-<li>After its run, each page it visited is opened again at 320 CSS pixels wide (400% zoom), signed in as it was. A page that then scrolls sideways is reported (WCAG 1.4.10), with the element that sticks out. A data table or other content that needs two dimensions is marked as possibly allowed.</li>
-<li>Links that do something when opened, such as confirm, invite or sign-out links, are not opened again.</li>
+<li>As it arrives on each page, its window is narrowed for a moment to 320 CSS pixels wide (400% zoom), measured, and widened again. Nothing is opened twice.</li>
+<li>A page that scrolls sideways at that width is reported (WCAG 1.4.10), with the element that sticks out. A data table or other content that needs two dimensions is marked as possibly allowed.</li>
 <li>It doesn&#39;t model eyesight or contrast.</li>
 </ul>
 </li>

@@ -1,16 +1,15 @@
-import type { BrowserContext } from "playwright";
-import type { ReflowCheck, Step } from "../types";
-import { settle } from "./settle";
+import type { Page } from "playwright";
+import type { ReflowCheck } from "../types";
 
 // WCAG 1.4.10 Reflow: at 320 CSS pixels wide (a 1280-pixel screen zoomed to 400%) a page should
-// read without scrolling sideways. After the low-vision agent's run, each page it visited is
-// opened again at that width, signed in as it was, and measured. Pages are only read.
+// read without scrolling sideways. Each page the low-vision agent arrives on is measured where it
+// is: its window is narrowed to that width, measured and widened again before the agent looks.
+// Nothing is requested twice, so no link or form is ever replayed to measure it.
 
 export const REFLOW_WIDTH = 320;
-const MAX_PAGES = 8;
-// Links that do something when opened (confirm an email, accept an invite, sign out) are not
-// opened twice.
-const ONE_TIME = /token|code=|key=|signature|invite|confirm|verif|reset|callback|magic|logout|log-out|sign-?out|unsubscribe/i;
+const MAX_PAGES = 12;
+/** Time for the page to lay itself out after each change of width. */
+const LAYOUT_MS = 300;
 
 // The page's sideways overflow, and the element reaching furthest right outside any scrolling
 // box. A string, like SCAN_SCRIPT: tsx injects helpers into functions the page lacks.
@@ -45,43 +44,26 @@ const MEASURE_SCRIPT = `(() => {
   };
 })()`;
 
-/** The pages to measure: each same-origin page the agent was on, once, leaving out one-time links. */
-export function pagesToProbe(steps: Step[], origin: string): string[] {
-  const pages: string[] = [];
-  for (const step of steps) {
-    let url: URL;
-    try {
-      url = new URL(step.observation.url);
-    } catch {
-      continue;
-    }
-    url.hash = "";
-    if (url.origin !== new URL(origin).origin || ONE_TIME.test(url.pathname + url.search)) continue;
-    if (!pages.includes(url.href)) pages.push(url.href);
-    if (pages.length === MAX_PAGES) break;
-  }
-  return pages;
-}
+export class ReflowMeter {
+  private readonly seen = new Set<string>();
+  readonly checks: ReflowCheck[] = [];
 
-/** Opens each page at 320 CSS pixels wide in the agent's own browser context and measures it. */
-export async function probeReflow(context: BrowserContext, urls: string[]): Promise<ReflowCheck[]> {
-  if (!urls.length) return [];
-  const page = await context.newPage();
-  const checks: ReflowCheck[] = [];
-  try {
-    await page.setViewportSize({ width: REFLOW_WIDTH, height: 640 });
-    for (const url of urls) {
-      try {
-        await page.goto(url, { waitUntil: "domcontentloaded", timeout: 20_000 });
-        await settle(page, { idleMs: 3_000, busyMs: 3_000 });
-        const measured = (await page.evaluate(MEASURE_SCRIPT)) as Omit<ReflowCheck, "url" | "widthPx">;
-        checks.push({ url, widthPx: REFLOW_WIDTH, ...measured });
-      } catch {
-        // A page that won't load again is left out, not reported.
-      }
+  /** Measures the page the agent is on, the first time it arrives at each address. */
+  async measure(page: Page): Promise<void> {
+    const url = page.url().split("#")[0];
+    const size = page.viewportSize();
+    if (!size || !/^https?:/.test(url) || this.seen.has(url) || this.seen.size >= MAX_PAGES) return;
+    this.seen.add(url);
+    try {
+      await page.setViewportSize({ width: REFLOW_WIDTH, height: size.height });
+      await page.waitForTimeout(LAYOUT_MS);
+      const measured = (await page.evaluate(MEASURE_SCRIPT)) as Omit<ReflowCheck, "url" | "widthPx">;
+      this.checks.push({ url, widthPx: REFLOW_WIDTH, ...measured });
+    } catch {
+      // The page changed under the measurement: this one goes without it.
+    } finally {
+      await page.setViewportSize(size).catch(() => {});
+      await page.waitForTimeout(LAYOUT_MS);
     }
-  } finally {
-    await page.close();
   }
-  return checks;
 }

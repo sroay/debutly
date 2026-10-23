@@ -1,5 +1,5 @@
 import type { Locator, Page } from "playwright";
-import type { Action, ActionResult, Observation } from "../types";
+import type { Action, ActionResult, InteractiveElement, Observation } from "../types";
 import { sampleFiles, sampleFor, type SampleKind } from "./samples";
 
 const DESTRUCTIVE = /\b(delete|remove|destroy|deactivate|close account|cancel (my )?(subscription|account))\b/i;
@@ -9,6 +9,13 @@ const DESTRUCTIVE = /\b(delete|remove|destroy|deactivate|close account|cancel (m
 class Refused extends Error {}
 function refuseDestructive(name: string): void {
   if (DESTRUCTIVE.test(name)) throw new Refused(`destructive action refused: "${name}"`);
+}
+// Every name the control goes by: Debutly's reading, and the one the browser gives assistive
+// technology, which is what the screen-reader agent sees (a button holding only an image whose alt
+// says "Delete workspace" has no name in the first and that one in the second).
+function refuseDestructiveControl(el: InteractiveElement): void {
+  refuseDestructive(el.name);
+  if (el.ax) refuseDestructive(el.ax.name);
 }
 
 export const COVERED = "another element covers it";
@@ -205,7 +212,7 @@ const keyTargetsScript = (key: string) => `(() => {
 
 async function namesAKeyWouldActivate(page: Page, key: string, obs: Observation): Promise<string[]> {
   const targets = (await page.evaluate(keyTargetsScript(key))) as { id: string | null; names: string[] }[];
-  return targets.flatMap((t) => [...t.names, ...obs.elements.filter((e) => t.id !== null && String(e.id) === t.id).map((e) => e.name)]);
+  return targets.flatMap((t) => [...t.names, ...obs.elements.filter((e) => t.id !== null && String(e.id) === t.id).flatMap((e) => [e.name, e.ax?.name ?? ""])]);
 }
 
 // Attach a sample file, as a person picks one from their computer. A visible file field takes it
@@ -241,7 +248,7 @@ export async function execute(
         const el = obs.elements.find((e) => e.id === action.id);
         if (!el) return { error: `no element with id ${action.id}` };
         const customDropdown = el.tag !== "select" && el.role === "combobox" && el.tag !== "input" && el.tag !== "textarea";
-        if (action.type === "click" || customDropdown) refuseDestructive(el.name);
+        if (action.type === "click" || customDropdown) refuseDestructiveControl(el);
         const locator = page.locator(`[data-debutly-id="${action.id}"]`);
         const byKeyboard = opts.keyboard && !ARROW_KEY_ITEMS.has(el.role);
         if (byKeyboard) result.focusObscured = await focusByKeyboard(page, locator, action.id);
@@ -261,7 +268,7 @@ export async function execute(
       case "upload": {
         const el = obs.elements.find((e) => e.id === action.id);
         if (!el) return { error: `no element with id ${action.id}` };
-        if (el.role !== "input:file") refuseDestructive(el.name);
+        if (el.role !== "input:file") refuseDestructiveControl(el);
         const target = page.locator(`[data-debutly-id="${action.id}"]`);
         // A drop zone or label a keyboard can't reach can't open the file picker for a keyboard user.
         if (opts.keyboard && el.role !== "input:file") result.focusObscured = await focusByKeyboard(page, target, action.id);

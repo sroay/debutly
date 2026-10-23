@@ -58,8 +58,8 @@ The first agents in each run take on one access need each, rotating daily, so a 
   - So is a focused control that something entirely hides (WCAG 2.4.11).
   - **Not checked:** the order Tab moves through, whether focus is visible, or what a screen reader would read aloud and when. Items inside lists, menus, tabs and radio groups, which keyboards reach with the arrow keys, are still chosen as a mouse would.
 - **The low-vision agent** works in a 640×400 window, which lays pages out as 200% zoom does on a laptop.
-  - After its run, each page it visited is opened again at 320 CSS pixels wide (400% zoom), signed in as it was. A page that then scrolls sideways is reported (WCAG 1.4.10), with the element that sticks out. A data table or other content that needs two dimensions is marked as possibly allowed.
-  - Links that do something when opened, such as confirm, invite or sign-out links, are not opened again.
+  - As it arrives on each page, its window is narrowed for a moment to 320 CSS pixels wide (400% zoom), measured, and widened again. Nothing is opened twice.
+  - A page that scrolls sideways at that width is reported (WCAG 1.4.10), with the element that sticks out. A data table or other content that needs two dimensions is marked as possibly allowed.
   - It doesn't model eyesight or contrast.
 - **The slow-connection agent's** network really is throttled, to 500 kbit/s with 400 ms round trips.
 - **The non-native English agent** is acted out entirely by the model.

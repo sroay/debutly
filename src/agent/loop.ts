@@ -2,6 +2,7 @@ import type { Page } from "playwright";
 import type { ArtifactStore } from "../artifacts/store";
 import { execute } from "../browser/execute";
 import { observe } from "../browser/observe";
+import { ReflowMeter } from "../browser/reflow";
 import { settle, type SettleOptions } from "../browser/settle";
 import { SignalCollector } from "../browser/signals";
 import type { EmailMessage, Inbox } from "../inbox/types";
@@ -91,12 +92,15 @@ export async function runSession(o: RunSessionOptions): Promise<Session> {
   const meter = new Meter();
   const startedAt = Date.now();
   const base = { agentId: o.persona.id, personaName: o.persona.name, goal: o.goal, steps };
-  // Every way out of the session carries what it spent.
+  // The low-vision agent's pages, each measured at 320 CSS pixels wide as it arrives (WCAG 1.4.10).
+  const reflow = o.persona.inclusion === "low_vision" ? new ReflowMeter() : undefined;
+  // Every way out of the session carries what it spent, and what it measured.
   const end = (outcome: Session["outcome"], outcomeNote: string): Session => ({
     ...base,
     outcome,
     outcomeNote,
     usage: { ...meter.total, costUsd: meter.costUsd(o.price) },
+    ...(reflow?.checks.length ? { reflow: [...reflow.checks] } : {}),
   });
 
   await openFirstPage(o.page, o.origin, signals, o.persona.inclusion === "slow_connection", o.firstLoad);
@@ -104,7 +108,7 @@ export async function runSession(o: RunSessionOptions): Promise<Session> {
   // A failure part-way (the provider out of credits, the browser gone) still ends the session
   // with the steps it took: they hold findings, and they were paid for.
   try {
-    return await takeSteps(o, { signals, system, steps, history, emailedLinks, meter, startedAt, end });
+    return await takeSteps(o, { signals, system, steps, history, emailedLinks, meter, startedAt, end, reflow });
   } catch (err) {
     return end("error", err instanceof Error ? err.message : String(err));
   }
@@ -119,9 +123,10 @@ interface SessionState {
   meter: Meter;
   startedAt: number;
   end: (outcome: Session["outcome"], outcomeNote: string) => Session;
+  reflow?: ReflowMeter;
 }
 
-async function takeSteps(o: RunSessionOptions, { signals, system, steps, history, emailedLinks, meter, startedAt, end }: SessionState): Promise<Session> {
+async function takeSteps(o: RunSessionOptions, { signals, system, steps, history, emailedLinks, meter, startedAt, end, reflow }: SessionState): Promise<Session> {
   // The screen-reader agent hears what the browser tells assistive technology and works by keyboard.
   const screenReader = o.persona.inclusion === "screen_reader";
   for (let index = 0; index < o.maxSteps; index++) {
@@ -134,6 +139,7 @@ async function takeSteps(o: RunSessionOptions, { signals, system, steps, history
       return end("budget_exhausted", `stopped at the time cap (${Math.round(o.caps.maxMs / 1000)}s)`);
     }
     await settle(o.page, o.settle);
+    await reflow?.measure(o.page);
     const observation = await observe(o.page);
     // Now that we can see the page after the previous action, tell the agent what it did.
     const prev = steps.at(-1);

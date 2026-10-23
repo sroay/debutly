@@ -328,3 +328,17 @@ describe("keyboard only, as the screen-reader agent works", () => {
     expect(await page.evaluate(() => document.body.dataset.paid)).toBe("yes");
   });
 });
+
+it("refuses a control whose browser-given name is destructive, though Debutly's own reading finds no name", async () => {
+  await show(`<button id="del" onclick="document.body.dataset.deleted = 'yes'"><img alt="Delete workspace" src="data:image/gif;base64,R0lGODlhAQABAAAAACw=" width="8" height="8"></button>`);
+  const obs = await observe(page);
+  const el = obs.elements.find((e) => e.ax?.name === "Delete workspace")!;
+  expect(el.name).toBe("");
+  for (const opts of [{}, { keyboard: true }]) {
+    const result = await execute(page, { type: "click", id: el.id }, obs, fx.url, undefined, opts);
+    expect(result.blocked).toBe('destructive action refused: "Delete workspace"');
+  }
+  await page.focus("#del");
+  expect((await execute(page, { type: "press", key: "Enter" }, obs, fx.url)).blocked).toMatch(/^destructive action refused/);
+  expect(await page.evaluate(() => document.body.dataset.deleted)).toBeUndefined();
+});
