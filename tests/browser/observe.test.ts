@@ -55,6 +55,15 @@ it("reads the page's language, text direction and how much of its text is Arabic
   expect(await observe(page)).toMatchObject({ lang: "", dir: "ltr", arabicShare: 0 });
 });
 
+it("takes the direction the Arabic text is laid out in, wherever the app sets it", async () => {
+  await page.goto("about:blank");
+  // An app that turns its own container right to left, as some single-page apps do.
+  await page.setContent(`<html><body><div id="app" dir="rtl"><h1>المحادثات</h1><p>لا توجد محادثات نشطة</p></div></body></html>`);
+  expect(await observe(page)).toMatchObject({ lang: "", dir: "rtl" });
+  await page.setContent(`<html><body><div><h1>المحادثات</h1><p>لا توجد محادثات نشطة</p></div><p dir="rtl">English footer</p></body></html>`);
+  expect(await observe(page)).toMatchObject({ dir: "ltr" });
+});
+
 it("names a field by the label wrapped around it, without the field's own text", async () => {
   await page.setContent(`
     <label>Bulk action <select><option>Archive</option><option>Delete</option></select></label>
