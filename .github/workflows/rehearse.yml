@@ -9,7 +9,7 @@ on:
       app:
         description: The app to rehearse (a folder in rehearsals/)
         type: choice
-        options: [chatwoot, twenty]
+        options: [chatwoot, twenty, caldiy]
         default: chatwoot
       languages:
         description: Customers' first languages (empty for the app's debutly.json)
@@ -30,7 +30,8 @@ concurrency: rehearse
 jobs:
   rehearse:
     runs-on: ubuntu-latest
-    timeout-minutes: 60
+    # Cal.diy is built from source first, which takes about half an hour.
+    timeout-minutes: 120
     env:
       APP_DIR: rehearsals/${{ inputs.app }}
     steps:

@@ -1,0 +1,22 @@
+# Cal.diy (formerly Cal.com's open-source edition), built by start.sh from its own Dockerfile at one
+# commit: its last published image is months older than its code. Mailpit catches its email.
+# start.sh writes app.env.
+name: rehearse-caldiy
+
+services:
+  calcom:
+    image: rehearse-caldiy:local
+    env_file: app.env
+    ports:
+      - "127.0.0.1:3000:3000"
+    depends_on:
+      - database
+
+  database:
+    image: postgres:16
+    env_file: app.env
+
+  mailpit:
+    image: axllent/mailpit:v1.31.4
+    ports:
+      - "127.0.0.1:8025:8025"

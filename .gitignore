@@ -22,3 +22,4 @@ dashboard/tsconfig.tsbuildinfo
 
 # Rehearsals: each app's generated secrets
 rehearsals/*/app.env
+rehearsals/*/src/

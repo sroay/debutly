@@ -1,0 +1,11 @@
+{
+  "$schema": "https://debutly.dev/schema.json",
+  "url": "http://localhost:3000",
+  "goal": "Sign up for Cal.diy for your practice, set the hours you take appointments, and create a 30-minute appointment type. Then open your public booking page and book one appointment as one of your clients would.",
+  "icp": "Small clinics, tutors and consultants in the Gulf whose clients book appointments online, in Arabic and English",
+  "app": "caldiy",
+  "mailpit": "http://localhost:8025",
+  "languages": "ar,en",
+  "maxSteps": 50,
+  "maxCost": 0.5
+}
