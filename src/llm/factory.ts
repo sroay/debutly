@@ -27,7 +27,7 @@ export function parseRouting(json: string | undefined, name = "DEBUTLY_NAV_ROUTI
 // DEBUTLY_ZERO_RETENTION=off allows any provider.
 const NO_RETENTION = { zdr: true, data_collection: "deny" } as const;
 
-function routing(env: Record<string, string | undefined>, baseUrl: string, own: Record<string, unknown> | undefined): Record<string, unknown> | undefined {
+export function routing(env: Record<string, string | undefined>, baseUrl: string, own: Record<string, unknown> | undefined): Record<string, unknown> | undefined {
   const zeroRetention = isOpenRouter(baseUrl) && !/^(off|false|0|no)$/i.test(env.DEBUTLY_ZERO_RETENTION ?? "");
   if (!zeroRetention) return own;
   return { ...NO_RETENTION, ...own };

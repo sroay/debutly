@@ -13,6 +13,7 @@ import "../src/util/legacy-env";
 import "../src/util/key-defaults";
 import { join } from "node:path";
 import { startFixture } from "../fixture/server";
+import { routing } from "../src/llm/factory";
 import { OpenAiCompatibleLlm } from "../src/llm/openai-compatible";
 import { asIndividuals, runSimulation } from "../src/run";
 import type { Finding, Persona } from "../src/types";
@@ -39,7 +40,8 @@ const outRoot = join("runs", `compare-${new Date().toISOString().replace(/[:.]/g
 
 async function compare(spec: string): Promise<string> {
   const [model, endpoint] = spec.split("@");
-  const provider = endpoint ? { order: [endpoint], allow_fallbacks: false } : undefined;
+  // The same data policy as real runs (zero retention on OpenRouter unless DEBUTLY_ZERO_RETENTION=off).
+  const provider = routing(process.env, baseUrl!, endpoint ? { order: [endpoint], allow_fallbacks: false } : undefined);
   const fx = await startFixture();
   const started = Date.now();
   try {
