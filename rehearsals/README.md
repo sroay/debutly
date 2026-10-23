@@ -15,6 +15,10 @@ Set "serve-minutes" (up to 90) to keep the app online instead of running agents.
 bash rehearsals/unseal.sh --links <private key> "$(cat sealed.txt)"
 ```
 
+## Hearing findings with a real screen reader
+
+`.github/workflows/screen-reader.yml` checks screen-reader findings with NVDA on a Windows runner, driven by [Guidepup](https://www.guidepup.dev). A Linux job serves the app behind temporary addresses while the Windows job signs up by code, goes through the app's set-up screens and records what NVDA says at each press of Tab (`screen-reader/checks/`). The Windows job makes a key pair for the run, the addresses are sealed to it, and the transcripts are sealed like reports. "smoke" checks NVDA itself, with no app.
+
 ## Reports are sealed
 
 This repository is public, and so are its workflow artifacts. Findings on someone else's app shouldn't be published before a person has checked them, so `seal.sh` encrypts each report for the holder of the private half of `report-key.pem`. To read one, download the artifact, unzip it and run:
