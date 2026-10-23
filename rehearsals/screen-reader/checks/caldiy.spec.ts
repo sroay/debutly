@@ -49,8 +49,9 @@ test("Cal.diy: sign-up, set-up, weekly hours and the public booking page", async
   await test.step("open the first schedule's weekly hours", async () => {
     await page.goto(`${APP}/availability`);
     await page.waitForTimeout(3000);
-    // New people are asked whether to update their timezone, in a dialog over the page.
-    await page.keyboard.press("Escape");
+    // New people are first welcomed in a dialog over the page.
+    const welcome = page.getByRole("dialog").getByRole("button", { name: /^continue$/i });
+    if (await welcome.isVisible().catch(() => false)) await welcome.click();
     await page.locator("a[href^='/availability/']").first().click();
     await page.waitForURL(/\/availability\/\d+/, { timeout: 60_000 });
     await page.waitForLoadState("networkidle");

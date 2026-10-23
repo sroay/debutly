@@ -24,7 +24,7 @@ test("Twenty: the sign-in page and the Companies table", async ({ page, nvda }) 
     await finishSetup(
       page,
       (url) => url.pathname.startsWith("/objects/"),
-      /^(create workspace|continue|continue without sync|skip|finish|get started)$/i,
+      /^(create workspace|continue|continue without sync|skip|skip anyway|finish|get started)$/i,
       undefined,
       20,
     );
