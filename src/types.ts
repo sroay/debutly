@@ -87,6 +87,8 @@ export interface Observation {
   lang?: string;
   dir?: string;
   arabicShare?: number;
+  /** The page's viewport setting when it stops pinch-zoom (user-scalable=no, maximum-scale under 2), else "". */
+  zoomBlocked?: string;
 }
 
 export interface ActionResult {
@@ -149,7 +151,8 @@ export type FindingKind =
   | "keyboard"
   | "focus_obscured"
   | "reflow"
-  | "language";
+  | "language"
+  | "zoom";
 
 export interface Finding {
   signature: string;

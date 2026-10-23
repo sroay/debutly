@@ -43,6 +43,7 @@ Each finding says what went wrong, how many of the agents who reached that page 
 | Keyboard focus hidden | A control with keyboard focus was entirely covered by something else. |
 | Scrolls sideways at 320 pixels | At 400% zoom the page is wider than the window. |
 | Language | The page doesn't say its language, or an Arabic page says another language or runs left to right. |
+| Zoom stopped | The page's viewport setting stops pinch-zoom on phones (`user-scalable=no`, or `maximum-scale` under 2). |
 
 ### Access needs: what is measured and what is acted out
 
@@ -50,7 +51,7 @@ The first agents in each run take on one access need each, rotating daily, so a 
 
 - **Measured on every page, whoever visits it.**
   - Controls with no name, by the name the browser itself gives assistive technology (Chromium's accessibility tree).
-  - Whether the page says what language it is in.
+  - Whether the page says what language it is in, and whether it lets people pinch-zoom on a phone (WCAG 1.4.4).
   - On a page that is mostly Arabic, whether it says so and runs right to left.
   - Clicks that land on something covering the control, and how long the first page takes to arrive.
 - **The screen-reader agent** hears what the browser tells assistive technology: each control's role and name, without the controls hidden from it. It works **by keyboard only**: it moves focus to a control, as Tab would, and presses Enter or Space.

@@ -111,6 +111,17 @@ it("says when a refused form had Arabic input in it, and for how many of the age
   expect(detectFindings([elsewhere]).map((x) => x.detail).join(" ")).not.toContain("Arabic");
 });
 
+it("reports once, site-wide, that pages stop people zooming in", () => {
+  const blocked = "width=device-width, initial-scale=1, user-scalable=0";
+  const findings = detectFindings([
+    session("a", [step(0, page("/app/login", [], { zoomBlocked: blocked })), step(1, page("/app/dashboard", [], { zoomBlocked: blocked }))]),
+    session("b", [step(0, page("/app/login", [], { zoomBlocked: "" }))]),
+  ]).filter((f) => f.kind === "zoom");
+  expect(findings).toHaveLength(1);
+  expect(findings[0]).toMatchObject({ title: "Pages stop people zooming in", severity: "major", confidence: "high", wcag: ["1.4.4"], pagePath: "/app/login" });
+  expect(findings[0].detail).toContain(`("${blocked}")`);
+});
+
 it("leaves runs recorded before these checks alone", () => {
   const old: Observation = { url: `${B}/`, title: "", text: "", elements: [button(0, "Save")] };
   expect(detectFindings([session("a", [step(0, old)])])).toEqual([]);

@@ -55,6 +55,16 @@ it("reads the page's language, text direction and how much of its text is Arabic
   expect(await observe(page)).toMatchObject({ lang: "", dir: "ltr", arabicShare: 0 });
 });
 
+it("notices a page that stops people zooming in", async () => {
+  await page.goto("about:blank");
+  await page.setContent(`<html><head><meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=0"></head><body>Hi</body></html>`);
+  expect((await observe(page)).zoomBlocked).toBe("width=device-width, initial-scale=1, user-scalable=0");
+  await page.setContent(`<html><head><meta name="viewport" content="width=device-width, maximum-scale=1.5"></head><body>Hi</body></html>`);
+  expect((await observe(page)).zoomBlocked).toBe("width=device-width, maximum-scale=1.5");
+  await page.setContent(`<html><head><meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=5"></head><body>Hi</body></html>`);
+  expect((await observe(page)).zoomBlocked).toBe("");
+});
+
 it("takes the direction the Arabic text is laid out in, wherever the app sets it", async () => {
   await page.goto("about:blank");
   // An app that turns its own container right to left, as some single-page apps do.

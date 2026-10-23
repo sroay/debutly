@@ -16,9 +16,10 @@ const BASE_SEVERITY: Record<FindingKind, Severity> = {
   focus_obscured: "minor",
   reflow: "minor",
   language: "minor",
+  zoom: "major",
 };
 // What the browser measures, not what an agent made of the page: one measurement is enough.
-export const MEASURED: ReadonlySet<FindingKind> = new Set(["a11y_unlabeled", "covered", "keyboard", "focus_obscured", "reflow", "language"]);
+export const MEASURED: ReadonlySet<FindingKind> = new Set(["a11y_unlabeled", "covered", "keyboard", "focus_obscured", "reflow", "language", "zoom"]);
 /** Sideways overflow this small is reported, but never raised above minor. */
 const SLIGHT_OVERFLOW_PX = 20;
 /** A page whose letters are at least this share Arabic is an Arabic page. */
@@ -237,6 +238,18 @@ function languageFindings(obs: Observation, pagePath: string): Candidate[] {
       pagePath,
       severity: BASE_SEVERITY.language,
       wcag: ["3.1.1"],
+    });
+  }
+  // Like a missing lang, a viewport setting is usually the same on every page: one finding.
+  if (obs.zoomBlocked) {
+    out.push({
+      signature: "zoom:blocked",
+      kind: "zoom",
+      title: "Pages stop people zooming in",
+      detail: `The page's viewport setting ("${obs.zoomBlocked}") stops pinch-zoom on phones and tablets (first seen on ${pagePath}), so someone with low vision can't enlarge the text. Remove user-scalable=no, and any maximum-scale under 2.`,
+      pagePath,
+      severity: BASE_SEVERITY.zoom,
+      wcag: ["1.4.4"],
     });
   }
   return out;
