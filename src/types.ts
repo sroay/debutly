@@ -57,6 +57,13 @@ export type Signal =
   // A file the page handed over (a report, an export): the page itself often doesn't change.
   | { kind: "download"; filename: string; url: string };
 
+/** What the browser tells assistive technology about an element. hidden: left out of the tree (e.g. aria-hidden). */
+export interface AccessibleName {
+  name: string;
+  role: string;
+  hidden: boolean;
+}
+
 export interface InteractiveElement {
   id: number;
   role: string;
@@ -65,6 +72,8 @@ export interface InteractiveElement {
   /** A native select's chosen option and its options, by label. */
   value?: string;
   options?: string[];
+  /** The browser's own accessible name and role (Chromium), as a screen reader would announce them. */
+  ax?: AccessibleName;
 }
 
 export interface Observation {
@@ -72,11 +81,17 @@ export interface Observation {
   title: string;
   elements: InteractiveElement[];
   text: string;
+  /** The page's lang attribute ("" when missing), its text direction, and the share of its letters that are Arabic. */
+  lang?: string;
+  dir?: string;
+  arabicShare?: number;
 }
 
 export interface ActionResult {
   blocked?: string;
   error?: string;
+  /** Keyboard only: what entirely hid the control once it had focus. */
+  focusObscured?: string;
 }
 
 export interface Step extends ActionResult {
@@ -88,6 +103,18 @@ export interface Step extends ActionResult {
   screenshotPath?: string;
   /** A goto to an address the agent typed itself, not a link from an email. */
   guessedUrl?: boolean;
+}
+
+/** A page measured at a narrow width after the low-vision agent's run (WCAG 1.4.10 Reflow). */
+export interface ReflowCheck {
+  url: string;
+  widthPx: number;
+  /** How much wider than the window the page is; 0 when it fits. */
+  overflowPx: number;
+  /** The element reaching furthest to the right, outside any scrolling box. */
+  widest: string;
+  /** Why the overflow may be allowed (e.g. it is a data table), or "". */
+  exception: string;
 }
 
 export interface Session {
@@ -102,11 +129,24 @@ export interface Session {
   inclusion?: InclusionNeed;
   /** Tokens this session spent, and their cost when the model price is known. */
   usage?: { inputTokens: number; outputTokens: number; costUsd?: number };
+  /** The low-vision agent's pages, measured again at 320 CSS pixels wide. */
+  reflow?: ReflowCheck[];
 }
 
 export type Severity = "blocker" | "major" | "minor";
 export type Confidence = "high" | "medium" | "low";
-export type FindingKind = "http_error" | "page_error" | "console_error" | "a11y_unlabeled" | "stuck" | "slow_load" | "covered";
+export type FindingKind =
+  | "http_error"
+  | "page_error"
+  | "console_error"
+  | "a11y_unlabeled"
+  | "stuck"
+  | "slow_load"
+  | "covered"
+  | "keyboard"
+  | "focus_obscured"
+  | "reflow"
+  | "language";
 
 export interface Finding {
   signature: string;
@@ -126,4 +166,6 @@ export interface Finding {
    * the website an agent invented for its company.
    */
   sandboxCause?: string[];
+  /** WCAG 2.2 success criteria the finding relates to ("4.1.2"), for a person to check. */
+  wcag?: string[];
 }

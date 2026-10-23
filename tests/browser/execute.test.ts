@@ -1,8 +1,8 @@
-import { afterAll, beforeAll, expect, it } from "vitest";
+import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { chromium, type Browser, type Page } from "playwright";
 import { startFixture, type RunningFixture } from "../../fixture/server";
 import { observe } from "../../src/browser/observe";
-import { execute } from "../../src/browser/execute";
+import { execute, NOT_BY_KEYBOARD } from "../../src/browser/execute";
 
 let fx: RunningFixture;
 let browser: Browser;
@@ -281,4 +281,50 @@ it("says so when what the agent clicked to upload opens no file picker", async (
   const obs = await observe(page);
   const result = await execute(page, { type: "upload", id: idOf(obs.elements, "Does nothing") }, obs, fx.url);
   expect(result.error).toBe("clicking it opened no file picker");
+});
+
+describe("keyboard only, as the screen-reader agent works", () => {
+  const keyboard = { keyboard: true };
+
+  it("presses a button by focusing it and pressing Enter, and ticks a checkbox with Space", async () => {
+    await show(`<button onclick="document.body.dataset.saved = 'yes'">Save</button>
+      <label><input type="checkbox" id="news"> Send me news</label>`);
+    const obs = await observe(page);
+    expect(await execute(page, { type: "click", id: idOf(obs.elements, "Save") }, obs, fx.url, undefined, keyboard)).toEqual({});
+    expect(await page.evaluate(() => document.body.dataset.saved)).toBe("yes");
+    expect(await execute(page, { type: "click", id: idOf(obs.elements, "Send me news") }, obs, fx.url, undefined, keyboard)).toEqual({});
+    expect(await page.isChecked("#news")).toBe(true);
+  });
+
+  it("can't use a control that isn't in the tab order, and says so", async () => {
+    await show(`<span role="button" onclick="document.body.dataset.saved = 'yes'">Save</span>
+      <button tabindex="-1">Skip me</button>`);
+    const obs = await observe(page);
+    const result = await execute(page, { type: "click", id: idOf(obs.elements, "Save") }, obs, fx.url, undefined, keyboard);
+    expect(result.error).toBe(`${NOT_BY_KEYBOARD}: it isn't in the tab order`);
+    expect(await page.evaluate(() => document.body.dataset.saved)).toBeUndefined();
+    expect((await execute(page, { type: "click", id: idOf(obs.elements, "Skip me") }, obs, fx.url, undefined, keyboard)).error).toMatch(/^can't be reached with the keyboard/);
+    // With a mouse it works.
+    expect(await execute(page, { type: "click", id: idOf(obs.elements, "Save") }, obs, fx.url)).toEqual({});
+  });
+
+  it("types into a field it can tab to, and focuses a field it clicks without submitting the form", async () => {
+    await show(`<form onsubmit="event.preventDefault(); document.body.dataset.sent = 'yes'"><label>Name <input id="name"></label><button>Send</button></form>`);
+    const obs = await observe(page);
+    expect(await execute(page, { type: "click", id: idOf(obs.elements, "Name") }, obs, fx.url, undefined, keyboard)).toEqual({});
+    expect(await page.evaluate(() => document.body.dataset.sent)).toBeUndefined();
+    expect(await execute(page, { type: "fill", id: idOf(obs.elements, "Name"), text: "Amal" }, obs, fx.url, undefined, keyboard)).toEqual({});
+    expect(await page.inputValue("#name")).toBe("Amal");
+  });
+
+  it("notices when the focused control is entirely hidden behind something, and still presses it", async () => {
+    await show(`<div style="height:1200px"></div>
+      <button id="pay" onclick="document.body.dataset.paid = 'yes'">Pay</button>
+      <div style="position:fixed;left:0;right:0;bottom:0;height:200px;background:#fff" class="cookie-bar">We use cookies</div>
+      <script>scrollTo(0, document.body.scrollHeight)</script>`);
+    const obs = await observe(page);
+    const result = await execute(page, { type: "click", id: idOf(obs.elements, "Pay") }, obs, fx.url, undefined, keyboard);
+    expect(result.focusObscured).toMatch(/^div\.cookie-bar/);
+    expect(await page.evaluate(() => document.body.dataset.paid)).toBe("yes");
+  });
 });

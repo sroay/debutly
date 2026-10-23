@@ -23,5 +23,9 @@ results.press = await execute(page, { type: "press", key: "Enter" }, obs, "http:
 results.choose = await execute(page, { type: "fill", id: idOf(obs.elements, "Plan"), text: "Team" }, obs, "http://x.test");
 obs = await observe(page);
 results.pick = await execute(page, { type: "fill", id: idOf(obs.elements, "Country"), text: "India" }, obs, "http://x.test");
+// Keyboard only, as the screen-reader agent works: the tab-order check and the covered-focus check run in the page.
+obs = await observe(page);
+results.keyboard = await execute(page, { type: "click", id: idOf(obs.elements, "Sign up") }, obs, "http://x.test", undefined, { keyboard: true });
+results.ax = obs.elements.find((e) => e.name === "Sign up")?.ax?.role;
 await browser.close();
 console.log(JSON.stringify(results));

@@ -124,6 +124,47 @@ document.getElementById('generate').addEventListener('click', () => {
     res.send(layout("Features", `<h1>Features</h1><ul><li>Boards</li><li>Team invites</li><li>Reports</li></ul>`, userOf(req)));
   });
 
+  // SEEDED BUG: a banner 900px wide, so at 320px wide (400% zoom) the page scrolls sideways.
+  app.get("/team", (req, res) => {
+    res.send(
+      layout(
+        "Team",
+        `<h1>Your team</h1><div class="banner" style="width:900px;background:#eef">Invite your whole team and save 20%</div><p>Nobody here yet.</p>`,
+        userOf(req),
+      ),
+    );
+  });
+
+  // Wide too, but only inside a data table, which WCAG 1.4.10 allows to scroll.
+  app.get("/usage", (req, res) => {
+    res.send(
+      layout(
+        "Usage",
+        `<h1>Usage</h1><table style="width:900px"><tr><th>Month</th><th>Boards</th><th>Reports</th><th>Invites</th></tr><tr><td>October</td><td>3</td><td>12</td><td>2</td></tr></table>`,
+        userOf(req),
+      ),
+    );
+  });
+
+  // SEEDED BUGS for keyboard users: "Save settings" is a span that a mouse can click but Tab never
+  // reaches, and the cookie bar sits over the "Export data" button.
+  app.get("/settings", (req, res) => {
+    res.send(
+      layout(
+        "Settings",
+        `<h1>Settings</h1>
+<label for="display-name">Display name</label><input id="display-name">
+<span role="button" onclick="document.getElementById('saved').textContent = 'Saved'">Save settings</span>
+<p id="saved"></p>
+<div style="height:900px"></div>
+<button onclick="document.getElementById('saved').textContent = 'Exported'">Export data</button>
+<div class="cookie-bar" style="position:fixed;left:0;right:0;bottom:0;height:160px;background:#fff">We use cookies to improve Fixturely.</div>
+<script>addEventListener('load', () => scrollTo(0, document.body.scrollHeight))</script>`,
+        userOf(req),
+      ),
+    );
+  });
+
   // SEEDED BUG: /docs is linked from the nav but has no route (404).
 
   app.get("/signup", (req, res) => {

@@ -59,7 +59,7 @@ async function keyWorks(env: NodeJS.ProcessEnv, fetchFn: typeof fetch): Promise<
     return { status: "warn", label: "Couldn't reach the model provider", detail: err instanceof Error ? err.message : String(err) };
   }
   const left = await keyCreditsLeft(env.DEBUTLY_BASE_URL ?? "", key, fetchFn);
-  return { status: "ok", label: "The provider accepts the API key", detail: left === null ? undefined : `$${left.toFixed(2)} left on the key's limit` };
+  return { status: "ok", label: "The provider accepts the API key", detail: left === null ? undefined : `$${left.toFixed(2)} left on the key's limit; the account's own balance isn't visible here` };
 }
 
 async function appAnswers(url: string, fetchFn: typeof fetch): Promise<Check> {

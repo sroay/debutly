@@ -12,8 +12,55 @@ function refuseDestructive(name: string): void {
 }
 
 export const COVERED = "another element covers it";
+export const NOT_BY_KEYBOARD = "can't be reached with the keyboard";
 const WAIT_MS = 3_000;
 const OPTION = '[role="option"]';
+
+export interface ExecuteOptions {
+  /**
+   * Keyboard only, as a screen-reader user works: a control is used by moving focus to it (as
+   * Tab would) and pressing Enter or Space, so one that isn't in the tab order can't be used.
+   * Items inside lists, menus, tab lists and radio groups are reached with arrow keys, not Tab;
+   * those are still chosen as a mouse would.
+   */
+  keyboard?: boolean;
+}
+
+// Roles reached with arrow keys inside their list, menu, tab list or group, not with Tab.
+const ARROW_KEY_ITEMS = new Set(["option", "menuitem", "menuitemcheckbox", "menuitemradio", "tab", "treeitem", "radio", "input:radio"]);
+// What Space presses; Enter presses the rest. Text fields and selects are only focused.
+const SPACE_KEY = new Set(["checkbox", "input:checkbox", "switch"]);
+const FOCUS_ONLY = /^(input:(text|email|password|number|search|tel|url|date|time|datetime-local|month|week)|textarea|select|combobox)$/;
+
+// Is the focused element entirely hidden behind something else? Checks its middle and four points
+// just inside its corners: WCAG 2.4.11 asks that focus is not entirely hidden. Returns what covers it.
+const focusCoveredScript = (id: number) => `(() => {
+  const el = document.querySelector('[data-debutly-id="${id}"]');
+  if (!el) return null;
+  const r = el.getBoundingClientRect();
+  const points = [[0.5, 0.5], [0.1, 0.1], [0.9, 0.1], [0.1, 0.9], [0.9, 0.9]].map(([fx, fy]) => [r.left + r.width * fx, r.top + r.height * fy]);
+  let cover = null;
+  for (const [x, y] of points) {
+    if (x < 0 || y < 0 || x >= innerWidth || y >= innerHeight) continue;
+    const hit = document.elementFromPoint(x, y);
+    if (!hit || hit === el || el.contains(hit) || hit.contains(el)) return null;
+    cover = cover || hit;
+  }
+  if (!cover) return 'the edge of the window';
+  const classes = typeof cover.className === 'string' ? cover.className.trim().split(/\\s+/).filter(Boolean).slice(0, 2) : [];
+  const text = (cover.innerText || '').replace(/\\s+/g, ' ').trim().slice(0, 50);
+  return cover.tagName.toLowerCase() + (cover.id ? '#' + cover.id : '') + classes.map((c) => '.' + c).join('') + (text ? ' ("' + text + '")' : '');
+})()`;
+
+class NotByKeyboard extends Error {}
+
+/** Moves focus to the control as Tab would; refuses one that isn't in the tab order. Returns what hides it, if anything. */
+async function focusByKeyboard(page: Page, locator: Locator, id: number): Promise<string | undefined> {
+  const tabbable = await locator.evaluate((node) => (node as HTMLElement).tabIndex >= 0 && !node.closest("[inert]"), undefined, { timeout: 5_000 });
+  if (!tabbable) throw new NotByKeyboard(`${NOT_BY_KEYBOARD}: it isn't in the tab order`);
+  await locator.focus({ timeout: 5_000 });
+  return ((await page.evaluate(focusCoveredScript(id))) as string | null) ?? undefined;
+}
 
 // Playwright's timeout message hides the cause in its call log; say it the way a person would notice it.
 export function describeFailure(err: unknown): string {
@@ -184,7 +231,9 @@ export async function execute(
   origin: string,
   // Links the agent received by email (e.g. a magic link to the auth server) may leave the app's origin.
   allowUrl: (href: string) => boolean = () => false,
+  opts: ExecuteOptions = {},
 ): Promise<ActionResult> {
+  const result: ActionResult = {};
   try {
     switch (action.type) {
       case "click":
@@ -194,7 +243,11 @@ export async function execute(
         const customDropdown = el.tag !== "select" && el.role === "combobox" && el.tag !== "input" && el.tag !== "textarea";
         if (action.type === "click" || customDropdown) refuseDestructive(el.name);
         const locator = page.locator(`[data-debutly-id="${action.id}"]`);
-        if (action.type === "click") {
+        const byKeyboard = opts.keyboard && !ARROW_KEY_ITEMS.has(el.role);
+        if (byKeyboard) result.focusObscured = await focusByKeyboard(page, locator, action.id);
+        if (action.type === "click" && byKeyboard) {
+          if (!FOCUS_ONLY.test(el.role)) await page.keyboard.press(SPACE_KEY.has(el.role) ? "Space" : "Enter");
+        } else if (action.type === "click") {
           try {
             await locator.click({ timeout: 5_000 });
           } catch (err) {
@@ -209,7 +262,10 @@ export async function execute(
         const el = obs.elements.find((e) => e.id === action.id);
         if (!el) return { error: `no element with id ${action.id}` };
         if (el.role !== "input:file") refuseDestructive(el.name);
-        await upload(page, page.locator(`[data-debutly-id="${action.id}"]`), el.role === "input:file", action.file);
+        const target = page.locator(`[data-debutly-id="${action.id}"]`);
+        // A drop zone or label a keyboard can't reach can't open the file picker for a keyboard user.
+        if (opts.keyboard && el.role !== "input:file") result.focusObscured = await focusByKeyboard(page, target, action.id);
+        await upload(page, target, el.role === "input:file", action.file);
         break;
       }
       case "goto": {
@@ -235,9 +291,10 @@ export async function execute(
     await page.waitForLoadState("domcontentloaded");
     // Let async handlers (fetch after submit, deferred errors) surface their signals.
     await page.waitForTimeout(300);
-    return {};
+    return result.focusObscured ? result : {};
   } catch (err) {
     if (err instanceof Refused) return { blocked: err.message };
-    return { error: describeFailure(err) };
+    if (err instanceof NotByKeyboard) return { error: err.message };
+    return { error: describeFailure(err), ...(result.focusObscured ? { focusObscured: result.focusObscured } : {}) };
   }
 }

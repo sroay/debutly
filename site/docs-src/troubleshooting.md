@@ -19,6 +19,8 @@ The key is wrong, revoked or cut short. Copy it again in full, or create a new o
 
 Top up on OpenRouter, or raise the key's limit, and run again. If it happened part-way, the report starts with **Run cut short** and names the agents that stopped. Debutly checks a key's limit before a run, so give your key one to be told before a run starts instead.
 
+A key's limit is not the account's balance: a key with $3 left on its limit still can't pay when the account itself is nearly empty, and an ordinary key can't see the account balance. Check it on OpenRouter's credits page.
+
 ## "No allowed providers are available for the selected model"
 
 With OpenRouter, Debutly only uses providers that keep no copy of your prompts, and the model you chose has none. Pick one of the recommended models, or set `DEBUTLY_ZERO_RETENTION=off` to allow any provider. See [Data and privacy](/docs/data-and-privacy).

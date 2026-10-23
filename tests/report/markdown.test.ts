@@ -128,3 +128,20 @@ it("summarises each business crew and shows role and inclusion need per agent", 
   expect(md).toContain("| Emil | Designer | screen reader | not_invited | No invite email arrived after Olga finished. |");
   expect(md).toContain('**Emil** never got an invite: "No invite email arrived after Olga finished."');
 });
+
+it("links the WCAG criteria a finding relates to, as things to check, and says when the browser measured it", () => {
+  const keyboard: Finding = {
+    ...finding("high", 'Can\'t reach button "Save settings" on /settings with the keyboard'),
+    kind: "keyboard",
+    pagePath: "/settings",
+    wcag: ["2.1.1"],
+    hitBy: ["p1"],
+    visitors: 4,
+  };
+  const md = renderReport({ targetUrl: "http://a.test", goal: "Buy", sessions: [session], findings: [keyboard] });
+  expect(md).toContain("Related WCAG 2.2: [2.1.1 Keyboard](https://www.w3.org/WAI/WCAG22/Understanding/keyboard) (A), for a person to check.");
+  expect(md).toContain("Measured by the browser on /settings, by 1 of 4 agents who visited it.");
+  expect(md).toContain("WCAG references point to what a person should check. Debutly doesn't test conformance");
+  // Without WCAG references the note stays out.
+  expect(renderReport({ targetUrl: "http://a.test", goal: "Buy", sessions: [session], findings: [finding("high", "x")] })).not.toContain("WCAG");
+});

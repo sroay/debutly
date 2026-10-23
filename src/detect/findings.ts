@@ -1,6 +1,7 @@
-import { COVERED } from "../browser/execute";
+import { COVERED, NOT_BY_KEYBOARD } from "../browser/execute";
 import type { BlockedCall } from "../sandbox/outbox";
-import type { Confidence, Finding, FindingKind, Session, Severity, Signal, Step } from "../types";
+import type { Confidence, Finding, FindingKind, InclusionNeed, Observation, Session, Severity, Signal, Step } from "../types";
+import { unlabeledCriteria } from "./wcag";
 
 const CRITICAL_PATH = /(sign-?up|sign-?in|log-?in|register|onboarding|auth|pricing|checkout|billing|payment|invite)/i;
 const BASE_SEVERITY: Record<FindingKind, Severity> = {
@@ -11,7 +12,15 @@ const BASE_SEVERITY: Record<FindingKind, Severity> = {
   stuck: "major",
   slow_load: "minor",
   covered: "major",
+  keyboard: "major",
+  focus_obscured: "minor",
+  reflow: "minor",
+  language: "minor",
 };
+// What the browser measures, not what an agent made of the page: one measurement is enough.
+export const MEASURED: ReadonlySet<FindingKind> = new Set(["a11y_unlabeled", "covered", "keyboard", "focus_obscured", "reflow", "language"]);
+/** A page whose letters are at least this share Arabic is an Arabic page. */
+const ARABIC_PAGE = 0.5;
 /** Clicks on one control that something else covered, in one session, before it is a finding. */
 const COVERED_REPEATS = 2;
 /** A page this slow, or one still not in when the agent stopped waiting, is a major finding. */
@@ -62,6 +71,7 @@ interface Candidate {
   detail: string;
   pagePath: string;
   severity: Severity;
+  wcag?: string[];
 }
 
 function fromSignal(signal: Signal): Candidate | null {
@@ -180,6 +190,49 @@ function madeUpSite(signal: Signal, sites: Set<string>, sandbox: boolean): strin
   return [...sites].find((site) => body.includes(site));
 }
 
+/**
+ * What a page says about its language and direction. A missing lang is site-wide, so it is one
+ * finding; Arabic marked as another language, or laid out left to right, is per page. Pages
+ * recorded before these checks carry none of it and are skipped.
+ */
+function languageFindings(obs: Observation, pagePath: string): Candidate[] {
+  if (obs.lang === undefined) return [];
+  const out: Candidate[] = [];
+  const arabic = (obs.arabicShare ?? 0) >= ARABIC_PAGE;
+  if (arabic && obs.dir === "ltr") {
+    out.push({
+      signature: `dir:ltr:${pagePath}`,
+      kind: "language",
+      title: `${pagePath} shows Arabic text left to right`,
+      detail: `Most of its text is Arabic, but the page is laid out left to right (no dir="rtl"), so alignment, punctuation and numbers come out in the wrong places for Arabic readers.`,
+      pagePath,
+      severity: "major",
+    });
+  }
+  if (obs.lang === "") {
+    out.push({
+      signature: "lang:missing",
+      kind: "language",
+      title: `Pages don't say what language they're in`,
+      detail: `The page's <html> element has no lang attribute (first seen on ${pagePath}), so a screen reader may read it with the wrong voice and pronunciation.`,
+      pagePath,
+      severity: BASE_SEVERITY.language,
+      wcag: ["3.1.1"],
+    });
+  } else if (arabic && !/^ar(-|$)/i.test(obs.lang)) {
+    out.push({
+      signature: `lang:mismatch:${pagePath}`,
+      kind: "language",
+      title: `${pagePath} is in Arabic but says it is "${obs.lang}"`,
+      detail: `Most of its text is Arabic but its lang attribute says "${obs.lang}", so a screen reader may read Arabic with the wrong voice.`,
+      pagePath,
+      severity: BASE_SEVERITY.language,
+      wcag: ["3.1.1"],
+    });
+  }
+  return out;
+}
+
 // An address the agent made up that does not exist (e.g. /settings when the app has
 // /dashboard/settings) is the agent's guess, not a broken link. Links from emails still count.
 function guessedMissing(step: Step, signal: Signal): boolean {
@@ -263,7 +316,11 @@ export function detectFindings(sessions: Session[], opts: DetectOptions = {}): F
       }
 
       for (const el of step.observation.elements) {
-        const control = el.name === "" ? unlabeledControl(el.role) : undefined;
+        // The browser's own name when there is one (an icon named by its SVG title has a name
+        // there); a control hidden from assistive technology isn't announced at all.
+        if (el.ax?.hidden) continue;
+        const name = el.ax ? el.ax.name : el.name;
+        const control = name === "" ? unlabeledControl(el.role) : undefined;
         if (control) {
           record(
             {
@@ -273,11 +330,50 @@ export function detectFindings(sessions: Session[], opts: DetectOptions = {}): F
               detail: `A ${control} has no accessible name; screen-reader users cannot tell what it ${control === "button" || control === "link" ? "does" : "is for"}.`,
               pagePath,
               severity: severityFor("a11y_unlabeled", [pagePath]),
+              wcag: unlabeledCriteria(control),
             },
             s.agentId,
             step.index,
           );
         }
+      }
+
+      for (const c of languageFindings(step.observation, pagePath)) record(c, s.agentId, step.index);
+
+      // Keyboard only (the screen-reader agent): a control Tab never reaches, and focus that
+      // something entirely hides.
+      const acted = "id" in step.action ? step.observation.elements.find((e) => e.id === (step.action as { id: number }).id) : undefined;
+      if (acted && step.error?.startsWith(NOT_BY_KEYBOARD)) {
+        const control = `${acted.role} "${acted.name}"`;
+        record(
+          {
+            signature: `keyboard:${pagePath}:${control}`,
+            kind: "keyboard",
+            title: `Can't reach ${control} on ${pagePath} with the keyboard`,
+            detail: `It isn't in the tab order, so someone who uses a keyboard or a screen reader can't get to it. A mouse can still click it.`,
+            pagePath,
+            severity: severityFor("keyboard", [pagePath]),
+            wcag: ["2.1.1"],
+          },
+          s.agentId,
+          step.index,
+        );
+      }
+      if (acted && step.focusObscured) {
+        const control = `${acted.role} "${acted.name}"`;
+        record(
+          {
+            signature: `focus:${pagePath}:${control}`,
+            kind: "focus_obscured",
+            title: `Keyboard focus on ${control} on ${pagePath} is hidden`,
+            detail: `With keyboard focus on it, it is entirely covered by ${step.focusObscured}, so someone using the keyboard can't see where they are.`,
+            pagePath,
+            severity: severityFor("focus_obscured", [pagePath]),
+            wcag: ["2.4.11"],
+          },
+          s.agentId,
+          step.index,
+        );
       }
 
       // A control something else keeps covering: the person can't press it either. The agent
@@ -324,13 +420,37 @@ export function detectFindings(sessions: Session[], opts: DetectOptions = {}): F
         );
       }
     }
+
+    // The low-vision agent's pages, measured again at 320 CSS pixels wide (WCAG 1.4.10).
+    for (const check of s.reflow ?? []) {
+      if (check.overflowPx <= 2) continue;
+      const pagePath = pathOf(check.url);
+      const lastVisit = [...s.steps].reverse().find((st) => st.observation.url.split("#")[0] === check.url) ?? s.steps.at(-1);
+      record(
+        {
+          signature: `reflow:${pagePath}`,
+          kind: "reflow",
+          title: `${pagePath} scrolls sideways at ${check.widthPx} pixels wide`,
+          detail: `At ${check.widthPx} CSS pixels wide (a 1280-pixel screen zoomed to 400%), the page is ${check.overflowPx} px wider than the window, so reading it means scrolling both ways.${check.widest ? ` Widest: ${check.widest}.` : ""}${check.exception ? ` It may be allowed: ${check.exception}.` : ""}`,
+          pagePath,
+          severity: severityFor("reflow", [pagePath]),
+          wcag: ["1.4.10"],
+        },
+        s.agentId,
+        lastVisit?.index ?? 0,
+      );
+    }
   }
 
+  const needOf = new Map<string, InclusionNeed | undefined>(sessions.map((s) => [s.agentId, s.inclusion]));
   const findings = [...found.values()].map((f) => {
     const pageVisitors = Math.max(visitors.get(f.pagePath)?.size ?? 0, f.hitBy.length);
     const tally = sandbox.get(f.signature);
     const sandboxCause = tally && tally.explained === tally.occurrences ? [...tally.causes].sort() : undefined;
-    return { ...f, visitors: pageVisitors, confidence: confidenceFor(f.hitBy.length / pageVisitors), ...(sandboxCause ? { sandboxCause } : {}) };
+    const confidence = MEASURED.has(f.kind) ? "high" : confidenceFor(f.hitBy.length / pageVisitors);
+    // Covered only for the agent at 200% zoom: the layout at that size is the problem.
+    const wcag = f.kind === "covered" && f.hitBy.every((a) => needOf.get(a) === "low_vision") ? ["1.4.4", "1.4.10"] : f.wcag;
+    return { ...f, visitors: pageVisitors, confidence, ...(sandboxCause ? { sandboxCause } : {}), ...(wcag ? { wcag } : {}) };
   });
 
   return findings.sort(

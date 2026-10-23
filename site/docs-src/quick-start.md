@@ -52,7 +52,7 @@ It checks Node.js, the key (without printing it), the browser, `debutly.json`, a
 ✓ Node.js 22.4.0
 ✓ API key found (https://openrouter.ai/api/v1; agents use z-ai/glm-5.3-flash)
 ✓ The provider accepts the API key
-    $4.50 left on the key's limit
+    $4.50 left on the key's limit; the account's own balance isn't visible here
 ✓ Chromium is installed
 ✓ debutly.json: "Sign up and invite a teammate"
 ✓ http://localhost:3000 answers (HTTP 200)

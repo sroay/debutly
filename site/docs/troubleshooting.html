@@ -102,6 +102,7 @@
 <p>The key is wrong, revoked or cut short. Copy it again in full, or create a new one.</p>
 <h2 id="the-ai-provider-account-is-out-of-credits"><a class="anchor" href="#the-ai-provider-account-is-out-of-credits">&quot;The AI provider account is out of credits&quot;</a></h2>
 <p>Top up on OpenRouter, or raise the key&#39;s limit, and run again. If it happened part-way, the report starts with <strong>Run cut short</strong> and names the agents that stopped. Debutly checks a key&#39;s limit before a run, so give your key one to be told before a run starts instead.</p>
+<p>A key&#39;s limit is not the account&#39;s balance: a key with $3 left on its limit still can&#39;t pay when the account itself is nearly empty, and an ordinary key can&#39;t see the account balance. Check it on OpenRouter&#39;s credits page.</p>
 <h2 id="no-allowed-providers-are-available-for-the-selected-model"><a class="anchor" href="#no-allowed-providers-are-available-for-the-selected-model">&quot;No allowed providers are available for the selected model&quot;</a></h2>
 <p>With OpenRouter, Debutly only uses providers that keep no copy of your prompts, and the model you chose has none. Pick one of the recommended models, or set <code>DEBUTLY_ZERO_RETENTION=off</code> to allow any provider. See <a href="/docs/data-and-privacy">Data and privacy</a>.</p>
 <h2 id="refusing-to-start-this-run-could-cost-up-to"><a class="anchor" href="#refusing-to-start-this-run-could-cost-up-to">&quot;Refusing to start: this run could cost up to…&quot;</a></h2>

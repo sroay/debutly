@@ -3,6 +3,7 @@ import type { ArtifactStore } from "../artifacts/store";
 import type { Inbox } from "../inbox/types";
 import type { ModelPrice } from "../llm/meter";
 import type { LlmClient } from "../llm/types";
+import { pagesToProbe, probeReflow } from "../browser/reflow";
 import { openAgentPage } from "../persona/inclusion";
 import type { RunStore } from "../store/run-store";
 import type { Persona, Session } from "../types";
@@ -50,6 +51,12 @@ export async function runAgentSession(d: AgentRunDeps, persona: Persona, goal: s
       shouldStop: d.shouldStop,
       onStep: record ? (step) => record.store.appendStep(record.runId, persona.id, step) : undefined,
     });
+    // The low-vision agent's pages, measured again at 320 CSS pixels wide in its own signed-in
+    // browser (WCAG 1.4.10 Reflow). A failure here costs the measurement, not the session.
+    if (persona.inclusion === "low_vision" && session.outcome !== "cancelled") {
+      const reflow = await probeReflow(context, pagesToProbe(session.steps, d.origin)).catch(() => []);
+      if (reflow.length) session.reflow = reflow;
+    }
   } catch (err) {
     session = { agentId: persona.id, personaName: persona.name, goal, steps: [], outcome: "error", outcomeNote: err instanceof Error ? err.message : String(err) };
   } finally {

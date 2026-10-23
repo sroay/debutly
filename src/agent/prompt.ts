@@ -41,14 +41,22 @@ Action is one of:
 {"type":"done","success":boolean,"note":string}`;
 }
 
-function describeElement(e: InteractiveElement): string {
-  const line = `[${e.id}] ${e.role} "${e.name}"`;
+function describeElement(e: InteractiveElement, screenReader = false): string {
+  // A screen reader announces the role and name the browser gives it.
+  const heard = screenReader && e.ax ? e.ax : e;
+  const line = `[${e.id}] ${heard.role} "${heard.name}"`;
   if (!e.options) return line;
   return `${line} set to "${e.value ?? ""}", options: ${e.options.map((o) => `"${o}"`).join(" | ")}`;
 }
 
-export function buildStepMessage(obs: Observation, history: string[]): string {
-  const elements = obs.elements.map(describeElement).join("\n");
+export interface StepView {
+  /** As a screen reader presents the page: the browser's names and roles, without what is hidden from it. */
+  screenReader?: boolean;
+}
+
+export function buildStepMessage(obs: Observation, history: string[], view: StepView = {}): string {
+  const shown = view.screenReader ? obs.elements.filter((e) => !e.ax?.hidden) : obs.elements;
+  const elements = shown.map((e) => describeElement(e, view.screenReader)).join("\n");
   const past = history.length ? history.map((h, i) => `${i + 1}. ${h}`).join("\n") : "(none yet)";
   return `URL: ${obs.url}
 Title: ${obs.title}

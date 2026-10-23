@@ -1,4 +1,6 @@
 import { describeAction } from "../agent/describe";
+import { MEASURED } from "../detect/findings";
+import { describeCriterion } from "../detect/wcag";
 import { OUT_OF_CREDITS } from "../llm/types";
 import type { CustomerUnit, Finding, Session } from "../types";
 
@@ -24,8 +26,11 @@ function renderFinding(f: Finding, sessions: Session[]): string {
     "",
     f.detail,
     "",
-    `Hit by ${f.hitBy.length} of ${f.visitors} agents who visited ${f.pagePath} (${f.confidence} confidence).`,
+    MEASURED.has(f.kind)
+      ? `Measured by the browser on ${f.pagePath}, by ${f.hitBy.length} of ${f.visitors} agents who visited it.`
+      : `Hit by ${f.hitBy.length} of ${f.visitors} agents who visited ${f.pagePath} (${f.confidence} confidence).`,
   ];
+  if (f.wcag?.length) lines.push("", `Related WCAG 2.2: ${f.wcag.map(describeCriterion).join(", ")}, for a person to check.`);
   const ev = f.evidence[0];
   const session = sessions.find((s) => s.agentId === ev?.agentId);
   if (ev && session) {
@@ -169,6 +174,12 @@ export function renderReport(input: ReportInput): string {
     "",
     `## Findings`,
     "",
+    ...(input.findings.some((f) => f.wcag?.length)
+      ? [
+          `WCAG references point to what a person should check. Debutly doesn't test conformance, and a run without such findings says nothing about it.`,
+          "",
+        ]
+      : []),
     confident.length ? confident.map((f) => renderFinding(f, input.sessions)).join("\n\n") : "_None._",
     "",
     `## Low-confidence findings`,

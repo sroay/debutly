@@ -39,28 +39,42 @@ Each finding says what went wrong, how many of the agents who reached that page 
 | Unlabeled control | A button, link or field with no name, which a screen reader announces only as "button". |
 | Slow page | The page took over 10 seconds to arrive. |
 | Agent stuck | An agent did the same thing three times on one page and nothing changed. |
+| Can't reach with the keyboard | The screen-reader agent couldn't move focus to a control: it isn't in the tab order. |
+| Keyboard focus hidden | A control with keyboard focus was entirely covered by something else. |
+| Scrolls sideways at 320 pixels | At 400% zoom the page is wider than the window. |
+| Language | The page doesn't say its language, or an Arabic page says another language or runs left to right. |
 
 ### Access needs: what is measured and what is acted out
 
 The first agents in each run take on one access need each, rotating daily, so a quick run of three agents covers three of the four.
 
-- **Measured, the same for every agent.** Controls with no name. Debutly works the name out from labels, ARIA attributes, text and titles, close to what browsers give assistive technology. Also: clicks that land on something covering the control, and how long the first page takes to arrive.
-- **The screen-reader agent** is told it knows controls only by their names and avoids unnamed ones. It reads the same summary of the page as the other agents, without a screen reader's reading order, keyboard movement or announcements.
-- **The low-vision agent** works in a 640×400 window, which lays pages out as 200% zoom does on a laptop. It doesn't model eyesight or contrast.
+- **Measured on every page, whoever visits it.**
+  - Controls with no name, by the name the browser itself gives assistive technology (Chromium's accessibility tree).
+  - Whether the page says what language it is in.
+  - On a page that is mostly Arabic, whether it says so and runs right to left.
+  - Clicks that land on something covering the control, and how long the first page takes to arrive.
+- **The screen-reader agent** hears what the browser tells assistive technology: each control's role and name, without the controls hidden from it. It works **by keyboard only**: it moves focus to a control, as Tab would, and presses Enter or Space.
+  - A control outside the tab order is one it can't use, and is reported (related to WCAG 2.1.1).
+  - So is a focused control that something entirely hides (WCAG 2.4.11).
+  - **Not checked:** the order Tab moves through, whether focus is visible, or what a screen reader would read aloud and when. Items inside lists, menus, tabs and radio groups, which keyboards reach with the arrow keys, are still chosen as a mouse would.
+- **The low-vision agent** works in a 640×400 window, which lays pages out as 200% zoom does on a laptop.
+  - After its run, each page it visited is opened again at 320 CSS pixels wide (400% zoom), signed in as it was. A page that then scrolls sideways is reported (WCAG 1.4.10), with the element that sticks out. A data table or other content that needs two dimensions is marked as possibly allowed.
+  - Links that do something when opened, such as confirm, invite or sign-out links, are not opened again.
+  - It doesn't model eyesight or contrast.
 - **The slow-connection agent's** network really is throttled, to 500 kbit/s with 400 ms round trips.
 - **The non-native English agent** is acted out entirely by the model.
 
-So these findings point to things a person should check, with assistive technology where it matters. A run with no such findings says nothing about conformance with WCAG or any accessibility standard.
+Findings like these name the WCAG 2.2 success criteria they relate to, with a link to W3C's explanation of each: 1.3.1, 1.4.4, 1.4.10, 2.1.1, 2.4.4, 2.4.11, 3.1.1, 3.3.2 and 4.1.2. They point to things a person should check, with assistive technology where it matters. A run with no such findings says nothing about conformance with WCAG or any accessibility standard.
 
 ### Severity
 
 - **Blocker**: a serious problem on a page customers must get through: sign-up, sign-in, onboarding, pricing, checkout, billing, payment or invites.
-- **Major**: server errors and JavaScript errors, controls something covers, agents stuck, and pages over 30 seconds or that never arrived. A minor problem on one of the critical pages above is major too.
+- **Major**: server errors and JavaScript errors, controls something covers, controls the keyboard can't reach, Arabic shown left to right, agents stuck, and pages over 30 seconds or that never arrived. A minor problem on one of the critical pages above is major too.
 - **Minor**: everything else, such as a 404 for an image or an unlabeled icon button.
 
 ### Confidence
 
-Confidence is the share of agents who reached that page and ran into the problem. Half or more is **high**, a quarter or more is **medium**, anything less is **low**. Low-confidence findings get their own section: they may be the agent's own mistake rather than your app's.
+Findings the browser measures (unlabeled controls, covered controls, keyboard reach and focus, reflow, language) are high confidence: one measurement is enough. For the rest, confidence is the share of agents who reached that page and ran into the problem. Half or more is **high**, a quarter or more is **medium**, anything less is **low**. Low-confidence findings get their own section: they may be the agent's own mistake rather than your app's.
 
 ## Caused by the test environment
 

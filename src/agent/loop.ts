@@ -122,6 +122,8 @@ interface SessionState {
 }
 
 async function takeSteps(o: RunSessionOptions, { signals, system, steps, history, emailedLinks, meter, startedAt, end }: SessionState): Promise<Session> {
+  // The screen-reader agent hears what the browser tells assistive technology and works by keyboard.
+  const screenReader = o.persona.inclusion === "screen_reader";
   for (let index = 0; index < o.maxSteps; index++) {
     if (o.shouldStop && (await o.shouldStop())) return end("cancelled", "run cancelled");
     const { inputTokens, outputTokens } = meter.total;
@@ -139,7 +141,7 @@ async function takeSteps(o: RunSessionOptions, { signals, system, steps, history
       const effect = describeEffect(prev.action, prev.observation, observation, prev.signals, prev);
       if (effect) history[history.length - 1] += ` → ${effect}`;
     }
-    const messages: LlmMessage[] = [{ role: "user", content: buildStepMessage(observation, history) }];
+    const messages: LlmMessage[] = [{ role: "user", content: buildStepMessage(observation, history, { screenReader }) }];
     let reply: ReturnType<typeof parseAgentReply> | undefined;
     let raw = "";
     let problem = "";
@@ -179,7 +181,7 @@ async function takeSteps(o: RunSessionOptions, { signals, system, steps, history
         }
       }
     } else {
-      result = await execute(o.page, reply.action, observation, o.origin, (href) => emailedLinks.has(href));
+      result = await execute(o.page, reply.action, observation, o.origin, (href) => emailedLinks.has(href), { keyboard: screenReader });
     }
 
     let screenshotPath: string | undefined;

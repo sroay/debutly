@@ -3,7 +3,7 @@ import { INCLUSION_NEEDS, type CustomerUnit, type InclusionNeed, type Persona } 
 
 const BRIEFS: Record<InclusionNeed, string> = {
   screen_reader:
-    'You are blind and use a screen reader. You only know what it announces: element roles and names, and the page text. A button or link with an empty name is announced only as "button" or "link", so you cannot tell what it does; avoid it unless you have no other choice.',
+    'You are blind and use a screen reader with your keyboard; you cannot use a mouse. You only know what it announces: element roles and names, and the page text. A button or link with an empty name is announced only as "button" or "link", so you cannot tell what it does; avoid it unless you have no other choice. You reach controls with the Tab key, so one the keyboard cannot reach is one you cannot use.',
   low_vision:
     "You have low vision and browse zoomed in to 200%, so pages look cramped and you often have to scroll. Small or low-contrast controls are hard for you to find.",
   slow_connection:

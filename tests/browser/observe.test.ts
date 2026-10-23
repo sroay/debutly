@@ -31,6 +31,30 @@ it("never leaves two elements with the same id after the page changes (2026-10-1
   expect(new Set(ids).size).toBe(ids.length);
 });
 
+it("gives each control the name and role the browser gives assistive technology", async () => {
+  await page.goto("about:blank");
+  await page.setContent(`<html lang="en"><body>
+    <button><svg width="8" height="8"><title>Close dialog</title></svg></button>
+    <button aria-hidden="true">Hidden save</button>
+    <span id="team">Team name</span><input aria-labelledby="team">
+    <button><svg width="8" height="8"></svg></button></body></html>`);
+  const obs = await observe(page);
+  expect(obs.elements.map((e) => e.ax)).toEqual([
+    { name: "Close dialog", role: "button", hidden: false },
+    { name: "", role: "none", hidden: true },
+    { name: "Team name", role: "textbox", hidden: false },
+    { name: "", role: "button", hidden: false },
+  ]);
+});
+
+it("reads the page's language, text direction and how much of its text is Arabic", async () => {
+  await page.goto("about:blank");
+  await page.setContent(`<html lang="ar" dir="rtl"><body><h1>إنشاء حساب</h1><p>ابدأ متجرك اليوم</p></body></html>`);
+  expect(await observe(page)).toMatchObject({ lang: "ar", dir: "rtl", arabicShare: 1 });
+  await page.setContent(`<html><body><p>Create an account</p></body></html>`);
+  expect(await observe(page)).toMatchObject({ lang: "", dir: "ltr", arabicShare: 0 });
+});
+
 it("names a field by the label wrapped around it, without the field's own text", async () => {
   await page.setContent(`
     <label>Bulk action <select><option>Archive</option><option>Delete</option></select></label>

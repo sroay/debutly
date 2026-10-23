@@ -15,7 +15,7 @@ const deps = (over: Partial<DoctorDeps> = {}): DoctorDeps => ({
 it("passes a machine that is ready, and says so", async () => {
   const checks = await runChecks(deps());
   expect(checks.map((c) => c.status)).toEqual(["ok", "ok", "ok", "ok", "ok", "ok"]);
-  expect(checks[2].detail).toBe("$4.50 left on the key's limit");
+  expect(checks[2].detail).toBe("$4.50 left on the key's limit; the account's own balance isn't visible here");
   expect(renderChecks(checks)).toMatch(/Ready\. Start a run with: npx debutly$/);
 });
 
