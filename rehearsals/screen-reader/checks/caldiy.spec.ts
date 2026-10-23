@@ -49,9 +49,13 @@ test("Cal.diy: sign-up, set-up, weekly hours and the public booking page", async
   await test.step("open the first schedule's weekly hours", async () => {
     await page.goto(`${APP}/availability`);
     await page.waitForTimeout(3000);
-    // New people are first welcomed in a dialog over the page.
-    const welcome = page.getByRole("dialog").getByRole("button", { name: /^continue$/i });
-    if (await welcome.isVisible().catch(() => false)) await welcome.click();
+    // New people meet dialogs over the page: a welcome, then whether to update their timezone.
+    for (let dialog = 0; dialog < 3; dialog++) {
+      const answer = page.getByRole("dialog").getByRole("button", { name: /^(continue|don't update)$/i }).first();
+      if (!(await answer.isVisible().catch(() => false))) break;
+      await answer.click();
+      await page.waitForTimeout(1500);
+    }
     await page.locator("a[href^='/availability/']").first().click();
     await page.waitForURL(/\/availability\/\d+/, { timeout: 60_000 });
     await page.waitForLoadState("networkidle");
