@@ -213,6 +213,23 @@ it("says when a click fails because the element is disabled", async () => {
   expect(result.error).toBe("the element is disabled");
 }, 15_000);
 
+it("says when a field can't be typed in until its edit button is pressed", async () => {
+  await show(`<label>Website <input readonly placeholder="www.example.com"></label><button><svg width="12" height="12"></svg></button>`);
+  const obs = await observe(page);
+  const result = await execute(page, { type: "fill", id: idOf(obs.elements, "Website"), text: "www.shop.ae" }, obs, fx.url);
+  expect(result.error).toBe("the field is read-only, so it can't be typed in yet; there may be a button to edit it");
+}, 15_000);
+
+it("says when a link is off the screen, in a menu that is closed", async () => {
+  await show(
+    `<nav style="position:fixed;left:0;top:0;width:200px;height:100vh;transform:translateX(-100%)"><a href="#settings">Settings</a></nav>` +
+      `<button aria-label="Open menu">☰</button>`,
+  );
+  const obs = await observe(page);
+  const result = await execute(page, { type: "click", id: idOf(obs.elements, "Settings") }, obs, fx.url);
+  expect(result.error).toBe("it is off the screen, perhaps in a menu or panel that is closed; open that first");
+}, 15_000);
+
 it("clicks the visible part of a partly covered element, like a person would", async () => {
   await show(
     `<button style="width:400px;height:40px" onclick="document.body.dataset.clicked='yes'">Invite Team Member</button>` +

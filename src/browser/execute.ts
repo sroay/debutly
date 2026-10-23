@@ -79,6 +79,36 @@ export function describeFailure(err: unknown): string {
   return message.split("\n")[0];
 }
 
+// When Playwright gives up waiting on an element it says only "Timeout exceeded", and an agent
+// told that tries the same thing again. A person can see why: the field only opens for typing
+// after its edit button, or the link is in a side menu that is shut. A string, like SCAN_SCRIPT.
+const WHY_UNUSABLE_SCRIPT = (id: number) => `(() => {
+  const el = document.querySelector('[data-debutly-id="${id}"]');
+  if (!el) return 'gone';
+  if (el.disabled || el.getAttribute('aria-disabled') === 'true') return 'disabled';
+  if ((el.tagName === 'INPUT' || el.tagName === 'TEXTAREA') && el.readOnly) return 'readonly';
+  const style = getComputedStyle(el);
+  el.scrollIntoView({ block: 'nearest', inline: 'nearest' });
+  const r = el.getBoundingClientRect();
+  if (r.width === 0 || r.height === 0 || style.visibility === 'hidden') return 'hidden';
+  if (r.right <= 0 || r.bottom <= 0 || r.left >= innerWidth || r.top >= innerHeight) return 'offscreen';
+  return '';
+})()`;
+
+const UNUSABLE: Record<string, string> = {
+  gone: "the element is no longer on the page",
+  disabled: "the element is disabled",
+  readonly: "the field is read-only, so it can't be typed in yet; there may be a button to edit it",
+  hidden: "the element is not visible",
+  offscreen: "it is off the screen, perhaps in a menu or panel that is closed; open that first",
+};
+
+async function explainTimeout(page: Page, id: number, err: unknown): Promise<string | undefined> {
+  if (!/Timeout \d+ms exceeded/.test(err instanceof Error ? err.message : String(err))) return undefined;
+  const why = (await page.evaluate(WHY_UNUSABLE_SCRIPT(id)).catch(() => "")) as string;
+  return UNUSABLE[why];
+}
+
 // Playwright clicks an element's centre; a person clicks whatever part of it they can see.
 async function clickVisiblePart(page: Page, id: number): Promise<boolean> {
   const locator = page.locator(`[data-debutly-id="${id}"]`);
@@ -302,6 +332,7 @@ export async function execute(
   } catch (err) {
     if (err instanceof Refused) return { blocked: err.message };
     if (err instanceof NotByKeyboard) return { error: err.message };
-    return { error: describeFailure(err), ...(result.focusObscured ? { focusObscured: result.focusObscured } : {}) };
+    const why = "id" in action ? await explainTimeout(page, action.id, err) : undefined;
+    return { error: why ?? describeFailure(err), ...(result.focusObscured ? { focusObscured: result.focusObscured } : {}) };
   }
 }
