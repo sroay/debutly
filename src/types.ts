@@ -12,6 +12,8 @@ export interface Persona {
   /** Job role inside a business crew, e.g. "Owner" or "Content writer". */
   role?: string;
   inclusion?: InclusionNeed;
+  /** First language, as a lang code ("ar"); English when unset. */
+  language?: string;
 }
 
 export interface Business {
@@ -127,6 +129,7 @@ export interface Session {
   unitId?: string;
   role?: string;
   inclusion?: InclusionNeed;
+  language?: string;
   /** Tokens this session spent, and their cost when the model price is known. */
   usage?: { inputTokens: number; outputTokens: number; costUsd?: number };
   /** The low-vision agent's pages, measured again at 320 CSS pixels wide. */

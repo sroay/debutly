@@ -26,7 +26,7 @@ export function ownerGoal(goal: string, team: { name: string; role?: string; ema
 export const employeeGoal = (role: string, owner: string, company: string) =>
   `${owner} has invited you to use this product at ${company}. Check your email for the invite, accept it and set up your account. Then check that you are in ${company}'s shared workspace: you should see what ${owner} set up there, such as the company details or the items they added. If you only see an empty workspace of your own, joining did not work: report that as a failure, not success. If you are in, do one task a ${role} would typically do here. Finish when you have done that or when you would give up.`;
 
-const tag = (s: Session, unitId: string, p: Persona): Session => ({ ...s, unitId, role: p.role, inclusion: p.inclusion });
+const tag = (s: Session, unitId: string, p: Persona): Session => ({ ...s, unitId, role: p.role, inclusion: p.inclusion, language: p.language });
 const notInvited = (unitId: string, p: Persona, why: string): Session =>
   tag({ agentId: p.id, personaName: p.name, goal: "", steps: [], outcome: "not_invited", outcomeNote: why }, unitId, p);
 

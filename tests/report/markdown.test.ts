@@ -145,3 +145,10 @@ it("links the WCAG criteria a finding relates to, as things to check, and says w
   // Without WCAG references the note stays out.
   expect(renderReport({ targetUrl: "http://a.test", goal: "Buy", sessions: [session], findings: [finding("high", "x")] })).not.toContain("WCAG");
 });
+
+it("shows each agent's access need and first language", () => {
+  const amal: Session = { ...session, agentId: "p2", personaName: "Amal", inclusion: "screen_reader", language: "ar" };
+  const md = renderReport({ targetUrl: "http://a.test", goal: "Buy", sessions: [session, amal], findings: [] });
+  expect(md).toContain("| Amal | — | screen reader, Arabic |");
+  expect(md).toContain("| Ava | — | — |");
+});

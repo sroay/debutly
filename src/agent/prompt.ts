@@ -1,4 +1,5 @@
 import { inclusionBrief } from "../persona/inclusion";
+import { languageBrief } from "../persona/language";
 import type { InteractiveElement, Observation, Persona } from "../types";
 
 // Stays constant for the whole session so providers can cache it; everything that changes goes in the user message.
@@ -18,6 +19,7 @@ To read your inbox (for example a login link or a confirmation), reply {"type":"
     persona.role ? `Your role: ${persona.role}.` : "",
     brief ?? "",
     persona.inclusion ? inclusionBrief(persona.inclusion) : "",
+    languageBrief(persona.language),
   ]
     .filter(Boolean)
     .join("\n");

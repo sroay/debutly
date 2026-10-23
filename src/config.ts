@@ -26,6 +26,7 @@ const SETTINGS = [
   "agentTokenCap",
   "agentMinutes",
   "evaluators",
+  "languages",
 ] as const;
 
 export type Setting = (typeof SETTINGS)[number];

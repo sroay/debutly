@@ -69,3 +69,13 @@ it("asks for owner-only businesses when there are no employees", async () => {
   const [unit] = await generateUnits(llm, "freelancers", { kind: "business", count: 1, employees: 0 });
   expect(unit.kind === "business" && unit.employees).toEqual([]);
 });
+
+it("asks for first languages when the run has them, and keeps the ones it gets", async () => {
+  const llm = new ScriptedLlm(() => JSON.stringify([{ ...p("Amal"), language: "AR" }, p("Ben")]));
+  const units = await generateUnits(llm, "small shops in Dubai", { kind: "individual", count: 2, employees: 0, languages: ["ar", "en"] });
+  expect(llm.calls[0].messages[0].content).toContain('Give each person a "language": their first language, one of "ar" (Arabic), "en" (English)');
+  expect(units.map((u) => (u.kind === "individual" ? u.person.language : undefined))).toEqual(["ar", undefined]);
+  const plain = new ScriptedLlm(() => JSON.stringify([p("Cara")]));
+  await generateUnits(plain, "freelancers", { kind: "individual", count: 1, employees: 0 });
+  expect(plain.calls[0].messages[0].content).not.toContain("language");
+});

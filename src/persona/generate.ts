@@ -1,5 +1,6 @@
 import { z } from "zod";
 import type { LlmClient } from "../llm/types";
+import { languageRequest } from "./language";
 import type { CustomerUnit, Persona } from "../types";
 
 const PersonaSchema = z.object({
@@ -12,6 +13,11 @@ const PersonaSchema = z.object({
   goal: z.string(),
   patience: z.enum(["low", "medium", "high"]),
   techSavvy: z.enum(["low", "medium", "high"]),
+  // Asked for only with --languages; withLanguages() keeps it only if it's on the list.
+  language: z
+    .string()
+    .transform((l) => l.trim().toLowerCase())
+    .optional(),
 });
 
 const BusinessUnitSchema = z.object({
@@ -44,8 +50,8 @@ async function ask(llm: LlmClient, system: string, content: string): Promise<unk
   return extractJsonArray(await llm.complete({ system, messages: [{ role: "user", content }], maxTokens: 16000 }));
 }
 
-export async function generatePersonas(llm: LlmClient, icp: string, count: number, system = SYSTEM): Promise<Persona[]> {
-  const raw = await ask(llm, system, `Ideal customer profile:\n${icp}\n\nReturn a JSON array of ${count} distinct personas. Each item: ${PERSONA_SHAPE}.`);
+export async function generatePersonas(llm: LlmClient, icp: string, count: number, system = SYSTEM, languages: string[] = []): Promise<Persona[]> {
+  const raw = await ask(llm, system, `Ideal customer profile:\n${icp}\n\nReturn a JSON array of ${count} distinct personas. Each item: ${PERSONA_SHAPE}.${withRequest(languages)}`);
   const parsed = z.array(PersonaSchema).parse(raw);
   return parsed.slice(0, count).map((persona, i) => ({ id: `p${i + 1}`, ...persona }));
 }
@@ -55,18 +61,22 @@ export interface UnitOptions {
   count: number;
   /** Employees per business crew (0 = owner only). */
   employees: number;
+  /** First languages to give the people (lang codes); none means English. */
+  languages?: string[];
 }
+
+const withRequest = (languages: string[]) => (languages.length ? ` ${languageRequest(languages)}` : "");
 
 /** Customer units from an ICP: individuals (B2C) or business crews of owner + employees (B2B). */
 export async function generateUnits(llm: LlmClient, icp: string, o: UnitOptions): Promise<CustomerUnit[]> {
   if (o.kind === "individual") {
-    const people = await generatePersonas(llm, icp, o.count, INDIVIDUAL_SYSTEM);
+    const people = await generatePersonas(llm, icp, o.count, INDIVIDUAL_SYSTEM, o.languages);
     return people.map((person) => ({ kind: "individual", id: person.id, person }));
   }
   const raw = await ask(
     llm,
     BUSINESS_SYSTEM,
-    `Ideal customer profile:\n${icp}\n\nReturn a JSON array of ${o.count} distinct businesses. Each item: {"business": {"name": string, "archetype": string, "size": number of people, "monthlyBudget": number in USD they would spend on a tool like this, "goal": string}, "owner": the decision-maker, ${PERSONA_SHAPE}, "employees": ${o.employees} employees, each ${PERSONA_SHAPE.slice(0, -1)}, "role": their job title}}.`,
+    `Ideal customer profile:\n${icp}\n\nReturn a JSON array of ${o.count} distinct businesses. Each item: {"business": {"name": string, "archetype": string, "size": number of people, "monthlyBudget": number in USD they would spend on a tool like this, "goal": string}, "owner": the decision-maker, ${PERSONA_SHAPE}, "employees": ${o.employees} employees, each ${PERSONA_SHAPE.slice(0, -1)}, "role": their job title}}.${withRequest(o.languages ?? [])}`,
   );
   const parsed = z.array(BusinessUnitSchema).parse(raw);
   return parsed.slice(0, o.count).map((u, i) => {

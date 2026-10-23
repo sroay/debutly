@@ -2,6 +2,7 @@ import { describeAction } from "../agent/describe";
 import { MEASURED } from "../detect/findings";
 import { describeCriterion } from "../detect/wcag";
 import { OUT_OF_CREDITS } from "../llm/types";
+import { languageName } from "../persona/language";
 import type { CustomerUnit, Finding, Session } from "../types";
 
 export interface ReportInput {
@@ -79,7 +80,9 @@ function renderUnits(units: CustomerUnit[], sessions: Session[]): string[] {
   return [`## Customer units`, "", ...lines, ""];
 }
 
-const needLabel = (s: Session) => (s.inclusion ? s.inclusion.replace(/_/g, " ") : "—");
+// Access need and first language, e.g. "screen reader, Arabic".
+const needLabel = (s: Session) =>
+  [s.inclusion?.replace(/_/g, " "), s.language && s.language !== "en" ? languageName(s.language) : ""].filter(Boolean).join(", ") || "—";
 
 // The agents' own reasons are often the clearest statement of a blocker.
 function renderStops(sessions: Session[]): string {

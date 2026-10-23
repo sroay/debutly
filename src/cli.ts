@@ -16,6 +16,7 @@ import { createLlms } from "./llm/factory";
 import { OUT_OF_CREDITS } from "./llm/types";
 import { generateUnits } from "./persona/generate";
 import { withInclusion } from "./persona/inclusion";
+import { languageName, parseLanguages, withLanguages } from "./persona/language";
 import { exhibitsFromSessions } from "./perception/exhibits";
 import { runPerception } from "./perception/run-perception";
 import { renderLaunchReadiness } from "./report/launch-readiness";
@@ -72,6 +73,8 @@ const { values } = parseArgs({
     "agent-minutes": { type: "string" },
     // After the depth run, this many breadth evaluators judge the pages the agents saw (Launch Readiness report).
     evaluators: { type: "string" },
+    // Customers' first languages, as lang codes (ar,en): agents take them in turn.
+    languages: { type: "string" },
   },
 });
 
@@ -80,6 +83,14 @@ if (!values.url || !values.goal || !values.icp || (unitKind !== "individual" && 
   console.error(
     'Usage: npx debutly (settings in debutly.json; npx debutly init writes one) or npx debutly --url <url> --goal "<goal>" --icp "<ideal customer profile>" [--unit individual|business] [--tier quick|standard|deep] [--agents N] [--employees N] [--max-cost USD] [--inclusion on|off] [--max-steps 30] [--concurrency 3] [--out runs/x] [--mailpit http://127.0.0.1:54324] [--email-domain agents.test] [--sandbox-outbox http://localhost:3000/api/sandbox/outbox] [--store postgres://…] [--app name] [--trigger nightly|pr|manual] [--ci-url url] [--screenshot-days 7] [--queue redis://…] [--agent-token-cap N] [--agent-minutes N] [--evaluators N]',
   );
+  process.exit(1);
+}
+// Checked before anything is spent: a wrong code stops the run here.
+let languages: string[];
+try {
+  languages = parseLanguages(values.languages);
+} catch (err) {
+  console.error(err instanceof Error ? err.message : err);
   process.exit(1);
 }
 const size = resolveRunSize({
@@ -129,13 +140,15 @@ if (credits.warn) console.warn(`Warning: ${credits.warn}`);
 
 const { nav, judge } = createLlms(process.env);
 console.log(`Generating ${count} ${unitKind === "business" ? `business crew(s) with ${employees} employees each` : "individual(s)"}...`);
-let units = await generateUnits(judge, values.icp, { kind: unitKind, count, employees });
+let units = await generateUnits(judge, values.icp, { kind: unitKind, count, employees, languages });
 if (values.inclusion !== "off") {
   const dayOfYear = Math.floor((Date.now() - Date.UTC(new Date().getUTCFullYear(), 0, 1)) / 86_400_000);
   units = withInclusion(units, dayOfYear);
 }
+units = withLanguages(units, languages);
 
-const describe = (p: Persona) => `${p.id} ${p.name}${p.role ? ` (${p.role})` : ""}${p.inclusion ? ` [${p.inclusion.replace(/_/g, " ")}]` : ""}: ${p.background}`;
+const describe = (p: Persona) =>
+  `${p.id} ${p.name}${p.role ? ` (${p.role})` : ""}${p.inclusion ? ` [${p.inclusion.replace(/_/g, " ")}]` : ""}${p.language && p.language !== "en" ? ` [${languageName(p.language)}]` : ""}: ${p.background}`;
 for (const u of units) {
   if (u.kind === "individual") console.log(`  ${describe(u.person)}`);
   else {

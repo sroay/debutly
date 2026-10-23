@@ -55,3 +55,10 @@ it("shows the screen-reader agent what a screen reader announces, and nothing hi
   // Everyone else sees the page as before.
   expect(buildStepMessage(obs, [])).toContain('[1] button "Hidden save"');
 });
+
+it("tells an Arabic-speaking agent to use the site in Arabic and type as an Arabic keyboard does", () => {
+  const system = buildSystemPrompt({ ...persona("p1", "Amal"), language: "ar" }, "Sign up");
+  expect(system).toContain("Your first language is Arabic.");
+  expect(system).toContain("٠١٢٣٤٥٦٧٨٩");
+  expect(buildSystemPrompt({ ...persona("p2", "Ben"), language: "en" }, "Sign up")).not.toContain("first language");
+});
