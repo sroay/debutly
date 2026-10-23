@@ -1,0 +1,84 @@
+name: rehearse
+# Rehearses a well-known open-source app, started from its own release images on the runner, so
+# Debutly's findings can be checked by hand and reported to its maintainers. Started by hand only.
+# The report is sealed (rehearsals/seal.sh): run artifacts in a public repo are public, and
+# findings on someone else's app wait for a person to check them.
+on:
+  workflow_dispatch:
+    inputs:
+      app:
+        description: The app to rehearse (a folder in rehearsals/)
+        type: choice
+        options: [chatwoot]
+        default: chatwoot
+      languages:
+        description: Customers' first languages
+        default: ar,en
+      agents:
+        description: How many agents
+        default: "3"
+      check-only:
+        description: Start the app and check sign-up email works, without agents or model calls
+        type: boolean
+        default: false
+
+permissions:
+  contents: read
+
+concurrency: rehearse
+
+jobs:
+  rehearse:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    env:
+      APP_DIR: rehearsals/${{ inputs.app }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Start ${{ inputs.app }}
+        run: bash "$APP_DIR/start.sh"
+
+      - name: Check that sign-up email arrives
+        run: bash "$APP_DIR/check.sh"
+
+      - name: Install Debutly
+        if: ${{ !inputs.check-only }}
+        run: |
+          npm ci --no-audit --no-fund
+          npx playwright install --with-deps chromium
+
+      - name: Run the agents
+        if: ${{ !inputs.check-only }}
+        working-directory: ${{ env.APP_DIR }}
+        env:
+          DEBUTLY_API_KEY: ${{ secrets.DEBUTLY_API_KEY }}
+          LANGUAGES: ${{ inputs.languages }}
+          AGENTS: ${{ inputs.agents }}
+        run: |
+          if [ -z "$DEBUTLY_API_KEY" ]; then echo "::error title=Rehearsal::Add the DEBUTLY_API_KEY secret to run agents."; exit 1; fi
+          node "$GITHUB_WORKSPACE/bin/debutly.mjs" run --out "$RUNNER_TEMP/report" --languages "$LANGUAGES" --agents "$AGENTS" \
+            --trigger manual --ci-url "$GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID"
+
+      - name: Seal the report
+        if: ${{ always() && !inputs.check-only }}
+        run: |
+          if [ ! -d "$RUNNER_TEMP/report" ]; then echo "No report was written."; exit 0; fi
+          bash rehearsals/seal.sh "$RUNNER_TEMP/report" "$RUNNER_TEMP/sealed"
+
+      - uses: actions/upload-artifact@v4
+        if: ${{ always() && !inputs.check-only }}
+        with:
+          name: sealed-report-${{ inputs.app }}
+          path: ${{ runner.temp }}/sealed
+          if-no-files-found: ignore
+          retention-days: 14
+
+      - name: App logs
+        if: failure()
+        working-directory: ${{ env.APP_DIR }}
+        run: docker compose logs --tail 100 rails sidekiq

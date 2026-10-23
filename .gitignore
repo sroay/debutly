@@ -19,3 +19,6 @@ dashboard/tsconfig.tsbuildinfo
 
 .vercel
 .env*.local
+
+# Rehearsals: each app's generated secrets
+rehearsals/*/app.env

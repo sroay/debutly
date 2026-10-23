@@ -1,0 +1,11 @@
+{
+  "$schema": "https://debutly.dev/schema.json",
+  "url": "http://localhost:3000",
+  "goal": "Sign up for Chatwoot for your business, confirm your email address, and set up a live-chat inbox for your website that your team can answer from.",
+  "icp": "Small businesses in the Gulf that answer their customers' questions over website chat, in Arabic and English",
+  "app": "chatwoot",
+  "mailpit": "http://localhost:8025",
+  "languages": "ar,en",
+  "maxSteps": 40,
+  "maxCost": 0.5
+}
