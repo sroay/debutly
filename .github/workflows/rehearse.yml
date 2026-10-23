@@ -9,14 +9,14 @@ on:
       app:
         description: The app to rehearse (a folder in rehearsals/)
         type: choice
-        options: [chatwoot]
+        options: [chatwoot, twenty]
         default: chatwoot
       languages:
-        description: Customers' first languages
-        default: ar,en
+        description: Customers' first languages (empty for the app's debutly.json)
+        default: ""
       agents:
-        description: How many agents
-        default: "3"
+        description: How many agents or crews (empty for the app's debutly.json)
+        default: ""
       check-only:
         description: Start the app and check sign-up email works, without agents or model calls
         type: boolean
@@ -43,7 +43,7 @@ jobs:
       - name: Start ${{ inputs.app }}
         run: bash "$APP_DIR/start.sh"
 
-      - name: Check that sign-up email arrives
+      - name: Check the app before any model calls
         run: bash "$APP_DIR/check.sh"
 
       - name: Install Debutly
@@ -61,8 +61,10 @@ jobs:
           AGENTS: ${{ inputs.agents }}
         run: |
           if [ -z "$DEBUTLY_API_KEY" ]; then echo "::error title=Rehearsal::Add the DEBUTLY_API_KEY secret to run agents."; exit 1; fi
-          node "$GITHUB_WORKSPACE/bin/debutly.mjs" run --out "$RUNNER_TEMP/report" --languages "$LANGUAGES" --agents "$AGENTS" \
-            --trigger manual --ci-url "$GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID"
+          args=(--out "$RUNNER_TEMP/report" --trigger manual --ci-url "$GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID")
+          if [ -n "$LANGUAGES" ]; then args+=(--languages "$LANGUAGES"); fi
+          if [ -n "$AGENTS" ]; then args+=(--agents "$AGENTS"); fi
+          node "$GITHUB_WORKSPACE/bin/debutly.mjs" run "${args[@]}"
 
       - name: Seal the report
         if: ${{ always() && !inputs.check-only }}
@@ -81,4 +83,4 @@ jobs:
       - name: App logs
         if: failure()
         working-directory: ${{ env.APP_DIR }}
-        run: docker compose logs --tail 100 rails sidekiq
+        run: docker compose logs --tail 100

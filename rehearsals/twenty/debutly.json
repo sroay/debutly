@@ -1,0 +1,14 @@
+{
+  "$schema": "https://debutly.dev/schema.json",
+  "url": "http://localhost:3000",
+  "goal": "Set up Twenty as your company's CRM: create your workspace, then add your three most important customers as companies, each with a contact person.",
+  "icp": "Small sales and service teams in the Gulf that track their customers and deals, working in Arabic and English",
+  "app": "twenty",
+  "unit": "business",
+  "agents": 1,
+  "employees": 2,
+  "mailpit": "http://localhost:8025",
+  "languages": "ar,en",
+  "maxSteps": 50,
+  "maxCost": 0.5
+}

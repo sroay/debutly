@@ -1,0 +1,65 @@
+# Twenty as its own packages/twenty-docker/docker-compose.yml runs it, pinned to one release, with
+# Mailpit catching its email so invited teammates can join. start.sh writes app.env.
+name: rehearse-twenty
+
+x-twenty: &twenty
+  image: twentycrm/twenty:v2.50.0
+  env_file: app.env
+  volumes:
+    - server-local-data:/app/packages/twenty-server/.local-storage
+
+services:
+  server:
+    <<: *twenty
+    ports:
+      - "127.0.0.1:3000:3000"
+    environment:
+      NODE_PORT: 3000
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    healthcheck:
+      test: curl --fail http://localhost:3000/healthz
+      interval: 5s
+      timeout: 5s
+      retries: 60
+
+  worker:
+    <<: *twenty
+    command: ["yarn", "worker:prod"]
+    environment:
+      DISABLE_DB_MIGRATIONS: "true"
+      DISABLE_CRON_JOBS_REGISTRATION: "true"
+    depends_on:
+      db:
+        condition: service_healthy
+      server:
+        condition: service_healthy
+
+  db:
+    image: postgres:16
+    env_file: app.env
+    healthcheck:
+      test: pg_isready -U postgres -h localhost -d postgres
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  redis:
+    image: redis:7-alpine
+    command: ["--maxmemory-policy", "noeviction"]
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  mailpit:
+    image: axllent/mailpit:v1.31.4
+    ports:
+      - "127.0.0.1:8025:8025"
+
+volumes:
+  server-local-data:
