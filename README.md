@@ -56,7 +56,7 @@ The first run downloads Chromium (about 150 MB, once). The report lands in `.deb
 - `--unit individual` (default) simulates one person per unit. `--unit business` simulates business crews: an owner and `--employees` teammates (default 2, max 4; 0 = owner only). `--agents` is the number of units. Crews need `--mailpit`.
 - `--tier quick|standard|deep` sets the run size: Quick is 3 units with owners only, Standard is 10 units with 2 employees each, Deep is 30 units with 3 each. `--agents` and `--employees` override it. `--max-cost 0.50` refuses to start a run that could cost more.
 - `--inclusion off` skips the inclusion needs, which are on by default. The starting need rotates daily.
-- `--languages ar,en` gives the customers first languages in turn. Arabic-first agents use the site in Arabic when it offers it, write their names in Arabic script and type numbers with Arabic-Indic digits.
+- `--languages ar,en` gives the customers first languages in turn. Arabic-first agents browse with their browser set to Arabic, use the site in Arabic when it offers it, write their names in Arabic script and type numbers with Arabic-Indic digits.
 - `--mailpit http://127.0.0.1:54324` gives each agent its own inbox for magic links and confirmation emails, for example the Mailpit that `supabase start` runs.
 - `--sandbox-outbox <url>` (with `DEBUTLY_SANDBOX_TOKEN` set) reads what your app's sandbox blocked during the run. Failures that happened while it was blocking an outside service, server errors saying a key is missing, and failures to reach a website an agent made up for its company are listed under "Caused by the test environment" instead of as findings.
 - `--max-steps`, `--agent-token-cap 200000` and `--agent-minutes 15` cap each agent.

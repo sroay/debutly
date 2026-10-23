@@ -30,7 +30,7 @@ export interface AgentRunDeps {
  */
 export async function runAgentSession(d: AgentRunDeps, persona: Persona, goal: string, brief: string | undefined): Promise<Session> {
   const record = d.store && d.runId ? { store: d.store, runId: d.runId } : undefined;
-  const { context, page } = await openAgentPage(d.browser, persona.inclusion);
+  const { context, page } = await openAgentPage(d.browser, persona.inclusion, persona.language);
   if (record) await record.store.startSession(record.runId, persona.id, goal);
   let session: Session;
   try {

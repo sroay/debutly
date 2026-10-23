@@ -31,10 +31,15 @@ export function withInclusion(units: CustomerUnit[], offset: number): CustomerUn
 const SLOW_NETWORK = { offline: false, latency: 400, downloadThroughput: (500 * 1024) / 8, uploadThroughput: (500 * 1024) / 8 };
 const SLOW_NAVIGATION_MS = 90_000;
 
-/** A fresh browser context and page for one agent, shaped by its inclusion need. */
-export async function openAgentPage(browser: Browser, need?: InclusionNeed): Promise<{ context: BrowserContext; page: Page }> {
-  // 200% zoom on a 1280×800 laptop lays pages out like a 640×400 viewport.
-  const context = await browser.newContext(need === "low_vision" ? { viewport: { width: 640, height: 400 } } : {});
+/** A fresh browser context and page for one agent, shaped by its inclusion need and first language. */
+export async function openAgentPage(browser: Browser, need?: InclusionNeed, language?: string): Promise<{ context: BrowserContext; page: Page }> {
+  const context = await browser.newContext({
+    // 200% zoom on a 1280×800 laptop lays pages out like a 640×400 viewport.
+    ...(need === "low_vision" ? { viewport: { width: 640, height: 400 } } : {}),
+    // Someone whose first language isn't English usually has their browser set to it, so the
+    // site hears it in Accept-Language and navigator.language, as it would from them.
+    ...(language && language !== "en" ? { locale: language } : {}),
+  });
   const page = await context.newPage();
   if (need === "slow_connection") {
     const cdp = await context.newCDPSession(page);

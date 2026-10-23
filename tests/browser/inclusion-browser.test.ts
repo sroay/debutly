@@ -31,5 +31,20 @@ it("slows every request down on a slow connection", async () => {
 it("leaves everyone else with a normal browser", async () => {
   const { page, context } = await openAgentPage(browser, undefined);
   expect(page.viewportSize()).toEqual({ width: 1280, height: 720 });
+  expect(await page.evaluate("navigator.language")).toMatch(/^en/); // the machine's own
   await context.close();
+});
+
+it("sets an Arabic-first agent's browser to Arabic, as their own would be", async () => {
+  const { page, context } = await openAgentPage(browser, "low_vision", "ar");
+  let asked = "";
+  page.on("request", (r) => (asked = r.headers()["accept-language"] ?? asked));
+  await page.goto(fx.url);
+  expect(await page.evaluate("navigator.language")).toBe("ar");
+  expect(asked).toMatch(/^ar\b/);
+  expect(page.viewportSize()).toEqual({ width: 640, height: 400 });
+  await context.close();
+  const english = await openAgentPage(browser, undefined, "en");
+  expect(await english.page.evaluate("navigator.language")).toMatch(/^en/);
+  await english.context.close();
 });

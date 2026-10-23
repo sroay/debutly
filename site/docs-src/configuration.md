@@ -38,7 +38,7 @@ In `debutly.json` a setting is camelCased; as a flag it is written with dashes: 
 | `maxCost` | none | Refuse to start a run that could cost more than this, in US dollars. |
 | `maxSteps` | `30` | Most actions one agent takes before it stops. |
 | `inclusion` | `on` | `off` leaves out the screen-reader, low-vision, slow-connection and non-native English agents. |
-| `languages` | none | Your customers' first languages as codes, such as `ar,en`. Agents take them in turn. An Arabic-first agent switches the site to Arabic when it can, writes its name in Arabic script, and types numbers as an Arabic phone keyboard does (٠٥٠…). |
+| `languages` | none | Your customers' first languages as codes, such as `ar,en`. Agents take them in turn, each with their browser set to their language. An Arabic-first agent switches the site to Arabic when it can, writes its name in Arabic script, and types numbers as an Arabic phone keyboard does (٠٥٠…). |
 | `concurrency` | `3` | How many agents use the app at once. |
 | `mailpit` | none | Address of a Mailpit mail catcher, which gives each agent an inbox for confirmation links and invites. |
 | `emailDomain` | `agents.test` | The domain of the agents' email addresses. |
