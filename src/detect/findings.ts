@@ -45,9 +45,16 @@ const STUCK_REPEATS = 3;
 // Server and browser share a clock in a throwaway environment; allow for background work finishing late.
 const SANDBOX_SLACK_MS = 2000;
 
+// Pages that differ only by a record's id are one page: every new customer of one app landed on
+// /app/accounts/<their account>/onboarding, which listed the same unlabeled button once per agent.
+const ID_SEGMENT = /^(?:\d+|[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}|[0-9a-f]{16,}|(?=[a-z0-9]*\d)[a-z0-9]{20,})$/i;
+
 const pathOf = (url: string) => {
   try {
-    return new URL(url).pathname;
+    return new URL(url).pathname
+      .split("/")
+      .map((segment) => (ID_SEGMENT.test(segment) ? ":id" : segment))
+      .join("/");
   } catch {
     return url;
   }

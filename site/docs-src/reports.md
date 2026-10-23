@@ -28,7 +28,7 @@ One line per agent: who it was, any access need, its first language when the run
 
 ## Findings
 
-Each finding says what went wrong, how many of the agents who reached that page ran into it, and how to reproduce it: the agent's steps, each with its reason, and a screenshot.
+Each finding says what went wrong, how many of the agents who reached that page ran into it, and how to reproduce it: the agent's steps, each with its reason, and a screenshot. Pages that differ only by an id count as one page, written with `:id`: `/accounts/2/onboarding` and `/accounts/3/onboarding` are both `/accounts/:id/onboarding`.
 
 | Finding | What it means |
 |---|---|

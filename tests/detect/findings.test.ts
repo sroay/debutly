@@ -27,6 +27,21 @@ it("finds HTTP errors, escalates critical paths and scores consensus", () => {
   ]);
 });
 
+it("counts pages that differ only by an id as one page", () => {
+  const limits = (account: number): Signal => ({ kind: "http_error", status: 404, requestUrl: `${B}/api/v1/accounts/${account}/limits`, url: `${B}/app/accounts/${account}/onboarding` });
+  const unnamed = (i: number, path: string, signals: Signal[] = []) => step(i, path, signals, { type: "wait" }, [""]);
+  const findings = detectFindings([
+    session("a", [unnamed(0, "/app/accounts/2/onboarding", [limits(2)])]),
+    session("b", [unnamed(0, "/app/accounts/3/onboarding", [limits(3)])]),
+    session("c", [unnamed(0, "/app/records/9b2c0e4a-51f6-4c3e-8d7b-2f1e0c9a7b31/edit")]),
+  ]);
+  expect(findings.map((f) => [f.title, f.hitBy.join(","), f.visitors]).sort()).toEqual([
+    ["HTTP 404 from /api/v1/accounts/:id/limits", "a,b", 2],
+    ["Unlabeled button on /app/accounts/:id/onboarding", "a,b", 2],
+    ["Unlabeled button on /app/records/:id/edit", "c", 1],
+  ]);
+});
+
 it("ignores favicon misses and browser echoes of HTTP errors", () => {
   const findings = detectFindings([
     session("a", [
