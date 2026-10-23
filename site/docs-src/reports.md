@@ -63,7 +63,7 @@ The first agents in each run take on one access need each, rotating daily, so a 
   - It doesn't model eyesight or contrast.
 - **The slow-connection agent's** network really is throttled, to 500 kbit/s with 400 ms round trips.
 - **The non-native English agent** is acted out entirely by the model.
-- **First languages.** With `languages` (such as `ar,en`), agents also take customers' first languages in turn, with their browser set to that language, so a site that follows the browser shows it. An Arabic-first agent switches the site to Arabic when it can, writes its name in Arabic script and types numbers with Arabic-Indic digits, which some forms wrongly refuse. Every page is checked for its language and, if mostly Arabic, its direction, whichever agent visits it.
+- **First languages.** With `languages` (such as `ar,en`), agents also take customers' first languages in turn, with their browser set to that language, so a site that follows the browser shows it. An Arabic-first agent switches the site to Arabic when it can, writes its name in Arabic script and types numbers with Arabic-Indic digits, which some forms wrongly refuse. When a form refuses a request (400 or 422) just after an agent typed Arabic into it, the finding says what was typed into which field. Every page is checked for its language and, if mostly Arabic, its direction, whichever agent visits it.
 
 Findings like these name the WCAG 2.2 success criteria they relate to, with a link to W3C's explanation of each: 1.3.1, 1.4.4, 1.4.10, 2.1.1, 2.4.4, 2.4.11, 3.1.1, 3.3.2 and 4.1.2. They point to things a person should check, with assistive technology where it matters. A run with no such findings says nothing about conformance with WCAG or any accessibility standard.
 

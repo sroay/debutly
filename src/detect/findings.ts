@@ -257,6 +257,37 @@ export interface DetectOptions {
   sandbox?: boolean;
 }
 
+// Arabic input a form may refuse: digits as an Arabic phone keyboard types them (٠–٩, and the
+// Persian/Urdu ۰–۹), and names in Arabic script. Gulf sign-up forms often reject both.
+const ARABIC_DIGITS = /[٠-٩۰-۹]/;
+const ARABIC_SCRIPT = /[ء-يٱ-ۓ]/;
+const REFUSED_INPUT = new Set([400, 422]);
+
+interface ArabicField {
+  field: string;
+  text: string;
+  digits: boolean;
+}
+
+function arabicField(field: string, text: string): ArabicField | undefined {
+  if (ARABIC_DIGITS.test(text)) return { field, text, digits: true };
+  if (ARABIC_SCRIPT.test(text)) return { field, text, digits: false };
+  return undefined;
+}
+
+/** "1 of the 2 agents who got this error had just typed Arabic-Indic digits into "Phone" ("٠٥٠…")…" */
+function arabicInputNote(fields: ArabicField[], agents: number, refused: number): string {
+  const quote = (f: ArabicField) => `"${f.field}" ("${f.text.slice(0, 40)}")`;
+  const digits = fields.filter((f) => f.digits).map(quote);
+  const script = fields.filter((f) => !f.digits).map(quote);
+  const typed = [
+    ...(digits.length ? [`Arabic-Indic digits into ${digits.join(" and ")}`] : []),
+    ...(script.length ? [`Arabic script into ${script.join(" and ")}`] : []),
+  ].join(" and ");
+  const who = refused === 1 ? "The agent who got this error" : `${agents} of the ${refused} agents who got this error`;
+  return ` ${who} had just typed ${typed}. People type this way on an Arabic keyboard. Check that the form accepts them, and converts the digits to 0–9 where it needs to.`;
+}
+
 function blockedDuring(signal: Signal, blocked: BlockedCall[]): string[] {
   if (signal.kind !== "http_error" || signal.startedAt === undefined || signal.at === undefined) return [];
   const from = signal.startedAt - SANDBOX_SLACK_MS;
@@ -271,6 +302,8 @@ export function detectFindings(sessions: Session[], opts: DetectOptions = {}): F
   // it (it was blocking an outbound call at the time, the app said a key was missing, or it
   // couldn't reach the site the agent made up).
   const sandbox = new Map<string, { occurrences: number; explained: number; causes: Set<string> }>();
+  // Per refused-request signature: the Arabic each agent had typed into the form just before.
+  const arabicInput = new Map<string, Map<string, ArabicField[]>>();
 
   const record = (c: Candidate, agentId: string, stepIndex: number) => {
     let f = found.get(c.signature);
@@ -291,10 +324,22 @@ export function detectFindings(sessions: Session[], opts: DetectOptions = {}): F
     const covered = new Map<string, number>();
     // Websites this agent gave for its company so far.
     const sites = new Set<string>();
+    // What the agent has typed into each field on the page it is on.
+    let typedOn = "";
+    const typed = new Map<string, string>();
     for (const step of s.steps) {
       const pagePath = pathOf(step.observation.url);
       const site = typedSite(step);
       if (site) sites.add(site);
+      if (pagePath !== typedOn) {
+        typed.clear();
+        typedOn = pagePath;
+      }
+      if (step.action.type === "fill") {
+        const id = step.action.id;
+        const el = step.observation.elements.find((e) => e.id === id);
+        typed.set(el?.ax?.name || el?.name || el?.role || `field ${id}`, step.action.text);
+      }
       if (!visitors.has(pagePath)) visitors.set(pagePath, new Set());
       visitors.get(pagePath)!.add(s.agentId);
 
@@ -314,6 +359,12 @@ export function detectFindings(sessions: Session[], opts: DetectOptions = {}): F
           if (missing) tally.causes.add(`missing key: ${missing}`);
           if (madeUp) tally.causes.add(`made-up site: ${madeUp}`);
           sandbox.set(c.signature, tally);
+          const arabic = [...typed].map(([field, text]) => arabicField(field, text)).filter((f) => f !== undefined);
+          if (signal.kind === "http_error" && REFUSED_INPUT.has(signal.status) && arabic.length) {
+            const byAgent = arabicInput.get(c.signature) ?? new Map<string, ArabicField[]>();
+            if (!byAgent.has(s.agentId)) byAgent.set(s.agentId, arabic);
+            arabicInput.set(c.signature, byAgent);
+          }
         }
       }
 
@@ -453,7 +504,9 @@ export function detectFindings(sessions: Session[], opts: DetectOptions = {}): F
     const confidence = MEASURED.has(f.kind) ? "high" : confidenceFor(f.hitBy.length / pageVisitors);
     // Covered only for the agent at 200% zoom: the layout at that size is the problem.
     const wcag = f.kind === "covered" && f.hitBy.every((a) => needOf.get(a) === "low_vision") ? ["1.4.4", "1.4.10"] : f.wcag;
-    return { ...f, visitors: pageVisitors, confidence, ...(sandboxCause ? { sandboxCause } : {}), ...(wcag ? { wcag } : {}) };
+    const arabic = arabicInput.get(f.signature);
+    const detail = arabic ? f.detail + arabicInputNote([...arabic.values()][0], arabic.size, f.hitBy.length) : f.detail;
+    return { ...f, detail, visitors: pageVisitors, confidence, ...(sandboxCause ? { sandboxCause } : {}), ...(wcag ? { wcag } : {}) };
   });
 
   return findings.sort(

@@ -82,6 +82,35 @@ it("checks the page says its language, and that Arabic runs right to left", () =
   ]);
 });
 
+it("says when a refused form had Arabic input in it, and for how many of the agents who got the error", () => {
+  const phone: InteractiveElement = { id: 0, role: "input:tel", name: "Phone", tag: "input" };
+  const name: InteractiveElement = { id: 1, role: "input:text", name: "Full name", tag: "input" };
+  const submit = button(2, "Create account");
+  const form = page("/signup", [phone, name, submit]);
+  const refused = { kind: "http_error" as const, status: 422, requestUrl: `${B}/api/accounts`, url: `${B}/signup` };
+  const signUp = (id: string, nameText: string, phoneText: string) =>
+    session(id, [
+      step(0, form, { type: "fill", id: 1, text: nameText }),
+      step(1, form, { type: "fill", id: 0, text: phoneText }),
+      step(2, form, { type: "click", id: 2 }, { signals: [refused] }),
+    ]);
+  const [f] = detectFindings([signUp("fatima", "فاطمة الحمادي", "٠٥٠١٢٣٤٥٦٧"), signUp("james", "James Carter", "+971 50 123 4567")]).filter(
+    (x) => x.kind === "http_error",
+  );
+  expect(f.title).toBe("HTTP 422 from /api/accounts");
+  expect(f.detail).toContain(
+    '1 of the 2 agents who got this error had just typed Arabic-Indic digits into "Phone" ("٠٥٠١٢٣٤٥٦٧") and Arabic script into "Full name" ("فاطمة الحمادي").',
+  );
+  expect(f.detail).toContain("Check that the form accepts them, and converts the digits to 0–9 where it needs to.");
+
+  // Arabic typed on another page, or a server error, isn't related.
+  const elsewhere = session("noora", [
+    step(0, page("/profile", [phone]), { type: "fill", id: 0, text: "٠٥٠١٢٣٤٥٦٧" }),
+    step(1, form, { type: "click", id: 2 }, { signals: [refused, { ...refused, status: 500, requestUrl: `${B}/api/other` }] }),
+  ]);
+  expect(detectFindings([elsewhere]).map((x) => x.detail).join(" ")).not.toContain("Arabic");
+});
+
 it("leaves runs recorded before these checks alone", () => {
   const old: Observation = { url: `${B}/`, title: "", text: "", elements: [button(0, "Save")] };
   expect(detectFindings([session("a", [step(0, old)])])).toEqual([]);
