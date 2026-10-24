@@ -7,7 +7,7 @@ description: Your first Debutly run in about five minutes. Set up with npx debut
 
 Your first run takes about five minutes. You need Node.js 20.12 or later and a test copy of your app.
 
-> **Before the first npm release**, type `npx github:sroay/debutly` wherever this page says `npx debutly`. The first time takes a minute or two while npm downloads it.
+The first `npx debutly` takes a minute or two while npm downloads it.
 
 ## 1. Set up
 

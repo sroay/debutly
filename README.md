@@ -24,7 +24,7 @@ Website and docs: [debutly.dev](https://debutly.dev) ([quick start](https://debu
 
 ## Quick start
 
-Needs Node.js 20.12 or later. Until the first npm release, type `npx github:sroay/debutly` wherever this says `npx debutly`. In your app's folder:
+Needs Node.js 20.12 or later. In your app's folder:
 
 ```bash
 npx debutly init     # a few questions, then a debutly.json
