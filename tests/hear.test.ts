@@ -30,6 +30,7 @@ beforeAll(async () => {
       return res.end();
     }
     res.writeHead(200, { "content-type": "text/html" });
+    if (req.url === "/form") return res.end(`<title>Sign in</title><form><input type="email" placeholder="john@doe.com"><button>Go</button></form>`);
     res.end(req.url === "/dashboard" ? "<title>Dashboard</title><p>Welcome</p>" : PAGE);
   });
   await new Promise<void>((r) => server.listen(0, "127.0.0.1", r));
@@ -193,3 +194,44 @@ it("waits for a screen reader that speaks late, and for the rest of what it says
   expect(await nextUtterance(speaker([[0, "form landmark"], [150, "john at doe dot com, edit"]]), quick)).toBe("form landmark john at doe dot com, edit");
   expect(await nextUtterance(speaker([]), quick)).toBe("");
 });
+
+it("hears a control again on its own when the walk only heard where focus went", async () => {
+  const dir = await mkdtemp(join(tmpdir(), "debutly-hear-"));
+  const observation = { url: `${base}/form`, title: "", text: "", elements: [] };
+  await writeFile(join(dir, "sessions.json"), JSON.stringify([{ agentId: "a", personaName: "A", goal: "g", outcome: "gave_up", outcomeNote: "", steps: [{ index: 0, observation, action: { type: "wait" }, reasoning: "", signals: [] }] }]));
+  await writeFile(join(dir, "findings.json"), JSON.stringify([{ ...finding("Email field on /form is named only by its placeholder", { role: "input:email", problem: "placeholder" }, "/form"), evidence: [{ agentId: "a", stepIndex: 0 }] }]));
+  await writeFile(join(dir, "report.md"), "# Debutly Report\n");
+  // Speaks on every focus change, as screen readers do, but the first one on the page says only
+  // where focus went, as NVDA and VoiceOver did arriving from the browser's toolbar.
+  let page: Page | undefined;
+  let arrived = false;
+  const reader: ScreenReader = {
+    name: "Stand-in 1.0",
+    start: async () => {},
+    stop: async () => {},
+    focus: async (p) => {
+      page = p;
+      await p.evaluate(`(() => {
+        window.__said = [];
+        document.addEventListener("focusin", (e) => {
+          const el = e.target;
+          const role = el.tagName === "INPUT" ? "edit" : el.tagName.toLowerCase();
+          const name = el.getAttribute("placeholder") || (el.innerText || "").trim();
+          window.__said.push((name ? name + ", " : "") + role);
+        });
+      })()`);
+    },
+    press: async (key) => {
+      await page!.keyboard.press(key);
+    },
+    said: async () => {
+      const said = (await page!.evaluate(`(() => { const s = window.__said.join(" "); window.__said = []; return s; })()`)) as string;
+      if (!said || arrived) return said;
+      arrived = true;
+      return "form landmark";
+    },
+  };
+  const [h] = await hearFindings({ reportDir: dir, reader, launch: () => chromium.launch() });
+  expect(h.verdict).toBe("confirmed");
+  expect(h.note).toBe('Stand-in named it by its placeholder: "john@doe.com, edit".');
+}, 60_000);

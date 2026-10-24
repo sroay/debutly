@@ -155,6 +155,28 @@ async function tabThrough(page: Page, reader: ScreenReader, tabs: number): Promi
   return stops;
 }
 
+const FOCUS = (id: string) => `(() => { const el = document.querySelector('[data-debutly-id="${id}"]'); if (el) el.focus(); })()`;
+
+/**
+ * What the screen reader says about each control a finding is about, heard again on its own: focus
+ * moves to another control on the page and back, as Shift+Tab would. On the walk, a field reached
+ * from the browser's toolbar was announced only as where focus went ("Chatwoot, document", "form
+ * landmark"), and VoiceOver could still be speaking about one control when focus reached the next.
+ * Tab still decides what can be reached; this decides what is said about it.
+ */
+async function hearAgain(page: Page, reader: ScreenReader, stops: Stop[], ids: Set<string>): Promise<void> {
+  for (const [i, stop] of stops.entries()) {
+    if (stop.id === null || !ids.has(stop.id)) continue;
+    const neighbour = [...stops.slice(i + 1), ...stops.slice(0, i).reverse()].find((s) => s.id !== null && s.id !== stop.id);
+    if (!neighbour) continue;
+    await page.evaluate(FOCUS(neighbour.id!));
+    await reader.said();
+    await page.evaluate(FOCUS(stop.id));
+    const said = await reader.said();
+    if (said) stop.said = said;
+  }
+}
+
 function judge(f: Finding, page: string, elements: InteractiveElement[], stops: Stop[], readerName: string): Heard {
   const control = f.control!;
   const targets = elements.filter((el) => matches(control, el));
@@ -247,6 +269,8 @@ export async function hearFindings(o: HearOptions): Promise<Heard[]> {
         const names = await accessibleNames(page);
         if (names) for (const el of elements) if (names.get(el.id)) el.ax = names.get(el.id);
         const stops = await tabThrough(page, o.reader, o.tabs ?? 120);
+        const ids = new Set(visit.findings.flatMap((f) => elements.filter((el) => matches(f.control!, el)).map((el) => String(el.id))));
+        await hearAgain(page, o.reader, stops, ids);
         for (const f of visit.findings) heard.push(judge(f, path, elements, stops, o.reader.name.split(" ")[0]));
       } finally {
         await context.close();
