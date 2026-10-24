@@ -17,6 +17,7 @@ import { OUT_OF_CREDITS } from "./llm/types";
 import { generateUnits } from "./persona/generate";
 import { withInclusion } from "./persona/inclusion";
 import { languageName, parseLanguages, withLanguages } from "./persona/language";
+import { peopleCount, readPeople } from "./persona/people";
 import { exhibitsFromSessions } from "./perception/exhibits";
 import { runPerception } from "./perception/run-perception";
 import { renderLaunchReadiness } from "./report/launch-readiness";
@@ -26,7 +27,7 @@ import { HttpSandboxOutbox } from "./sandbox/outbox";
 import { runSimulation } from "./run";
 import { openDb } from "./store/db";
 import { PgRunStore } from "./store/pg-run-store";
-import type { Persona } from "./types";
+import type { CustomerUnit, Persona } from "./types";
 import { runOrigin } from "./util/run-origin";
 
 const MAX_EMPLOYEES = 4;
@@ -77,13 +78,15 @@ const { values } = parseArgs({
     evaluators: { type: "string" },
     // Customers' first languages, as lang codes (ar,en): agents take them in turn.
     languages: { type: "string" },
+    // An earlier run's people.json: the same agents again, e.g. to see whether a fix worked.
+    people: { type: "string" },
   },
 });
 
 const unitKind = values.unit;
 if (!values.url || !values.goal || !values.icp || (unitKind !== "individual" && unitKind !== "business")) {
   console.error(
-    'Usage: npx debutly (settings in debutly.json; npx debutly init writes one) or npx debutly --url <url> --goal "<goal>" --icp "<ideal customer profile>" [--unit individual|business] [--tier quick|standard|deep] [--agents N] [--employees N] [--max-cost USD] [--inclusion on|off] [--max-steps 30] [--concurrency 3] [--out runs/x] [--mailpit http://127.0.0.1:54324] [--email-domain agents.test] [--sandbox-outbox http://localhost:3000/api/sandbox/outbox] [--store postgres://…] [--app name] [--trigger nightly|pr|manual] [--ci-url url] [--screenshot-days 7] [--browser-state dir] [--queue redis://…] [--agent-token-cap N] [--agent-minutes N] [--evaluators N]',
+    'Usage: npx debutly (settings in debutly.json; npx debutly init writes one) or npx debutly --url <url> --goal "<goal>" --icp "<ideal customer profile>" [--unit individual|business] [--tier quick|standard|deep] [--agents N] [--employees N] [--max-cost USD] [--inclusion on|off] [--max-steps 30] [--concurrency 3] [--out runs/x] [--mailpit http://127.0.0.1:54324] [--email-domain agents.test] [--sandbox-outbox http://localhost:3000/api/sandbox/outbox] [--store postgres://…] [--app name] [--trigger nightly|pr|manual] [--ci-url url] [--screenshot-days 7] [--browser-state dir] [--queue redis://…] [--agent-token-cap N] [--agent-minutes N] [--evaluators N] [--people runs/x/people.json]',
   );
   process.exit(1);
 }
@@ -103,13 +106,20 @@ const size = resolveRunSize({
 const employees = Math.min(Math.max(size.employees || 0, 0), MAX_EMPLOYEES);
 const count = size.units;
 const maxSteps = Number(values["max-steps"]);
+let reused: CustomerUnit[] | undefined;
+try {
+  reused = values.people ? await readPeople(values.people) : undefined;
+} catch (err) {
+  console.error(err instanceof Error ? err.message : err);
+  process.exit(1);
+}
 if (unitKind === "business" && employees > 0 && !values.mailpit) {
   console.warn("Business crews need --mailpit for invites; employees will be recorded as not invited.");
 }
 
 // Before anything is spent: what could this run cost?
 const navModel = process.env.DEBUTLY_NAV_MODEL ?? (process.env.DEBUTLY_PROVIDER === "openai-compatible" ? "" : "claude-haiku-4-5");
-const agents = agentCount(unitKind, { ...size, employees });
+const agents = reused ? peopleCount(reused) : agentCount(unitKind, { ...size, employees });
 const price = await fetchModelPrice(navModel);
 const evaluatorCount = values.evaluators !== undefined ? Number(values.evaluators) : 0;
 const depthEstimate = estimateRunCost({ agents, maxSteps, price });
@@ -141,13 +151,19 @@ if (credits.refuse) {
 if (credits.warn) console.warn(`Warning: ${credits.warn}`);
 
 const { nav, judge } = createLlms(process.env);
-console.log(`Generating ${count} ${unitKind === "business" ? `business crew(s) with ${employees} employees each` : "individual(s)"}...`);
-let units = await generateUnits(judge, values.icp, { kind: unitKind, count, employees, languages });
-if (values.inclusion !== "off") {
-  const dayOfYear = Math.floor((Date.now() - Date.UTC(new Date().getUTCFullYear(), 0, 1)) / 86_400_000);
-  units = withInclusion(units, dayOfYear);
+let units: CustomerUnit[];
+if (reused) {
+  console.log(`The same ${agents} agents as before, from ${values.people}:`);
+  units = reused;
+} else {
+  console.log(`Generating ${count} ${unitKind === "business" ? `business crew(s) with ${employees} employees each` : "individual(s)"}...`);
+  units = await generateUnits(judge, values.icp, { kind: unitKind, count, employees, languages });
+  if (values.inclusion !== "off") {
+    const dayOfYear = Math.floor((Date.now() - Date.UTC(new Date().getUTCFullYear(), 0, 1)) / 86_400_000);
+    units = withInclusion(units, dayOfYear);
+  }
+  units = withLanguages(units, languages);
 }
-units = withLanguages(units, languages);
 
 const describe = (p: Persona) =>
   `${p.id} ${p.name}${p.role ? ` (${p.role})` : ""}${p.inclusion ? ` [${p.inclusion.replace(/_/g, " ")}]` : ""}${p.language && p.language !== "en" ? ` [${languageName(p.language)}]` : ""}: ${p.background}`;

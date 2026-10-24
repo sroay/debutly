@@ -7,6 +7,7 @@ import { runUnit, type RunAgent } from "./crew/run-unit";
 import { detectFindings } from "./detect/findings";
 import type { Inbox } from "./inbox/types";
 import type { LlmClient } from "./llm/types";
+import { PEOPLE_FILE } from "./persona/people";
 import { renderReport } from "./report/markdown";
 import type { ModelPrice } from "./llm/meter";
 import { blockedCalls, type SandboxOutbox } from "./sandbox/outbox";
@@ -120,6 +121,7 @@ export async function runSimulation(o: SimulationOptions): Promise<SimulationRes
     const reportPath = join(o.outDir, "report.md");
     await writeFile(join(o.outDir, "sessions.json"), JSON.stringify(sessions, null, 2));
     await writeFile(join(o.outDir, "findings.json"), JSON.stringify(findings, null, 2));
+    await writeFile(join(o.outDir, PEOPLE_FILE), JSON.stringify(o.units, null, 2));
     await writeFile(reportPath, reportMd);
     if (store && runId) {
       const status = sessions.some((s) => s.outcome === "cancelled") ? "cancelled" : "finished";

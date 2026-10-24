@@ -57,6 +57,7 @@ Only on the command line:
 | `--store <postgres url>` | Record the run in a database for the dashboard. `DEBUTLY_STORE_URL` does the same and keeps the address out of your shell history. |
 | `--queue <redis url>` | Hand the agents to workers (`npx debutly worker`) instead of running them here. |
 | `--browser-state <folder>` | Keep each agent's signed-in browser (cookies, storage) there when it finishes, so `npx debutly hear` can open pages behind sign-in. It holds session cookies for your test copy: keep it out of reports and repos. |
+| `--people <people.json>` | Run the same agents as an earlier run (the `people.json` in its report folder): the same people, access needs and languages, with new email addresses. Use it to see whether a fix worked. |
 | `--trigger`, `--ci-url` | What started the run and its CI page, for the dashboard. GitHub Actions fills these in. |
 
 The address of a database holds a password, so `debutly.json` can't name one: set `DEBUTLY_STORE_URL` instead.
