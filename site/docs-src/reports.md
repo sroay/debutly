@@ -5,11 +5,22 @@ description: What Debutly's report says: findings and their severity, how sure e
 
 # Reading the report
 
-Every run writes `report.md`, with `findings.json`, `sessions.json` (every step of every agent) and a `screenshots` folder beside it. In GitHub Actions the report is on the workflow run's summary page. The report is labelled as simulated evidence: it comes from AI agents, not real customers.
+Every run writes `report.md`, with `findings.json`, `sessions.json` (every step of every agent), `people.json` (the agents, to run them again) and a `screenshots` folder beside it. In GitHub Actions the report is on the workflow run's summary page. The report is labelled as simulated evidence: it comes from AI agents, not real customers.
 
 ## The top
 
 How many agents ran, what the run cost, and the count of findings by severity. If the model provider ran out of credit part-way, a **Run cut short** note comes first: the agents it stopped are named, and the findings cover only the steps they took.
+
+## Fix these first
+
+Up to five things to look at, in order, so the report is useful in a couple of minutes:
+
+1. Each agent that gave up, ran out of steps or never got its invite: where it stopped, in its own words (or its last thought, if it ran out of steps), and its last screenshot.
+2. Then the blocker and major findings, those an agent that stopped ran into first, each with one line on what to do.
+
+Minor and low-confidence findings are left for the full list below.
+
+To see whether a fix worked, run the same agents again: `npx debutly --people <earlier report folder>/people.json`. Without it, each run meets new people, and access needs change from day to day.
 
 ## Agent outcomes
 
@@ -36,7 +47,7 @@ Each finding says what went wrong, how many of the agents who reached that page 
 | JavaScript error | An uncaught error on the page. |
 | Console error | The page logged an error. |
 | Can't click | Something kept covering a control, such as a cookie banner, a tour popup or a fixed bar, so a person can't press it either. |
-| Unlabeled control | A button, link or field with no name, which a screen reader announces only as "button". Each finding says where the control is, by the named controls around it. Controls that Tab can't reach (disabled, or out of the tab order) and controls that have only a description are reported apart, as minor. |
+| Unlabeled control | A button, link or field with no name, which a screen reader announces only as "button". Each finding says where the control is, by the named controls around it, and which icon it shows when the page's markup names one ("the trash icon"). Controls that Tab can't reach (disabled, or out of the tab order) and controls that have only a description are reported apart, as minor. |
 | Named only by its placeholder | A field with no label, which a screen reader names by its placeholder (a password's dots read as "13 bullet"). The placeholder is gone once someone types. |
 | Slow page | The page took over 10 seconds to arrive. |
 | Agent stuck | An agent did the same thing three times on one page and nothing changed. |

@@ -152,3 +152,37 @@ it("shows each agent's access need and first language", () => {
   expect(md).toContain("| Amal | — | screen reader, Arabic |");
   expect(md).toContain("| Ava | — | — |");
 });
+
+it("opens with what to fix first: agents the app stopped, then serious findings with what to do", () => {
+  const stopped: Session = {
+    ...session,
+    agentId: "p2",
+    personaName: "Omar",
+    role: "Sales rep",
+    inclusion: "screen_reader",
+    outcome: "gave_up",
+    outcomeNote: "The invite link says I have no access to this workspace",
+    steps: [{ ...session.steps[0], observation: { ...session.steps[0].observation, url: "http://a.test/welcome" }, screenshotPath: "/home/runner/work/_temp/report/screenshots/p2-007.png" }],
+  };
+  const done: Session = { ...session, agentId: "p3", personaName: "Mia", outcome: "success", outcomeNote: "all good" };
+  const stuck: Finding = { ...finding("high", "Agent stuck on /companies"), kind: "stuck", severity: "major", hitBy: ["p3"] };
+  const unlabeled: Finding = { ...finding("high", "Unlabeled link on /invite/:id"), kind: "a11y_unlabeled", severity: "major", hitBy: ["p2"], control: { role: "link", problem: "unnamed" } };
+  const minor: Finding = { ...finding("high", "Console error on /"), kind: "console_error", severity: "minor" };
+  const md = renderReport({ targetUrl: "http://a.test", goal: "Buy", sessions: [stopped, done], findings: [stuck, unlabeled, minor] });
+  const section = md.split("## Fix these first")[1].split("\n## ")[0];
+  expect(md.indexOf("## Fix these first")).toBeLessThan(md.indexOf("## Agent outcomes"));
+  expect(section).toContain("1 of 2 agents reached the goal.");
+  expect(section).toContain('1. **Omar (Sales rep; screen reader) gave up on /welcome.** In the agent\'s words: "The invite link says I have no access to this workspace" Start with the last screenshot, screenshots/p2-007.png.');
+  // The finding an agent that stopped ran into comes before one hit only by an agent that got through.
+  expect(section).toContain("2. **Unlabeled link on /invite/:id** (major). Give each one visible text, or an aria-label");
+  expect(section).toContain("3. **Agent stuck on /companies** (major). Watch the reproduction below");
+  expect(section).not.toContain("Console error");
+  expect(section).toContain("One more finding is below.");
+});
+
+it("says so when nothing stopped an agent and nothing serious was found", () => {
+  const done: Session = { ...session, outcome: "success", outcomeNote: "ok" };
+  const section = renderReport({ targetUrl: "http://a.test", goal: "Buy", sessions: [done], findings: [] }).split("## Fix these first")[1].split("\n## ")[0];
+  expect(section).toContain("1 of 1 agents reached the goal.");
+  expect(section).toContain("Nothing stopped an agent, and nothing serious was found.");
+});

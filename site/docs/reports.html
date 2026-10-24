@@ -95,9 +95,17 @@
     <main id="content" class="docs-page">
       <article class="prose">
 <h1>Reading the report</h1>
-<p>Every run writes <code>report.md</code>, with <code>findings.json</code>, <code>sessions.json</code> (every step of every agent) and a <code>screenshots</code> folder beside it. In GitHub Actions the report is on the workflow run&#39;s summary page. The report is labelled as simulated evidence: it comes from AI agents, not real customers.</p>
+<p>Every run writes <code>report.md</code>, with <code>findings.json</code>, <code>sessions.json</code> (every step of every agent), <code>people.json</code> (the agents, to run them again) and a <code>screenshots</code> folder beside it. In GitHub Actions the report is on the workflow run&#39;s summary page. The report is labelled as simulated evidence: it comes from AI agents, not real customers.</p>
 <h2 id="the-top"><a class="anchor" href="#the-top">The top</a></h2>
 <p>How many agents ran, what the run cost, and the count of findings by severity. If the model provider ran out of credit part-way, a <strong>Run cut short</strong> note comes first: the agents it stopped are named, and the findings cover only the steps they took.</p>
+<h2 id="fix-these-first"><a class="anchor" href="#fix-these-first">Fix these first</a></h2>
+<p>Up to five things to look at, in order, so the report is useful in a couple of minutes:</p>
+<ol>
+<li>Each agent that gave up, ran out of steps or never got its invite: where it stopped, in its own words (or its last thought, if it ran out of steps), and its last screenshot.</li>
+<li>Then the blocker and major findings, those an agent that stopped ran into first, each with one line on what to do.</li>
+</ol>
+<p>Minor and low-confidence findings are left for the full list below.</p>
+<p>To see whether a fix worked, run the same agents again: <code>npx debutly --people &lt;earlier report folder&gt;/people.json</code>. Without it, each run meets new people, and access needs change from day to day.</p>
 <h2 id="agent-outcomes"><a class="anchor" href="#agent-outcomes">Agent outcomes</a></h2>
 <p>One line per agent: who it was, any access need, its first language when the run has <code>languages</code>, and how it ended.</p>
 <div class="table-wrap"><table>
@@ -160,7 +168,7 @@
 </tr>
 <tr>
 <td>Unlabeled control</td>
-<td>A button, link or field with no name, which a screen reader announces only as &quot;button&quot;. Each finding says where the control is, by the named controls around it. Controls that Tab can&#39;t reach (disabled, or out of the tab order) and controls that have only a description are reported apart, as minor.</td>
+<td>A button, link or field with no name, which a screen reader announces only as &quot;button&quot;. Each finding says where the control is, by the named controls around it, and which icon it shows when the page&#39;s markup names one (&quot;the trash icon&quot;). Controls that Tab can&#39;t reach (disabled, or out of the tab order) and controls that have only a description are reported apart, as minor.</td>
 </tr>
 <tr>
 <td>Named only by its placeholder</td>

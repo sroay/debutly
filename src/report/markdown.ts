@@ -4,6 +4,7 @@ import { describeCriterion } from "../detect/wcag";
 import { OUT_OF_CREDITS } from "../llm/types";
 import { languageName } from "../persona/language";
 import type { CustomerUnit, Finding, Session } from "../types";
+import { renderFixFirst, shotPath } from "./fix-first";
 
 export interface ReportInput {
   targetUrl: string;
@@ -40,7 +41,7 @@ function renderFinding(f: Finding, sessions: Session[]): string {
       lines.push(`${step.index + 1}. ${describeAction(step.action, step.observation)} — "${step.reasoning}"`);
     }
     const shot = session.steps[ev.stepIndex]?.screenshotPath;
-    if (shot) lines.push("", `Screenshot: ${shot}`);
+    if (shot) lines.push("", `Screenshot: ${shotPath(shot)}`);
   }
   return lines.join("\n");
 }
@@ -164,6 +165,7 @@ export function renderReport(input: ReportInput): string {
     `Findings: ${count("blocker")} blocker, ${count("major")} major, ${count("minor")} minor (${low.length} low-confidence${caused.length ? `, ${caused.length} caused by the test environment` : ""})`,
     "",
     ...renderOutOfCredits(input.sessions),
+    ...renderFixFirst(input.sessions, input.findings, needLabel),
     ...renderUnits(input.units ?? [], input.sessions),
     `## Agent outcomes`,
     "",
