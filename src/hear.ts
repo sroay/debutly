@@ -155,6 +155,10 @@ async function tabThrough(page: Page, reader: ScreenReader, tabs: number): Promi
   return stops;
 }
 
+/** A kind of control, in NVDA's or VoiceOver's words: what an announcement of a control includes. */
+const CONTROL_KIND =
+  /\b(button|link|combo box|edit|check ?box|switch|radio button|menu button|toggle button|text field|secure text field|text area|edit text|secure edit text|pop[- ]?up button|slider|tab)\b/i;
+
 const FOCUS = (id: string) => `(() => { const el = document.querySelector('[data-debutly-id="${id}"]'); if (el) el.focus(); })()`;
 
 /**
@@ -166,14 +170,16 @@ const FOCUS = (id: string) => `(() => { const el = document.querySelector('[data
  */
 async function hearAgain(page: Page, reader: ScreenReader, stops: Stop[], ids: Set<string>): Promise<void> {
   for (const [i, stop] of stops.entries()) {
-    if (stop.id === null || !ids.has(stop.id)) continue;
+    // Only where the walk heard no kind of control at all; and only a hearing that names one is
+    // kept, as VoiceOver on a CI Mac sometimes spoke about something else entirely.
+    if (stop.id === null || !ids.has(stop.id) || CONTROL_KIND.test(stop.said)) continue;
     const neighbour = [...stops.slice(i + 1), ...stops.slice(0, i).reverse()].find((s) => s.id !== null && s.id !== stop.id);
     if (!neighbour) continue;
     await page.evaluate(FOCUS(neighbour.id!));
     await reader.said();
     await page.evaluate(FOCUS(stop.id));
     const said = await reader.said();
-    if (said) stop.said = said;
+    if (CONTROL_KIND.test(said)) stop.said = said;
   }
 }
 

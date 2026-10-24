@@ -201,10 +201,10 @@ it("hears a control again on its own when the walk only heard where focus went",
   await writeFile(join(dir, "sessions.json"), JSON.stringify([{ agentId: "a", personaName: "A", goal: "g", outcome: "gave_up", outcomeNote: "", steps: [{ index: 0, observation, action: { type: "wait" }, reasoning: "", signals: [] }] }]));
   await writeFile(join(dir, "findings.json"), JSON.stringify([{ ...finding("Email field on /form is named only by its placeholder", { role: "input:email", problem: "placeholder" }, "/form"), evidence: [{ agentId: "a", stepIndex: 0 }] }]));
   await writeFile(join(dir, "report.md"), "# Debutly Report\n");
-  // Speaks on every focus change, as screen readers do, but the first one on the page says only
-  // where focus went, as NVDA and VoiceOver did arriving from the browser's toolbar.
+  // Speaks on every focus change, as screen readers do, but Tab onto the form's first field says
+  // only where focus went, every time round, as NVDA did arriving from the browser's toolbar.
   let page: Page | undefined;
-  let arrived = false;
+  let byTab = false;
   const reader: ScreenReader = {
     name: "Stand-in 1.0",
     start: async () => {},
@@ -222,13 +222,14 @@ it("hears a control again on its own when the walk only heard where focus went",
       })()`);
     },
     press: async (key) => {
+      byTab = true;
       await page!.keyboard.press(key);
     },
     said: async () => {
       const said = (await page!.evaluate(`(() => { const s = window.__said.join(" "); window.__said = []; return s; })()`)) as string;
-      if (!said || arrived) return said;
-      arrived = true;
-      return "form landmark";
+      const tabbedOn = byTab;
+      byTab = false;
+      return tabbedOn && said.startsWith("john@doe.com") ? "form landmark" : said;
     },
   };
   const [h] = await hearFindings({ reportDir: dir, reader, launch: () => chromium.launch() });

@@ -86,6 +86,8 @@ The screen reader starts, and Chrome opens each page that had a screen-reader fi
 
 The report gets a "Heard with a screen reader" section, and `heard.json` beside it. The screen reader takes over the screen while it works, so use a machine you aren't using, such as a Windows or macOS GitHub runner. VoiceOver is checked with Chrome, which Debutly uses; most VoiceOver users browse with Safari, which can announce some controls differently.
 
+On the same app, NVDA gave the clearest results. VoiceOver on GitHub's Mac runners left more findings to check by ear, as it sometimes spoke late or about something else on the screen. Neither gave a verdict the other contradicted. With both, the first field on a page, reached from the browser's toolbar, can be announced only as where focus went ("form landmark"); Debutly hears it again on its own, and if that still doesn't name a control, leaves it to check by ear.
+
 ### Severity
 
 - **Blocker**: a serious problem on a page customers must get through: sign-up, sign-in, onboarding, pricing, checkout, billing, payment or invites.
