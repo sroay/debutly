@@ -25,6 +25,36 @@ it("goes by the browser's own names for unlabeled controls, and relates them to 
   expect(findings.every((f) => f.confidence === "high")).toBe(true);
 });
 
+it("tells apart unnamed controls Tab lands on, ones it can't reach, ones with a description, and fields named by a placeholder", () => {
+  const ax = (name: string, role: string, description?: string) => ({ name, role, hidden: false, ...(description ? { description } : {}) });
+  const els: InteractiveElement[] = [
+    { id: 0, role: "link", name: "Search...", tag: "a", ax: ax("Search...", "link") },
+    { id: 1, role: "button", name: "", tag: "button", ax: ax("", "button") },
+    { id: 2, role: "link", name: "My Inbox", tag: "a", ax: ax("My Inbox", "link") },
+    { id: 3, role: "button", name: "", tag: "button", ax: ax("", "button", "Sort conversations") },
+    { id: 4, role: "button", name: "", tag: "div", tabbable: false, ax: ax("", "button") },
+    { id: 5, role: "input:email", name: "john@doe.com", tag: "input", nameFrom: "placeholder", ax: ax("john@doe.com", "textbox") },
+    { id: 6, role: "input:password", name: "•••••••••••••", tag: "input", nameFrom: "placeholder", ax: ax("•••••••••••••", "textbox") },
+    { id: 7, role: "input:search", name: "Search", tag: "input", nameFrom: "placeholder", ax: ax("Search", "searchbox") },
+  ];
+  const findings = detectFindings([session("a", [step(0, page("/signup", els))])]).filter((f) => f.kind === "a11y_unlabeled");
+  const byTitle = Object.fromEntries(findings.map((f) => [f.title, f]));
+  expect(Object.keys(byTitle).sort()).toEqual([
+    "Button on /signup has a description but no name",
+    "Email field on /signup is named only by its placeholder",
+    "Password field on /signup is named only by its placeholder",
+    "Unlabeled button on /signup",
+    "Unlabeled button on /signup, which Tab doesn't reach",
+  ]);
+  expect(byTitle["Unlabeled button on /signup"]).toMatchObject({ severity: "major" });
+  expect(byTitle["Unlabeled button on /signup"].detail).toContain('It is after "Search..." and before "My Inbox".');
+  expect(byTitle["Button on /signup has a description but no name"]).toMatchObject({ severity: "minor", wcag: ["4.1.2"] });
+  expect(byTitle["Button on /signup has a description but no name"].detail).toContain('("Sort conversations")');
+  expect(byTitle["Unlabeled button on /signup, which Tab doesn't reach"]).toMatchObject({ severity: "minor" });
+  expect(byTitle["Email field on /signup is named only by its placeholder"]).toMatchObject({ severity: "major", wcag: ["1.3.1", "3.3.2"] });
+  expect(byTitle["Password field on /signup is named only by its placeholder"].detail).toContain("as a count of bullets");
+});
+
 it("reports a control the keyboard can't reach, measured once, with high confidence", () => {
   const save = button(0, "Save settings", { name: "Save settings", role: "generic", hidden: false });
   const sr = session("sr", [step(0, page("/settings", [save]), { type: "click", id: 0 }, { error: `${NOT_BY_KEYBOARD}: it isn't in the tab order` })], "screen_reader");

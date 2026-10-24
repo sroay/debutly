@@ -64,6 +64,8 @@ export interface AccessibleName {
   name: string;
   role: string;
   hidden: boolean;
+  /** What a screen reader reads after the role (aria-describedby, a tooltip); absent when there's none. */
+  description?: string;
 }
 
 export interface InteractiveElement {
@@ -76,6 +78,12 @@ export interface InteractiveElement {
   options?: string[];
   /** The browser's own accessible name and role (Chromium), as a screen reader would announce them. */
   ax?: AccessibleName;
+  /** Named only by its placeholder: no label, aria-label or aria-labelledby. */
+  nameFrom?: "placeholder";
+  /** Disabled, so Tab skips it. */
+  disabled?: true;
+  /** Out of the tab order (tabindex -1, or inside an inert part of the page). */
+  tabbable?: false;
 }
 
 export interface Observation {

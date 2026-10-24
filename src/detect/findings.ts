@@ -1,6 +1,6 @@
 import { COVERED, NOT_BY_KEYBOARD } from "../browser/execute";
 import type { BlockedCall } from "../sandbox/outbox";
-import type { Confidence, Finding, FindingKind, InclusionNeed, Observation, Session, Severity, Signal, Step } from "../types";
+import type { Confidence, Finding, FindingKind, InclusionNeed, InteractiveElement, Observation, Session, Severity, Signal, Step } from "../types";
 import { unlabeledCriteria } from "./wcag";
 
 const CRITICAL_PATH = /(sign-?up|sign-?in|log-?in|register|onboarding|auth|pricing|checkout|billing|payment|invite)/i;
@@ -164,6 +164,98 @@ const NAMED_CONTROLS: Record<string, string> = {
 function unlabeledControl(role: string): string | undefined {
   return NAMED_CONTROLS[role];
 }
+
+// Checked against what NVDA itself said on three open-source apps: an unnamed control Tab never
+// reaches, or one a screen reader reads a description for, is a smaller problem than one a
+// keyboard user lands on and hears only "button"; and a field named only by its placeholder
+// (a password read as "13 bullet") was missed, because the browser counts a placeholder as a name.
+type Unnamed = "unnamed" | "described" | "unreached" | "placeholder";
+const MAX_PLACES = 3;
+
+/** Where a control sits, by the named controls around it: 'after "Search..." and before "My Inbox"'. */
+function placeOf(elements: InteractiveElement[], i: number): string {
+  const nameAt = (j: number) => (elements[j].ax ? elements[j].ax!.name : elements[j].name);
+  let before = "";
+  for (let j = i - 1; j >= 0 && !before; j--) before = nameAt(j);
+  let after = "";
+  for (let j = i + 1; j < elements.length && !after; j++) after = nameAt(j);
+  const q = (s: string) => `"${s.slice(0, 40)}"`;
+  if (before && after) return `after ${q(before)} and before ${q(after)}`;
+  if (before) return `after ${q(before)}`;
+  return after ? `before ${q(after)}` : "";
+}
+
+/** One finding per page, kind of control and kind of problem, naming up to three places. */
+function unnamedControls(elements: InteractiveElement[], pagePath: string): Candidate[] {
+  const groups = new Map<string, { control: string; role: string; problem: Unnamed; places: string[]; said: string; count: number }>();
+  elements.forEach((el, i) => {
+    // The browser's own name when there is one (an icon named by its SVG title has a name
+    // there); a control hidden from assistive technology isn't announced at all.
+    if (el.ax?.hidden) return;
+    const control = unlabeledControl(el.role);
+    if (!control) return;
+    const name = el.ax ? el.ax.name : el.name;
+    let problem: Unnamed | undefined;
+    if (name === "") problem = el.ax?.description ? "described" : el.disabled || el.tabbable === false ? "unreached" : "unnamed";
+    else if (el.nameFrom === "placeholder" && el.role !== "input:search") problem = "placeholder";
+    if (!problem) return;
+    const key = `${problem}:${el.role}`;
+    const g = groups.get(key) ?? { control, role: el.role, problem, places: [] as string[], said: problem === "placeholder" ? name : (el.ax?.description ?? ""), count: 0 };
+    g.count++;
+    const place = placeOf(elements, i);
+    if (place && g.places.length < MAX_PLACES) g.places.push(place);
+    groups.set(key, g);
+  });
+  return [...groups.values()].map((g) => {
+    const where = g.places.length ? ` ${g.count > 1 ? `${g.count} of them, e.g. ` : "It is "}${g.places.join("; ")}.` : "";
+    const does = g.control === "button" || g.control === "link" ? "does" : "is for";
+    const an = /^[aeiou]/.test(g.control) ? "An" : "A";
+    switch (g.problem) {
+      case "unnamed":
+        return {
+          signature: `a11y:${pagePath}:${g.role}`,
+          kind: "a11y_unlabeled" as const,
+          title: `Unlabeled ${g.control} on ${pagePath}`,
+          detail: `${an} ${g.control} has no accessible name; screen-reader users cannot tell what it ${does}.${where}`,
+          pagePath,
+          severity: severityFor("a11y_unlabeled", [pagePath]),
+          wcag: unlabeledCriteria(g.control),
+        };
+      case "described":
+        return {
+          signature: `a11y:described:${pagePath}:${g.role}`,
+          kind: "a11y_unlabeled" as const,
+          title: `${capitalize(g.control)} on ${pagePath} has a description but no name`,
+          detail: `${an} ${g.control} has no accessible name, only a description ("${g.said.slice(0, 60)}"). A screen reader says "${g.control}" and then the description, so the purpose comes through, but the control itself is unnamed.${where}`,
+          pagePath,
+          severity: "minor" as const,
+          wcag: ["4.1.2"],
+        };
+      case "unreached":
+        return {
+          signature: `a11y:unreached:${pagePath}:${g.role}`,
+          kind: "a11y_unlabeled" as const,
+          title: `Unlabeled ${g.control} on ${pagePath}, which Tab doesn't reach`,
+          detail: `${an} ${g.control} has no accessible name, but it is disabled or outside the tab order, so a keyboard user never lands on it. A screen-reader user reading the page line by line still meets an unnamed ${g.control}.${where}`,
+          pagePath,
+          severity: "minor" as const,
+          wcag: unlabeledCriteria(g.control),
+        };
+      case "placeholder":
+        return {
+          signature: `a11y:placeholder:${pagePath}:${g.role}`,
+          kind: "a11y_unlabeled" as const,
+          title: `${capitalize(g.control)} on ${pagePath} is named only by its placeholder`,
+          detail: `${an} ${g.control} has no label: a screen reader reads its placeholder ("${g.said.slice(0, 40)}") as its name${/^[•·*●]+$/.test(g.said) ? ", here as a count of bullets" : ""}, and the placeholder disappears once someone types, leaving nothing to say what the field is.${where}`,
+          pagePath,
+          severity: severityFor("a11y_unlabeled", [pagePath]),
+          wcag: ["1.3.1", "3.3.2"],
+        };
+    }
+  });
+}
+
+const capitalize = (s: string) => s.charAt(0).toUpperCase() + s.slice(1);
 
 /** What a server error said, for quoting: its JSON `error` or `message` if it has one. */
 function said(body: string): string {
@@ -388,28 +480,7 @@ export function detectFindings(sessions: Session[], opts: DetectOptions = {}): F
         }
       }
 
-      for (const el of step.observation.elements) {
-        // The browser's own name when there is one (an icon named by its SVG title has a name
-        // there); a control hidden from assistive technology isn't announced at all.
-        if (el.ax?.hidden) continue;
-        const name = el.ax ? el.ax.name : el.name;
-        const control = name === "" ? unlabeledControl(el.role) : undefined;
-        if (control) {
-          record(
-            {
-              signature: `a11y:${pagePath}:${el.role}`,
-              kind: "a11y_unlabeled",
-              title: `Unlabeled ${control} on ${pagePath}`,
-              detail: `A ${control} has no accessible name; screen-reader users cannot tell what it ${control === "button" || control === "link" ? "does" : "is for"}.`,
-              pagePath,
-              severity: severityFor("a11y_unlabeled", [pagePath]),
-              wcag: unlabeledCriteria(control),
-            },
-            s.agentId,
-            step.index,
-          );
-        }
-      }
+      for (const c of unnamedControls(step.observation.elements, pagePath)) record(c, s.agentId, step.index);
 
       for (const c of languageFindings(step.observation, pagePath)) record(c, s.agentId, step.index);
 

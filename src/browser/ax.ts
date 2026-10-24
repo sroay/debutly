@@ -11,6 +11,7 @@ interface AXNode {
   ignoredReasons?: { name: string }[];
   role?: { value?: string };
   name?: { value?: string };
+  description?: { value?: string };
   backendDOMNodeId?: number;
 }
 
@@ -60,10 +61,12 @@ export async function accessibleNames(page: Page): Promise<Map<number, Accessibl
     for (const node of nodes) {
       const id = node.backendDOMNodeId === undefined ? undefined : tagged.get(node.backendDOMNodeId);
       if (id === undefined) continue;
+      const description = (node.description?.value ?? "").replace(/\s+/g, " ").trim();
       out.set(id, {
         name: (node.name?.value ?? "").replace(/\s+/g, " ").trim(),
         role: node.role?.value ?? "",
         hidden: node.ignored,
+        ...(description ? { description } : {}),
       });
     }
     return out;

@@ -55,6 +55,25 @@ it("reads the page's language, text direction and how much of its text is Arabic
   expect(await observe(page)).toMatchObject({ lang: "", dir: "ltr", arabicShare: 0 });
 });
 
+it("records what a keyboard can reach, what a placeholder alone names, and descriptions", async () => {
+  await page.goto("about:blank");
+  await page.setContent(`
+    <label for="email-label-target">Email</label><input id="signup-email" placeholder="john@doe.com">
+    <input placeholder="Search" aria-label="Search people">
+    <button disabled>Go</button>
+    <div role="button" tabindex="-1">Close</div>
+    <button aria-describedby="sort-hint"><svg width="10" height="10"></svg></button><span id="sort-hint">Sort conversations</span>`);
+  const { elements } = await observe(page);
+  const byName = (name: string) => elements.find((e) => e.name === name)!;
+  expect(byName("john@doe.com").nameFrom).toBe("placeholder");
+  expect(byName("Search people").nameFrom).toBeUndefined();
+  expect(byName("Go").disabled).toBe(true);
+  expect(byName("Close").tabbable).toBe(false);
+  expect(byName("Go").tabbable).toBeUndefined();
+  const icon = elements.find((e) => e.tag === "button" && e.name === "")!;
+  expect(icon.ax).toMatchObject({ name: "", description: "Sort conversations" });
+});
+
 it("notices a page that stops people zooming in", async () => {
   await page.goto("about:blank");
   await page.setContent(`<html><head><meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=0"></head><body>Hi</body></html>`);

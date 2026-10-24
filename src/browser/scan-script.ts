@@ -41,8 +41,16 @@ export const SCAN_SCRIPT = `(() => {
     // A native select's text is all its options run together: name it by its label, and list them apart.
     const isSelect = tag === 'select';
     const fileHint = fileField ? 'file upload' + (el.getAttribute('accept') ? ' (' + el.getAttribute('accept') + ')' : '') : '';
-    const raw = el.getAttribute('aria-label') || labelledBy || (label && label.textContent) || el.getAttribute('placeholder') || (isSelect ? '' : textOf(el).trim()) || el.getAttribute('title') || fileHint;
+    const labelled = el.getAttribute('aria-label') || labelledBy || (label && label.textContent.trim());
+    const placeholder = el.getAttribute('placeholder');
+    const raw = labelled || placeholder || (isSelect ? '' : textOf(el).trim()) || el.getAttribute('title') || fileHint;
     const item = { id, role, name: raw.replace(/\\s+/g, ' ').trim().slice(0, 80), tag };
+    // A placeholder is an example, not a label: screen readers read it as the field's name (a
+    // password's dots as "13 bullet"), and it's gone once someone types.
+    if (!labelled && placeholder) item.nameFrom = 'placeholder';
+    // What a keyboard user can reach: a disabled control, or one out of the tab order, isn't.
+    if (el.disabled === true || el.getAttribute('aria-disabled') === 'true') item.disabled = true;
+    else if (el.tabIndex < 0 || el.closest('[inert]')) item.tabbable = false;
     if (isSelect) {
       const chosen = el.selectedOptions[0];
       item.value = chosen ? chosen.label.slice(0, 80) : '';
