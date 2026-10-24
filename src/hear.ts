@@ -94,6 +94,13 @@ async function tabThrough(page: Page, reader: ScreenReader, tabs: number): Promi
     await reader.press("Tab");
     const said = await reader.said();
     const id = (await page.evaluate(ACTIVE_ID).catch(() => null)) as string | null;
+    const previous = stops.at(-1);
+    // NVDA can spend a press on where focus went ("form landmark") before naming the field: one
+    // control, one stop, everything said there.
+    if (previous && id !== null && id === previous.id) {
+      previous.said = `${previous.said} ${said}`.trim();
+      continue;
+    }
     if (id !== null && id === first) break; // round to the start again
     if (first === null) first = id;
     stops.push({ id, said });

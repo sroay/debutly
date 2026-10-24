@@ -136,3 +136,36 @@ it("tells a control announced without a name from one with a name, and says plac
   expect(spoken("john@doe.com")).toBe("john at doe dot com");
   expect(spoken("•••••••••••••")).toBe("13 bullet");
 });
+
+it("puts together what a screen reader says over two presses on one control", async () => {
+  const dir = await mkdtemp(join(tmpdir(), "debutly-hear-"));
+  const observation = { url: `${base}/signup`, title: "", text: "", elements: [] };
+  await writeFile(join(dir, "sessions.json"), JSON.stringify([{ agentId: "a", personaName: "A", goal: "g", outcome: "gave_up", outcomeNote: "", steps: [{ index: 0, observation, action: { type: "wait" }, reasoning: "", signals: [] }] }]));
+  await writeFile(join(dir, "findings.json"), JSON.stringify([finding("Email field on /signup is named only by its placeholder", { role: "input:email", problem: "placeholder" })]));
+  await writeFile(join(dir, "report.md"), "# Debutly Report\n");
+  // Like NVDA entering a form: the first press says where focus went, the next names the field.
+  const reader = standInReader();
+  let held = "";
+  let entered = false;
+  const twoPart: ScreenReader = {
+    ...reader,
+    press: async (key) => {
+      if (!held) await reader.press(key); // a held press is spent naming the field
+    },
+    said: async () => {
+      if (held) {
+        const s = held;
+        held = "";
+        return s;
+      }
+      const s = await reader.said();
+      if (entered || !s.includes("john@doe.com")) return s;
+      entered = true;
+      held = s;
+      return "form landmark";
+    },
+  };
+  const [h] = await hearFindings({ reportDir: dir, reader: twoPart, launch: () => chromium.launch() });
+  expect(h.verdict).toBe("confirmed");
+  expect(h.said[0]).toBe("form landmark john@doe.com, edit");
+}, 60_000);
