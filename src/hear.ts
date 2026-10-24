@@ -43,7 +43,7 @@ export interface HearOptions {
   reader: ScreenReader;
   /** Where `debutly run --browser-state` kept each agent's browser, to open pages behind sign-in. */
   browserStateDir?: string;
-  /** Tab presses per page at most; the walk stops sooner when focus comes round to the start. */
+  /** Tab presses per page at most; the walk stops sooner, once focus has come round twice. */
   tabs?: number;
   /** Opens the browser. A real screen reader needs a visible one in front. */
   launch: () => Promise<Browser>;
@@ -83,27 +83,31 @@ interface Stop {
   said: string;
 }
 
-/** Tab through the page from the top, noting what was said and which control had focus. */
+/**
+ * Tab through the page from the top, twice round, noting which control had focus and everything
+ * said while it did. Arriving on a page, NVDA can say only where focus went ("form landmark",
+ * "Chatwoot, document") and not name the first field; on the way round again it does.
+ */
 async function tabThrough(page: Page, reader: ScreenReader, tabs: number): Promise<Stop[]> {
   await page.evaluate(BLUR);
   await reader.focus(page);
   await reader.said();
   const stops: Stop[] = [];
   let first: string | null = null;
+  let arrivals = 0;
+  let previousId: string | null | undefined;
   for (let i = 0; i < tabs; i++) {
     await reader.press("Tab");
     const said = await reader.said();
     const id = (await page.evaluate(ACTIVE_ID).catch(() => null)) as string | null;
-    const previous = stops.at(-1);
-    // NVDA can spend a press on where focus went ("form landmark") before naming the field: one
-    // control, one stop, everything said there.
-    if (previous && id !== null && id === previous.id) {
-      previous.said = `${previous.said} ${said}`.trim();
-      continue;
-    }
-    if (id !== null && id === first) break; // round to the start again
+    if (id !== null && id === first && previousId !== first && ++arrivals === 2) break; // round twice
     if (first === null) first = id;
-    stops.push({ id, said });
+    previousId = id;
+    const known = id === null ? undefined : stops.find((s) => s.id === id);
+    if (known) {
+      if (said && !known.said.includes(said)) known.said = `${known.said} ${said}`.trim();
+    }
+    else stops.push({ id, said });
   }
   return stops;
 }
@@ -199,7 +203,7 @@ export async function hearFindings(o: HearOptions): Promise<Heard[]> {
         const elements = (await page.evaluate(SCAN_SCRIPT)) as InteractiveElement[];
         const names = await accessibleNames(page);
         if (names) for (const el of elements) if (names.get(el.id)) el.ax = names.get(el.id);
-        const stops = await tabThrough(page, o.reader, o.tabs ?? 60);
+        const stops = await tabThrough(page, o.reader, o.tabs ?? 120);
         for (const f of visit.findings) heard.push(judge(f, path, elements, stops, o.reader.name.split(" ")[0]));
       } finally {
         await context.close();
@@ -221,7 +225,7 @@ export function renderHeard(readerName: string, heard: Heard[]): string {
     "",
     "## Heard with a screen reader",
     "",
-    `${readerName} went through each page with a screen-reader finding, pressing Tab from the top. "Confirmed" means it said what the finding says; "check by ear" means a person should judge what it said.`,
+    `${readerName} went through each page with a screen-reader finding, pressing Tab from the top until it had been round twice. "Confirmed" means it said what the finding says; "check by ear" means a person should judge what it said.`,
     "",
     `${count("confirmed")} confirmed, ${count("not confirmed")} not confirmed, ${count("check by ear")} to check by ear, ${count("not on the page")} not on the page when opened again.`,
     "",

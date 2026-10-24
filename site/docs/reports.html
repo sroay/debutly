@@ -229,7 +229,7 @@
 <li>On Windows, with the app still running, install Guidepup and set up NVDA for automation (once): <code>npm i -D @guidepup/guidepup</code> then <code>npx @guidepup/setup</code>.</li>
 <li>Run <code>npx debutly hear .debutly/runs/&lt;run&gt; --browser-state .debutly/browser-state</code>.</li>
 </ol>
-<p>NVDA starts, and a browser opens each page that had a screen-reader finding. Tab is pressed through each page from the top, and Debutly notes which control had focus at each press. Each finding gets a verdict from what NVDA said about that very control:</p>
+<p>NVDA starts, and a browser opens each page that had a screen-reader finding. Tab is pressed through each page from the top until it has been round twice (arriving on a page, NVDA sometimes names the first field only on the way round again), and Debutly notes which control had focus at each press. Each finding gets a verdict from what NVDA said about that very control:</p>
 <ul>
 <li><strong>confirmed:</strong> NVDA said what the finding says. For example &quot;button&quot; with no name, or a field named by its placeholder (&quot;john at doe dot com, edit&quot;).</li>
 <li><strong>not confirmed:</strong> Tab never reached the control, or did reach one the finding said it couldn&#39;t.</li>

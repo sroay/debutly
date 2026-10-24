@@ -77,7 +77,7 @@ What Chromium tells assistive technology is close to what a screen reader says, 
 2. On Windows, with the app still running, install Guidepup and set up NVDA for automation (once): `npm i -D @guidepup/guidepup` then `npx @guidepup/setup`.
 3. Run `npx debutly hear .debutly/runs/<run> --browser-state .debutly/browser-state`.
 
-NVDA starts, and a browser opens each page that had a screen-reader finding. Tab is pressed through each page from the top, and Debutly notes which control had focus at each press. Each finding gets a verdict from what NVDA said about that very control:
+NVDA starts, and a browser opens each page that had a screen-reader finding. Tab is pressed through each page from the top until it has been round twice (arriving on a page, NVDA sometimes names the first field only on the way round again), and Debutly notes which control had focus at each press. Each finding gets a verdict from what NVDA said about that very control:
 
 - **confirmed:** NVDA said what the finding says. For example "button" with no name, or a field named by its placeholder ("john at doe dot com, edit").
 - **not confirmed:** Tab never reached the control, or did reach one the finding said it couldn't.

@@ -1,4 +1,4 @@
-// `debutly hear [report dir] [--browser-state dir] [--tabs 60]`: a run's screen-reader findings,
+// `debutly hear [report dir] [--browser-state dir] [--tabs 120]`: a run's screen-reader findings,
 // checked with NVDA on Windows (through Guidepup). The app must be running where the report's
 // pages point; for pages behind sign-in, run the agents with --browser-state <dir> first.
 import { readdirSync, statSync } from "node:fs";
@@ -7,11 +7,11 @@ import { parseArgs } from "node:util";
 import { chromium, type Page } from "playwright";
 import { hearFindings, type ScreenReader } from "./hear";
 
-const USAGE = "Usage: npx debutly hear [report dir] [--browser-state <dir>] [--tabs 60]\nNeeds Windows with NVDA set up for automation: npm i -D @guidepup/guidepup && npx @guidepup/setup";
+const USAGE = "Usage: npx debutly hear [report dir] [--browser-state <dir>] [--tabs 120]\nNeeds Windows with NVDA set up for automation: npm i -D @guidepup/guidepup && npx @guidepup/setup";
 
 const { values, positionals } = parseArgs({
   allowPositionals: true,
-  options: { "browser-state": { type: "string" }, tabs: { type: "string", default: "60" } },
+  options: { "browser-state": { type: "string" }, tabs: { type: "string", default: "120" } },
 });
 
 /** The newest run under .debutly/runs, where `debutly run` writes reports by default. */
