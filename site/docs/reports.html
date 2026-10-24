@@ -222,6 +222,21 @@
 <li><strong>First languages.</strong> With <code>languages</code> (such as <code>ar,en</code>), agents also take customers&#39; first languages in turn, with their browser set to that language, so a site that follows the browser shows it. An Arabic-first agent switches the site to Arabic when it can, writes its name in Arabic script and types numbers with Arabic-Indic digits, which some forms wrongly refuse. When a form refuses a request (400 or 422) just after an agent typed Arabic into it, the finding says what was typed into which field. Every page is checked for its language and, if mostly Arabic, its direction, whichever agent visits it.</li>
 </ul>
 <p>Findings like these name the WCAG 2.2 success criteria they relate to, with a link to W3C&#39;s explanation of each: 1.3.1, 1.4.4, 1.4.10, 2.1.1, 2.4.4, 2.4.11, 3.1.1, 3.3.2 and 4.1.2. They point to things a person should check, with assistive technology where it matters. A run with no such findings says nothing about conformance with WCAG or any accessibility standard.</p>
+<h3 id="heard-with-a-screen-reader"><a class="anchor" href="#heard-with-a-screen-reader">Heard with a screen reader</a></h3>
+<p>What Chromium tells assistive technology is close to what a screen reader says, but not the same. On three open-source apps, real NVDA didn&#39;t bear out about a third of the unnamed-control findings, and showed problems the browser&#39;s names hid. <code>npx debutly hear</code> checks a run&#39;s screen-reader findings with NVDA before you report them:</p>
+<ol>
+<li>Run the agents and keep their signed-in browsers: <code>npx debutly --browser-state .debutly/browser-state</code>. The folder holds the agents&#39; session cookies for your test copy, so don&#39;t upload it or commit it.</li>
+<li>On Windows, with the app still running, install Guidepup and set up NVDA for automation (once): <code>npm i -D @guidepup/guidepup</code> then <code>npx @guidepup/setup</code>.</li>
+<li>Run <code>npx debutly hear .debutly/runs/&lt;run&gt; --browser-state .debutly/browser-state</code>.</li>
+</ol>
+<p>NVDA starts, and a browser opens each page that had a screen-reader finding. Tab is pressed through each page from the top, and Debutly notes which control had focus at each press. Each finding gets a verdict from what NVDA said about that very control:</p>
+<ul>
+<li><strong>confirmed:</strong> NVDA said what the finding says. For example &quot;button&quot; with no name, or a field named by its placeholder (&quot;john at doe dot com, edit&quot;).</li>
+<li><strong>not confirmed:</strong> Tab never reached the control, or did reach one the finding said it couldn&#39;t.</li>
+<li><strong>check by ear:</strong> NVDA said something a person should judge.</li>
+<li><strong>not on the page:</strong> the control wasn&#39;t there when the page was opened again, or the page led elsewhere (often a sign-in page, without <code>--browser-state</code>).</li>
+</ul>
+<p>The report gets a &quot;Heard with a screen reader&quot; section, and <code>heard.json</code> beside it. NVDA takes over the screen while it works, so use a machine you aren&#39;t using, such as a Windows GitHub runner.</p>
 <h3 id="severity"><a class="anchor" href="#severity">Severity</a></h3>
 <ul>
 <li><strong>Blocker</strong>: a serious problem on a page customers must get through: sign-up, sign-in, onboarding, pricing, checkout, billing, payment or invites.</li>

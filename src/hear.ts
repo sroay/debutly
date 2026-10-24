@@ -1,7 +1,7 @@
 import { existsSync } from "node:fs";
 import { appendFile, readFile, writeFile } from "node:fs/promises";
 import { join } from "node:path";
-import type { Browser, Page } from "playwright";
+import type { Browser, BrowserContext, Page } from "playwright";
 import { accessibleNames } from "./browser/ax";
 import { SCAN_SCRIPT } from "./browser/scan-script";
 import { nameProblem } from "./detect/findings";
@@ -106,7 +106,12 @@ function judge(f: Finding, page: string, elements: InteractiveElement[], stops: 
   const targets = elements.filter((el) => matches(control, el));
   const base = { title: f.title, page };
   if (!targets.length) return { ...base, verdict: "not on the page", said: [], note: "No such control was on the page when it was opened again." };
-  const said = targets.map((t) => stops.find((s) => s.id === String(t.id))?.said).filter((s): s is string => s !== undefined);
+  const reached = targets
+    .map((t) => ({ t, said: stops.find((s) => s.id === String(t.id))?.said }))
+    .filter((r): r is { t: InteractiveElement; said: string } => r.said !== undefined);
+  const said = reached.map((r) => r.said);
+  // A dropdown announces its current choice ("combo box, English (en)"): that is its value, not a name.
+  const nameless = reached.find((r) => saidNoName(r.t.value ? r.said.split(r.t.value).join(" ") : r.said));
   const presses = stops.length;
   switch (control.problem) {
     case "keyboard":
@@ -116,8 +121,8 @@ function judge(f: Finding, page: string, elements: InteractiveElement[], stops: 
         : { ...base, verdict: "confirmed", said, note: `Tab never reached it in ${presses} presses.` };
     case "unnamed":
       if (!said.length) return { ...base, verdict: "not confirmed", said, note: `Tab never reached it in ${presses} presses; a screen-reader user meets it only reading line by line.` };
-      return said.some(saidNoName)
-        ? { ...base, verdict: "confirmed", said, note: `${readerName} said "${said.find(saidNoName)}", with no name.` }
+      return nameless
+        ? { ...base, verdict: "confirmed", said, note: `${readerName} said "${nameless.said}", with no name.` }
         : { ...base, verdict: "check by ear", said, note: `${readerName} said "${said[0]}".` };
     case "described":
       return said.length
@@ -157,18 +162,33 @@ export async function hearFindings(o: HearOptions): Promise<Heard[]> {
   await o.reader.start();
   try {
     for (const visit of visits.values()) {
-      const state = o.browserStateDir ? join(o.browserStateDir, `${visit.agentId}.json`) : undefined;
-      const context = await browser.newContext(state && existsSync(state) ? { storageState: state } : {});
-      const page = await context.newPage();
       const path = new URL(visit.url).pathname;
-      try {
-        await page.goto(visit.url);
+      const stateFile = o.browserStateDir ? join(o.browserStateDir, `${visit.agentId}.json`) : undefined;
+      const state = stateFile && existsSync(stateFile) ? stateFile : undefined;
+      // Signed in first, as the agent ended; a page from before sign-in (sign-up, log in) sends a
+      // signed-in browser on, so it is opened again signed out.
+      const tries = state ? [state, undefined] : [undefined];
+      const landed: string[] = [];
+      let context: BrowserContext | undefined;
+      let page: Page | undefined;
+      for (const tryState of tries) {
+        context = await browser.newContext(tryState ? { storageState: tryState } : {});
+        page = await context.newPage();
+        await page.goto(visit.url).catch(() => {});
         await page.waitForTimeout(SETTLE_MS);
-        if (new URL(page.url()).pathname !== path) {
-          const note = `Opening ${path} led to ${new URL(page.url()).pathname}${state && existsSync(state) ? "" : "; keep the agents' browser state with debutly run --browser-state <dir> to open pages behind sign-in"}.`;
-          for (const f of visit.findings) heard.push({ title: f.title, page: path, verdict: "not on the page", said: [], note });
-          continue;
-        }
+        if (new URL(page.url()).pathname === path) break;
+        landed.push(new URL(page.url()).pathname);
+        await context.close();
+        context = undefined;
+      }
+      if (!context || !page) {
+        const note = state
+          ? `Opening ${path} led to ${landed[0]} signed in and to ${landed[1]} signed out: it may be a step shown only once, such as set-up after sign-up.`
+          : `Opening ${path} led to ${landed[0]}; keep the agents' browser state with debutly run --browser-state <dir> to open pages behind sign-in.`;
+        for (const f of visit.findings) heard.push({ title: f.title, page: path, verdict: "not on the page", said: [], note });
+        continue;
+      }
+      try {
         const elements = (await page.evaluate(SCAN_SCRIPT)) as InteractiveElement[];
         const names = await accessibleNames(page);
         if (names) for (const el of elements) if (names.get(el.id)) el.ax = names.get(el.id);

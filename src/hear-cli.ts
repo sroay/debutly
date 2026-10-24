@@ -45,7 +45,8 @@ async function nvdaReader(): Promise<ScreenReader> {
     throw new Error(`Guidepup isn't installed.\n${USAGE}`);
   }
   const { nvda, NVDAKeyCodeCommands, WindowsKeyCodes, WindowsModifiers } = guidepup;
-  const version = (nvda as unknown as { version?: string }).version;
+  // Guidepup's NVDA build is versioned like "0.2.1-2026.2": the NVDA release is the last part.
+  const version = (nvda as unknown as { version?: string }).version?.match(/(\d{4}\.\d+(?:\.\d+)?)$/)?.[1];
   return {
     name: version ? `NVDA ${version}` : "NVDA",
     start: () => nvda.start({ capture: "initial" }),
@@ -65,10 +66,19 @@ async function nvdaReader(): Promise<ScreenReader> {
       await nvda.clearSpokenPhraseLog();
     },
     press: (key) => nvda.press(key),
+    // NVDA can speak in parts ("main landmark", then the field): wait until it has been quiet.
     async said() {
-      const said = (await nvda.spokenPhraseLog()).join(" ").replace(/\s+/g, " ").trim();
-      await nvda.clearSpokenPhraseLog();
-      return said;
+      const parts: string[] = [];
+      for (let quiet = 0; quiet < 2 && parts.length < 20; ) {
+        await delay(250);
+        const log = await nvda.spokenPhraseLog();
+        await nvda.clearSpokenPhraseLog();
+        if (log.length) {
+          parts.push(...log);
+          quiet = 0;
+        } else quiet++;
+      }
+      return parts.join(" ").replace(/\s+/g, " ").trim();
     },
   };
 }

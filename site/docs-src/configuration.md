@@ -56,6 +56,7 @@ Only on the command line:
 | `--out <folder>` | Where the report goes. Default: `.debutly/runs/<time>`. |
 | `--store <postgres url>` | Record the run in a database for the dashboard. `DEBUTLY_STORE_URL` does the same and keeps the address out of your shell history. |
 | `--queue <redis url>` | Hand the agents to workers (`npx debutly worker`) instead of running them here. |
+| `--browser-state <folder>` | Keep each agent's signed-in browser (cookies, storage) there when it finishes, so `npx debutly hear` can open pages behind sign-in. It holds session cookies for your test copy: keep it out of reports and repos. |
 | `--trigger`, `--ci-url` | What started the run and its CI page, for the dashboard. GitHub Actions fills these in. |
 
 The address of a database holds a password, so `debutly.json` can't name one: set `DEBUTLY_STORE_URL` instead.
@@ -88,6 +89,7 @@ A `.env` in the folder can only change where your key is sent (`DEBUTLY_BASE_URL
 | `npx debutly` | Runs the agents (the same as `npx debutly run`). |
 | `npx debutly doctor` | Checks the key, the browser, the config and that the app answers. |
 | `npx debutly perceive` | Skeptical-buyer evaluators judge your pages, two versions of a page, or an idea. |
+| `npx debutly hear [report]` | Checks a run's screen-reader findings with NVDA, on Windows. See [Reports](reports.html#heard-with-a-screen-reader). |
 | `npx debutly cancel <run id> --store <url>` | Stops a recorded run from anywhere. |
 | `npx debutly import` | Loads earlier runs from GitHub Actions report artifacts into the dashboard's database. |
 | `npx debutly costs` | Your OpenRouter key's spend, and what each app's latest run cost. |

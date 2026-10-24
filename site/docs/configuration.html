@@ -240,6 +240,10 @@
 <td>Hand the agents to workers (<code>npx debutly worker</code>) instead of running them here.</td>
 </tr>
 <tr>
+<td><code>--browser-state &lt;folder&gt;</code></td>
+<td>Keep each agent&#39;s signed-in browser (cookies, storage) there when it finishes, so <code>npx debutly hear</code> can open pages behind sign-in. It holds session cookies for your test copy: keep it out of reports and repos.</td>
+</tr>
+<tr>
 <td><code>--trigger</code>, <code>--ci-url</code></td>
 <td>What started the run and its CI page, for the dashboard. GitHub Actions fills these in.</td>
 </tr>
@@ -323,6 +327,10 @@
 <tr>
 <td><code>npx debutly perceive</code></td>
 <td>Skeptical-buyer evaluators judge your pages, two versions of a page, or an idea.</td>
+</tr>
+<tr>
+<td><code>npx debutly hear [report]</code></td>
+<td>Checks a run&#39;s screen-reader findings with NVDA, on Windows. See <a href="reports.html#heard-with-a-screen-reader">Reports</a>.</td>
 </tr>
 <tr>
 <td><code>npx debutly cancel &lt;run id&gt; --store &lt;url&gt;</code></td>
