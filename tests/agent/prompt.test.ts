@@ -85,3 +85,14 @@ it("shows each control's state, as a person sees it", () => {
   expect(message).toContain('[4] button "Account menu" (closed)');
   expect(message).toContain('[5] input:email "Email"\n');
 });
+
+it("shows a sighted agent the icon on a button with no text, but not the screen-reader agent", () => {
+  const obs = {
+    url: "http://a.test/inbox",
+    title: "",
+    text: "",
+    elements: [{ id: 0, role: "button", name: "", tag: "button", icon: "dots vertical", ax: { name: "", role: "button", hidden: false } }],
+  };
+  expect(buildStepMessage(obs, [])).toContain('[0] button "" (dots vertical icon)');
+  expect(buildStepMessage(obs, [], { screenReader: true })).not.toContain("icon");
+});

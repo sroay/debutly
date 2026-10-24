@@ -144,7 +144,7 @@ async function takeSteps(o: RunSessionOptions, { signals, system, steps, history
     // Now that we can see the page after the previous action, tell the agent what it did.
     const prev = steps.at(-1);
     if (prev) {
-      const effect = describeEffect(prev.action, prev.observation, observation, prev.signals, prev);
+      const effect = describeEffect(prev.action, prev.observation, observation, prev.signals, prev, { screenReader });
       if (effect) history[history.length - 1] += ` → ${effect}`;
     }
     const messages: LlmMessage[] = [{ role: "user", content: buildStepMessage(observation, history, { screenReader }) }];

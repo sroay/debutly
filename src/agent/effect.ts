@@ -1,4 +1,5 @@
 import type { Action, ActionResult, InteractiveElement, Observation, Signal } from "../types";
+import { controlLabel, type StepView } from "./prompt";
 
 const pathOf = (url: string) => {
   try {
@@ -12,10 +13,10 @@ const pathOf = (url: string) => {
 const MAX_LISTED = 4;
 const MAX_LINE = 80;
 
-const controlOf = (e: InteractiveElement) => `${e.role} "${e.name}"`;
+type Label = (e: InteractiveElement) => string;
 
 /** Controls in `a` beyond those in `b`, counting copies: a second "Untitled" row is new. */
-function beyond(a: InteractiveElement[], b: InteractiveElement[]): InteractiveElement[] {
+function beyond(a: InteractiveElement[], b: InteractiveElement[], controlOf: Label): InteractiveElement[] {
   const left = new Map<string, number>();
   for (const e of b) left.set(controlOf(e), (left.get(controlOf(e)) ?? 0) + 1);
   return a.filter((e) => {
@@ -26,7 +27,7 @@ function beyond(a: InteractiveElement[], b: InteractiveElement[]): InteractiveEl
 }
 
 /** Controls still there whose state changed: a Save button now enabled, a box now checked. */
-function stateChanges(before: InteractiveElement[], after: InteractiveElement[]): string[] {
+function stateChanges(before: InteractiveElement[], after: InteractiveElement[], controlOf: Label): string[] {
   const out: string[] = [];
   for (const a of after) {
     const b = before.find((e) => controlOf(e) === controlOf(a));
@@ -46,16 +47,16 @@ const listed = (items: string[]) => items.slice(0, MAX_LISTED).join(", ") + (ite
  * field that had appeared, pressed "Create company" seven times without seeing seven new rows,
  * and kept retyping values while waiting for a Save button to wake up.
  */
-function whatChanged(before: Observation, after: Observation): string {
-  const appeared = beyond(after.elements, before.elements);
-  const gone = beyond(before.elements, after.elements);
+function whatChanged(before: Observation, after: Observation, controlOf: Label): string {
+  const appeared = beyond(after.elements, before.elements, controlOf);
+  const gone = beyond(before.elements, after.elements, controlOf);
   const names = new Set(after.elements.map((e) => e.name));
   const had = new Set(before.text.split("\n").map((l) => l.trim()));
   const newText = [...new Set(after.text.split("\n").map((l) => l.trim()))].filter((l) => l && !had.has(l) && !names.has(l)).map((l) => `"${l.slice(0, MAX_LINE)}"`);
   const parts = [
     appeared.length ? `new ${listed(appeared.map(controlOf))}` : "",
     gone.length ? `gone ${listed(gone.map(controlOf))}` : "",
-    ...stateChanges(before.elements, after.elements).slice(0, MAX_LISTED),
+    ...stateChanges(before.elements, after.elements, controlOf).slice(0, MAX_LISTED),
     newText.length ? `new text ${listed(newText)}` : "",
   ].filter(Boolean);
   return parts.length ? `the page changed: ${parts.join("; ")}` : "";
@@ -63,14 +64,15 @@ function whatChanged(before: Observation, after: Observation): string {
 
 // What a person would notice after acting: where they are now, whether anything changed,
 // and whether something visibly broke. Without this, agents retry dead buttons forever.
-export function describeEffect(action: Action, before: Observation, after: Observation, signals: Signal[], result: ActionResult): string {
+// Controls are named as the agent meets them, as in its step message.
+export function describeEffect(action: Action, before: Observation, after: Observation, signals: Signal[], result: ActionResult, view: StepView = {}): string {
   if (result.blocked) return `blocked: ${result.blocked}`;
   if (result.error) return `failed: ${result.error}`;
   // check_email reports its own result; done ends the session.
   if (action.type === "done" || action.type === "check_email") return "";
 
   const parts: string[] = [];
-  const changed = whatChanged(before, after);
+  const changed = whatChanged(before, after, (e) => controlLabel(e, view.screenReader));
   if (pathOf(after.url) !== pathOf(before.url)) parts.push(`now on ${pathOf(after.url)}`);
   else if (changed) parts.push(changed);
   else if (after.text !== before.text) parts.push("the page changed");

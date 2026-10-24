@@ -12,6 +12,35 @@ export const SCAN_SCRIPT = `(() => {
     ? el.checkVisibility({ visibilityProperty: true })
     : (getComputedStyle(el).display !== 'none' && getComputedStyle(el).visibility !== 'hidden');
   const textOf = (el) => (el && (el.innerText || el.textContent)) || '';
+  // What a sighted person sees on a control with no text: its icon. Icon sets name their icons in
+  // class names (lucide-menu, tabler-icon-dots, fa-bars, i-ph-gear), data attributes, sprite
+  // references (<use href="#menu">) or an image's file name. Without it, agents met
+  // a row of buttons named "" and guessed.
+  const ICON_CLASS = /^(?:i-[a-z0-9]+-|lucide-|tabler-icon-|icon-tabler-|fa-|bi-|ti-|mdi-|ph-|ri-|feather-|heroicons?-|bx-|bxs-|octicon-|codicon-|icon-)([a-z][a-z0-9-]*)$/;
+  const NOT_ICON = /^(?:solid|regular|light|thin|duotone|brands|sharp|fw|xs|sm|md|lg|xl|spin|pulse|button|btn|wrapper|container|only|small|large|size-.*)$/;
+  const iconWord = (s) => {
+    const word = s.replace(/([a-z])([A-Z])/g, '$1 $2').toLowerCase().replace(/[-_]+/g, ' ')
+      .replace(/^icon /, '').replace(/( (?:icon|outline|outlined|filled|fill|line|solid|bold|regular|light|thin|duotone|round|rounded|sharp|[0-9]+))+$/, '').trim();
+    return word || s.toLowerCase();
+  };
+  const iconOf = (el) => {
+    for (const n of [el, ...el.querySelectorAll('svg, i, span, img, use')].slice(0, 15)) {
+      const tag = n.tagName.toLowerCase();
+      const href = tag === 'use' ? n.getAttribute('href') || n.getAttribute('xlink:href') || '' : '';
+      const testId = (n.getAttribute('data-testid') || '').match(/^(.+)Icon$/);
+      const named = n.getAttribute('data-icon') || n.getAttribute('data-lucide') || (href.includes('#') && href.split('#').pop()) || (testId && testId[1]);
+      if (named) return iconWord(named);
+      for (const token of n.classList || []) {
+        const m = token.match(ICON_CLASS);
+        if (m && !NOT_ICON.test(m[1])) return iconWord(m[1]);
+      }
+      if (tag === 'img') {
+        const file = (n.getAttribute('src') || '').split(/[?#]/)[0].split('/').pop().replace(/[.][a-z0-9]+$/i, '');
+        if (/^[a-z][a-z_-]{1,30}$/i.test(file)) return iconWord(file);
+      }
+    }
+    return '';
+  };
   const out = [];
   let next = 0;
   // Ids from the last look stay on elements that have since gone out of sight; the same number
@@ -48,6 +77,10 @@ export const SCAN_SCRIPT = `(() => {
     // A placeholder is an example, not a label: screen readers read it as the field's name (a
     // password's dots as "13 bullet"), and it's gone once someone types.
     if (!labelled && placeholder) item.nameFrom = 'placeholder';
+    if (!item.name) {
+      const icon = iconOf(el);
+      if (icon) item.icon = icon;
+    }
     // What a keyboard user can reach: a disabled control, or one out of the tab order, isn't.
     if (el.disabled === true || el.getAttribute('aria-disabled') === 'true') item.disabled = true;
     else if (el.tabIndex < 0 || el.closest('[inert]')) item.tabbable = false;

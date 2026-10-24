@@ -93,6 +93,8 @@ export interface InteractiveElement {
   disabled?: true;
   /** Out of the tab order (tabindex -1, or inside an inert part of the page). */
   tabbable?: false;
+  /** A control with no text: the icon it shows, as its markup names it ("menu", "trash"). What a sighted person sees. */
+  icon?: string;
 }
 
 export interface Observation {

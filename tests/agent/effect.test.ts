@@ -73,3 +73,10 @@ it("says when a control's state changed", () => {
   const after = at("Settings", [el(0, "input:text", "Title", { value: "Consultation" }), el(1, "button", "Save"), el(2, "input:checkbox", "I agree", { checked: true })]);
   expect(describeEffect({ type: "click", id: 2 }, before, after, [], {})).toBe('the page changed: now enabled button "Save"; now checked input:checkbox "I agree"');
 });
+
+it("names a new icon button by its icon for a sighted agent only", () => {
+  const before = at("Inbox", [el(0, "button", "Open menu")]);
+  const after = at("Inbox", [el(0, "button", "Open menu"), el(1, "button", "", { icon: "trash" })]);
+  expect(describeEffect({ type: "click", id: 0 }, before, after, [], {})).toBe('the page changed: new button "" (trash icon)');
+  expect(describeEffect({ type: "click", id: 0 }, before, after, [], {}, { screenReader: true })).toBe('the page changed: new button ""');
+});

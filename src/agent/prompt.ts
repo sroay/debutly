@@ -56,10 +56,18 @@ function stateOf(e: InteractiveElement): string {
   return states.length ? ` (${states.join(", ")})` : "";
 }
 
-function describeElement(e: InteractiveElement, screenReader = false): string {
-  // A screen reader announces the role and name the browser gives it.
+/**
+ * A control as the agent meets it. A screen reader announces the role and name the browser gives
+ * it; a sighted person looking at a control with no text sees its icon.
+ */
+export function controlLabel(e: InteractiveElement, screenReader = false): string {
   const heard = screenReader && e.ax ? e.ax : e;
-  const line = `[${e.id}] ${heard.role} "${heard.name}"${stateOf(e)}`;
+  const icon = !screenReader && !e.name && e.icon ? ` (${e.icon} icon)` : "";
+  return `${heard.role} "${heard.name}"${icon}`;
+}
+
+function describeElement(e: InteractiveElement, screenReader = false): string {
+  const line = `[${e.id}] ${controlLabel(e, screenReader)}${stateOf(e)}`;
   if (!e.options) return line;
   return `${line} set to "${e.value ?? ""}", options: ${e.options.map((o) => `"${o}"`).join(" | ")}`;
 }

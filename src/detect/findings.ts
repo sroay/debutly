@@ -208,7 +208,8 @@ function unnamedControls(elements: InteractiveElement[], pagePath: string): Cand
     const key = `${problem}:${el.role}`;
     const g = groups.get(key) ?? { control, role: el.role, problem, places: [] as string[], said: problem === "placeholder" ? name : (el.ax?.description ?? ""), count: 0 };
     g.count++;
-    const place = placeOf(elements, i);
+    // The icon it shows, when its markup names one, is how a founder spots it on the page.
+    const place = [el.icon ? `the ${el.icon} icon` : "", placeOf(elements, i)].filter(Boolean).join(" ");
     if (place && g.places.length < MAX_PLACES) g.places.push(place);
     groups.set(key, g);
   });

@@ -29,7 +29,7 @@ it("tells apart unnamed controls Tab lands on, ones it can't reach, ones with a 
   const ax = (name: string, role: string, description?: string) => ({ name, role, hidden: false, ...(description ? { description } : {}) });
   const els: InteractiveElement[] = [
     { id: 0, role: "link", name: "Search...", tag: "a", ax: ax("Search...", "link") },
-    { id: 1, role: "button", name: "", tag: "button", ax: ax("", "button") },
+    { id: 1, role: "button", name: "", tag: "button", icon: "panel left close", ax: ax("", "button") },
     { id: 2, role: "link", name: "My Inbox", tag: "a", ax: ax("My Inbox", "link") },
     { id: 3, role: "button", name: "", tag: "button", ax: ax("", "button", "Sort conversations") },
     { id: 4, role: "button", name: "", tag: "div", tabbable: false, ax: ax("", "button") },
@@ -47,7 +47,7 @@ it("tells apart unnamed controls Tab lands on, ones it can't reach, ones with a 
     "Unlabeled button on /signup, which Tab doesn't reach",
   ]);
   expect(byTitle["Unlabeled button on /signup"]).toMatchObject({ severity: "major" });
-  expect(byTitle["Unlabeled button on /signup"].detail).toContain('It is after "Search..." and before "My Inbox".');
+  expect(byTitle["Unlabeled button on /signup"].detail).toContain('It is the panel left close icon after "Search..." and before "My Inbox".');
   expect(byTitle["Button on /signup has a description but no name"]).toMatchObject({ severity: "minor", wcag: ["4.1.2"] });
   expect(byTitle["Button on /signup has a description but no name"].detail).toContain('("Sort conversations")');
   expect(byTitle["Unlabeled button on /signup, which Tab doesn't reach"]).toMatchObject({ severity: "minor" });

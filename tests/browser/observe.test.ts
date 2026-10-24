@@ -168,3 +168,18 @@ it("records what a field holds, and whether it is editable, ticked or open", asy
   expect(byName("Account menu")).toMatchObject({ expanded: false });
   expect(obs.text).toContain("First line\nSecond line");
 });
+
+it("reads the icon a control with no text shows, from how icon sets name their icons", async () => {
+  await page.goto("about:blank");
+  await page.setContent(`
+    <button><svg class="tabler-icon tabler-icon-dots-vertical" width="8" height="8"></svg></button>
+    <button><span class="i-lucide-panel-left-close"></span></button>
+    <button><svg width="8" height="8"><use href="/icons/sprite.svg#trash-2"></use></svg></button>
+    <button><i class="fa-solid fa-bars"></i></button>
+    <button><svg data-testid="SettingsIcon" width="8" height="8"></svg></button>
+    <button><img src="/assets/bell-outline.svg" alt=""></button>
+    <button class="icon-button"><svg width="8" height="8"></svg></button>
+    <button><svg class="lucide lucide-plus" width="8" height="8"></svg> New</button>`);
+  const { elements } = await observe(page);
+  expect(elements.map((e) => e.icon)).toEqual(["dots vertical", "panel left close", "trash", "bars", "settings", "bell", undefined, undefined]);
+});
