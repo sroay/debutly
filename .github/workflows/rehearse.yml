@@ -31,6 +31,9 @@ on:
       debutly-ref:
         description: Run another version of Debutly (a branch, tag or commit), to compare it with this one on the same people
         default: ""
+      probe:
+        description: Instead of agents, run a probe script from the app's folder (e.g. keyboard-probe.mjs) to check a suspected finding
+        default: ""
 
 permissions:
   contents: read
@@ -71,7 +74,7 @@ jobs:
         run: bash "$APP_DIR/check.sh"
 
       - name: Fetch the other Debutly version
-        if: ${{ !inputs.check-only && inputs.serve-minutes == '0' && inputs.debutly-ref != '' }}
+        if: ${{ !inputs.check-only && inputs.serve-minutes == '0' && inputs.probe == '' && inputs.debutly-ref != '' }}
         env:
           REF: ${{ inputs.debutly-ref }}
         run: |
@@ -86,8 +89,20 @@ jobs:
           npm ci --no-audit --no-fund
           npx playwright install --with-deps chromium
 
+      - name: Probe ${{ inputs.app }}
+        if: ${{ !inputs.check-only && inputs.serve-minutes == '0' && inputs.probe != '' }}
+        env:
+          PROBE: ${{ inputs.probe }}
+        run: |
+          case "$PROBE" in */*|.*) echo "::error title=Rehearsal::Name a probe file in $APP_DIR, e.g. keyboard-probe.mjs."; exit 1 ;; esac
+          if [ ! -f "$APP_DIR/$PROBE" ]; then echo "::error title=Rehearsal::$APP_DIR/$PROBE doesn't exist."; exit 1; fi
+          # What it prints is about someone else's app, so it is sealed like a report.
+          mkdir -p "$RUNNER_TEMP/report"
+          cd "$RUNNER_TEMP/report"
+          node "$GITHUB_WORKSPACE/$APP_DIR/$PROBE" > probe.txt 2>&1 || echo "The probe failed; its output says why."
+
       - name: Run the agents
-        if: ${{ !inputs.check-only && inputs.serve-minutes == '0' }}
+        if: ${{ !inputs.check-only && inputs.serve-minutes == '0' && inputs.probe == '' }}
         working-directory: ${{ env.APP_DIR }}
         env:
           DEBUTLY_API_KEY: ${{ secrets.DEBUTLY_API_KEY }}
