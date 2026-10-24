@@ -43,6 +43,8 @@ export interface SimulationOptions {
   price?: ModelPrice | null;
   /** In-memory kill switch when there is no store (e.g. Ctrl+C). */
   shouldStop?: () => boolean | Promise<boolean>;
+  /** Where to keep each agent's browser state (cookies, storage) at the end, for `debutly hear`. */
+  browserStateDir?: string;
   /** Sends each agent somewhere else to run (e.g. a queue of workers) instead of this process. */
   dispatch?: (ctx: { runId?: string; runTag: string }) => RunAgent;
 }
@@ -94,7 +96,7 @@ export async function runSimulation(o: SimulationOptions): Promise<SimulationRes
       ? o.dispatch({ runId, runTag })
       : (persona, goal, brief) =>
           runAgentSession(
-            { browser: browser!, llm: o.llm, origin, maxSteps: o.maxSteps, artifacts, emailOf, inbox: o.inbox, caps: o.caps, price: o.price, shouldStop, store, runId },
+            { browser: browser!, llm: o.llm, origin, maxSteps: o.maxSteps, artifacts, emailOf, inbox: o.inbox, caps: o.caps, price: o.price, shouldStop, store, runId, browserStateDir: o.browserStateDir },
             persona,
             goal,
             brief,

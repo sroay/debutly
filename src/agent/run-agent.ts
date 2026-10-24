@@ -1,3 +1,5 @@
+import { mkdir } from "node:fs/promises";
+import { join } from "node:path";
 import type { Browser } from "playwright";
 import type { ArtifactStore } from "../artifacts/store";
 import type { Inbox } from "../inbox/types";
@@ -22,6 +24,8 @@ export interface AgentRunDeps {
   /** With a store and run id, the session and each step are recorded as they happen. */
   store?: RunStore;
   runId?: string;
+  /** Keeps the agent's browser state here as <agent id>.json when it finishes, for `debutly hear`. */
+  browserStateDir?: string;
 }
 
 /**
@@ -53,6 +57,10 @@ export async function runAgentSession(d: AgentRunDeps, persona: Persona, goal: s
   } catch (err) {
     session = { agentId: persona.id, personaName: persona.name, goal, steps: [], outcome: "error", outcomeNote: err instanceof Error ? err.message : String(err) };
   } finally {
+    if (d.browserStateDir) {
+      await mkdir(d.browserStateDir, { recursive: true });
+      await context.storageState({ path: join(d.browserStateDir, `${persona.id}.json`) }).catch(() => {});
+    }
     await context.close();
   }
   if (record) await record.store.finishSession(record.runId, session);

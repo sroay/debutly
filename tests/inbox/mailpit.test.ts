@@ -25,3 +25,14 @@ it("returns nothing for an empty inbox", async () => {
   const inbox = new MailpitInbox("http://mail.test", (async () => json({ messages: [] })) as unknown as typeof fetch);
   expect(await inbox.latest("nobody@agents.test")).toEqual([]);
 });
+
+it("signs in to a mailbox given with a login, without putting the login in the address", async () => {
+  const seen: { url: string; auth?: string }[] = [];
+  const fetchFn = vi.fn(async (url: string, init?: RequestInit) => {
+    seen.push({ url, auth: (init?.headers as Record<string, string> | undefined)?.authorization });
+    return json({ messages: [] });
+  });
+  await new MailpitInbox("https://checker:s3cret@mail.example.test/", fetchFn as unknown as typeof fetch).latest("maya@agents.test");
+  expect(seen[0].url.startsWith("https://mail.example.test/api/v1/search")).toBe(true);
+  expect(seen[0].auth).toBe(`Basic ${Buffer.from("checker:s3cret").toString("base64")}`);
+});

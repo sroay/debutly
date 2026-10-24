@@ -182,4 +182,6 @@ export interface Finding {
   sandboxCause?: string[];
   /** WCAG 2.2 success criteria the finding relates to ("4.1.2"), for a person to check. */
   wcag?: string[];
+  /** The control a screen-reader finding is about, so `debutly hear` can find it again. */
+  control?: { role: string; name?: string; problem: "unnamed" | "described" | "unreached" | "placeholder" | "keyboard" };
 }

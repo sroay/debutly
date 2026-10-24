@@ -16,6 +16,7 @@ Usage: npx debutly [command] [flags]
   run          the agents, with the settings in ${CONFIG_FILE} (the default command)
   doctor       checks the key, the browser, the config and that the app answers
   perceive     skeptical-buyer evaluators judge your pages, variants or an idea
+  hear         checks a run's screen-reader findings with NVDA (Windows)
   worker       an agent worker for queued runs
   cancel       stops a run: cancel <run id> --store <url>
   import       loads earlier runs from GitHub Actions report artifacts
@@ -92,6 +93,10 @@ try {
     case "perceive":
       handOver("./perceive.ts", args);
       await import("./perceive");
+      break;
+    case "hear":
+      handOver("./hear-cli.ts", args);
+      await import("./hear-cli");
       break;
     case "worker":
       handOver("./worker.ts", args);

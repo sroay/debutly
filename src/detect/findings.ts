@@ -82,6 +82,7 @@ interface Candidate {
   pagePath: string;
   severity: Severity;
   wcag?: string[];
+  control?: Finding["control"];
 }
 
 function fromSignal(signal: Signal): Candidate | null {
@@ -172,6 +173,17 @@ function unlabeledControl(role: string): string | undefined {
 type Unnamed = "unnamed" | "described" | "unreached" | "placeholder";
 const MAX_PLACES = 3;
 
+/** What's wrong with a control's name, as a screen reader meets it; undefined when nothing is. */
+export function nameProblem(el: InteractiveElement): Unnamed | undefined {
+  // The browser's own name when there is one (an icon named by its SVG title has a name
+  // there); a control hidden from assistive technology isn't announced at all.
+  if (el.ax?.hidden || !unlabeledControl(el.role)) return undefined;
+  const name = el.ax ? el.ax.name : el.name;
+  if (name === "") return el.ax?.description ? "described" : el.disabled || el.tabbable === false ? "unreached" : "unnamed";
+  if (el.nameFrom === "placeholder" && el.role !== "input:search") return "placeholder";
+  return undefined;
+}
+
 /** Where a control sits, by the named controls around it: 'after "Search..." and before "My Inbox"'. */
 function placeOf(elements: InteractiveElement[], i: number): string {
   const nameAt = (j: number) => (elements[j].ax ? elements[j].ax!.name : elements[j].name);
@@ -189,16 +201,10 @@ function placeOf(elements: InteractiveElement[], i: number): string {
 function unnamedControls(elements: InteractiveElement[], pagePath: string): Candidate[] {
   const groups = new Map<string, { control: string; role: string; problem: Unnamed; places: string[]; said: string; count: number }>();
   elements.forEach((el, i) => {
-    // The browser's own name when there is one (an icon named by its SVG title has a name
-    // there); a control hidden from assistive technology isn't announced at all.
-    if (el.ax?.hidden) return;
-    const control = unlabeledControl(el.role);
-    if (!control) return;
-    const name = el.ax ? el.ax.name : el.name;
-    let problem: Unnamed | undefined;
-    if (name === "") problem = el.ax?.description ? "described" : el.disabled || el.tabbable === false ? "unreached" : "unnamed";
-    else if (el.nameFrom === "placeholder" && el.role !== "input:search") problem = "placeholder";
+    const problem = nameProblem(el);
     if (!problem) return;
+    const control = unlabeledControl(el.role)!;
+    const name = el.ax ? el.ax.name : el.name;
     const key = `${problem}:${el.role}`;
     const g = groups.get(key) ?? { control, role: el.role, problem, places: [] as string[], said: problem === "placeholder" ? name : (el.ax?.description ?? ""), count: 0 };
     g.count++;
@@ -213,6 +219,7 @@ function unnamedControls(elements: InteractiveElement[], pagePath: string): Cand
     switch (g.problem) {
       case "unnamed":
         return {
+          control: { role: g.role, problem: "unnamed" as const },
           signature: `a11y:${pagePath}:${g.role}`,
           kind: "a11y_unlabeled" as const,
           title: `Unlabeled ${g.control} on ${pagePath}`,
@@ -223,6 +230,7 @@ function unnamedControls(elements: InteractiveElement[], pagePath: string): Cand
         };
       case "described":
         return {
+          control: { role: g.role, problem: "described" as const },
           signature: `a11y:described:${pagePath}:${g.role}`,
           kind: "a11y_unlabeled" as const,
           title: `${capitalize(g.control)} on ${pagePath} has a description but no name`,
@@ -233,6 +241,7 @@ function unnamedControls(elements: InteractiveElement[], pagePath: string): Cand
         };
       case "unreached":
         return {
+          control: { role: g.role, problem: "unreached" as const },
           signature: `a11y:unreached:${pagePath}:${g.role}`,
           kind: "a11y_unlabeled" as const,
           title: `Unlabeled ${g.control} on ${pagePath}, which Tab doesn't reach`,
@@ -243,6 +252,7 @@ function unnamedControls(elements: InteractiveElement[], pagePath: string): Cand
         };
       case "placeholder":
         return {
+          control: { role: g.role, problem: "placeholder" as const },
           signature: `a11y:placeholder:${pagePath}:${g.role}`,
           kind: "a11y_unlabeled" as const,
           title: `${capitalize(g.control)} on ${pagePath} is named only by its placeholder`,
@@ -494,6 +504,7 @@ export function detectFindings(sessions: Session[], opts: DetectOptions = {}): F
             signature: `keyboard:${pagePath}:${control}`,
             kind: "keyboard",
             title: `Can't reach ${control} on ${pagePath} with the keyboard`,
+            control: { role: acted.role, name: acted.name, problem: "keyboard" },
             detail: `It isn't in the tab order, so someone who uses a keyboard or a screen reader can't get to it. A mouse can still click it.`,
             pagePath,
             severity: severityFor("keyboard", [pagePath]),

@@ -78,5 +78,8 @@
   },
   "publishConfig": {
     "access": "public"
+  },
+  "optionalDependencies": {
+    "@guidepup/guidepup": "0.36.4"
   }
 }
