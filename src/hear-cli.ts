@@ -7,7 +7,7 @@ import { readdirSync, statSync } from "node:fs";
 import { join } from "node:path";
 import { parseArgs } from "node:util";
 import { chromium, type Page } from "playwright";
-import { hearFindings, type ScreenReader } from "./hear";
+import { hearFindings, nextUtterance, type ScreenReader } from "./hear";
 
 const USAGE =
   "Usage: npx debutly hear [report dir] [--browser-state <dir>] [--tabs 120]\nNeeds Windows (NVDA) or macOS (VoiceOver), set up for automation: npm i -D @guidepup/guidepup && npx @guidepup/setup";
@@ -36,26 +36,6 @@ const delay = (ms: number) => new Promise((r) => setTimeout(r, ms));
 
 /** The Chrome Playwright launches, as macOS knows it. */
 const CHROME_FOR_TESTING = "com.google.chrome.for.testing";
-
-interface SpeechLog {
-  spokenPhraseLog(): Promise<string[]>;
-  clearSpokenPhraseLog(): Promise<void>;
-}
-
-/** Everything said until the screen reader has been quiet: NVDA can speak in parts ("main landmark", then the field). */
-async function untilQuiet(reader: SpeechLog): Promise<string> {
-  const parts: string[] = [];
-  for (let quiet = 0; quiet < 2 && parts.length < 20; ) {
-    await delay(250);
-    const log = await reader.spokenPhraseLog();
-    await reader.clearSpokenPhraseLog();
-    if (log.length) {
-      parts.push(...log);
-      quiet = 0;
-    } else quiet++;
-  }
-  return parts.join(" ").replace(/\s+/g, " ").trim();
-}
 
 async function loadGuidepup(): Promise<typeof import("@guidepup/guidepup")> {
   try {
@@ -93,7 +73,7 @@ async function nvdaReader(): Promise<ScreenReader> {
       await nvda.clearSpokenPhraseLog();
     },
     press: (key) => nvda.press(key),
-    said: () => untilQuiet(nvda),
+    said: () => nextUtterance(nvda),
   };
 }
 
@@ -118,11 +98,12 @@ async function voiceOverReader(): Promise<ScreenReader> {
       await macOSActivateId(CHROME_FOR_TESTING);
       await voiceOver.perform({ keyCode: MacOSKeyCodes.Control }, { capture: false });
       await page.bringToFront();
-      await delay(500);
+      // Bringing Chrome forward has VoiceOver read the window and toolbar: let it finish first.
+      await nextUtterance(voiceOver, { startWithinMs: 1500, pauseMs: 800 });
       await voiceOver.clearSpokenPhraseLog();
     },
     press: (key) => voiceOver.press(key),
-    said: () => untilQuiet(voiceOver),
+    said: () => nextUtterance(voiceOver),
   };
 }
 

@@ -71,20 +71,20 @@ Findings like these name the WCAG 2.2 success criteria they relate to, with a li
 
 ### Heard with a screen reader
 
-What Chromium tells assistive technology is close to what a screen reader says, but not the same. On three open-source apps, real NVDA didn't bear out about a third of the unnamed-control findings, and showed problems the browser's names hid. `npx debutly hear` checks a run's screen-reader findings with NVDA before you report them:
+What Chromium tells assistive technology is close to what a screen reader says, but not the same. On three open-source apps, real NVDA didn't bear out about a third of the unnamed-control findings, and showed problems the browser's names hid. `npx debutly hear` checks a run's screen-reader findings with a real screen reader before you report them: NVDA on Windows, or VoiceOver on macOS.
 
 1. Run the agents and keep their signed-in browsers: `npx debutly --browser-state .debutly/browser-state`. The folder holds the agents' session cookies for your test copy, so don't upload it or commit it.
-2. On Windows, with the app still running, install Guidepup and set up NVDA for automation (once): `npm i -D @guidepup/guidepup` then `npx @guidepup/setup`.
+2. On Windows or macOS, with the app still running, install Guidepup and set up the screen reader for automation (once): `npm i -D @guidepup/guidepup` then `npx @guidepup/setup`. On a Mac this asks you to allow VoiceOver to be controlled by AppleScript, and your terminal to control the computer (Accessibility).
 3. Run `npx debutly hear .debutly/runs/<run> --browser-state .debutly/browser-state`.
 
-NVDA starts, and a browser opens each page that had a screen-reader finding. Tab is pressed through each page from the top until it has been round twice (arriving on a page, NVDA sometimes names the first field only on the way round again), and Debutly notes which control had focus at each press. Each finding gets a verdict from what NVDA said about that very control:
+The screen reader starts, and Chrome opens each page that had a screen-reader finding. Tab is pressed through each page from the top until it has been round twice (arriving on a page, NVDA sometimes names the first field only on the way round again), and Debutly notes which control had focus at each press. Each finding gets a verdict from what the screen reader said about that very control:
 
-- **confirmed:** NVDA said what the finding says. For example "button" with no name, or a field named by its placeholder ("john at doe dot com, edit").
+- **confirmed:** the screen reader said what the finding says. For example "button" with no name, or a field named by its placeholder ("john at doe dot com, edit").
 - **not confirmed:** Tab never reached the control, or did reach one the finding said it couldn't.
-- **check by ear:** NVDA said something a person should judge.
+- **check by ear:** it said something a person should judge.
 - **not on the page:** the control wasn't there when the page was opened again, or the page led elsewhere (often a sign-in page, without `--browser-state`).
 
-The report gets a "Heard with a screen reader" section, and `heard.json` beside it. NVDA takes over the screen while it works, so use a machine you aren't using, such as a Windows GitHub runner.
+The report gets a "Heard with a screen reader" section, and `heard.json` beside it. The screen reader takes over the screen while it works, so use a machine you aren't using, such as a Windows or macOS GitHub runner. VoiceOver is checked with Chrome, which Debutly uses; most VoiceOver users browse with Safari, which can announce some controls differently.
 
 ### Severity
 

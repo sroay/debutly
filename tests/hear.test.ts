@@ -5,7 +5,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { chromium, type Page } from "playwright";
 import { afterAll, beforeAll, expect, it } from "vitest";
-import { hearFindings, saidNoName, spoken, type ScreenReader } from "../src/hear";
+import { hearFindings, nextUtterance, saidNoName, spoken, type ScreenReader } from "../src/hear";
 import type { Finding, Session } from "../src/types";
 
 const PAGE = `<!doctype html><title>Sign up</title>
@@ -129,6 +129,7 @@ it("hears each screen-reader finding's control with the screen reader, and says 
 
 it("tells a control announced without a name from one with a name, and says placeholders as a screen reader does", () => {
   expect(saidNoName("button")).toBe(true);
+  expect(saidNoName("")).toBe(false); // silence isn't "no name"
   expect(saidNoName("combo box, collapsed, has auto complete, editable, blank")).toBe(true);
   expect(saidNoName("edit, multi line, blank")).toBe(true);
   expect(saidNoName("Save settings, button")).toBe(false);
@@ -173,3 +174,22 @@ it("puts together what a screen reader says over two presses on one control", as
   expect(h.verdict).toBe("confirmed");
   expect(h.said[0]).toBe("form landmark john@doe.com, edit");
 }, 60_000);
+
+it("waits for a screen reader that speaks late, and for the rest of what it says", async () => {
+  // Speech with the time it is spoken, as a screen reader's log fills.
+  const speaker = (lines: [number, string][]) => {
+    const started = Date.now();
+    let heard = 0;
+    const spokenSoFar = () => lines.filter(([at]) => Date.now() - started >= at);
+    return {
+      spokenPhraseLog: async () => spokenSoFar().slice(heard).map(([, s]) => s),
+      clearSpokenPhraseLog: async () => {
+        heard = spokenSoFar().length;
+      },
+    };
+  };
+  const quick = { startWithinMs: 1500, pauseMs: 300, stepMs: 50 };
+  expect(await nextUtterance(speaker([[600, "Email, edit text"]]), quick)).toBe("Email, edit text");
+  expect(await nextUtterance(speaker([[0, "form landmark"], [150, "john at doe dot com, edit"]]), quick)).toBe("form landmark john at doe dot com, edit");
+  expect(await nextUtterance(speaker([]), quick)).toBe("");
+});

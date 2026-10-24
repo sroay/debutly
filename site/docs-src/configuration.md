@@ -89,7 +89,7 @@ A `.env` in the folder can only change where your key is sent (`DEBUTLY_BASE_URL
 | `npx debutly` | Runs the agents (the same as `npx debutly run`). |
 | `npx debutly doctor` | Checks the key, the browser, the config and that the app answers. |
 | `npx debutly perceive` | Skeptical-buyer evaluators judge your pages, two versions of a page, or an idea. |
-| `npx debutly hear [report]` | Checks a run's screen-reader findings with NVDA, on Windows. See [Reports](reports.html#heard-with-a-screen-reader). |
+| `npx debutly hear [report]` | Checks a run's screen-reader findings with a real screen reader: NVDA on Windows, VoiceOver on macOS. See [Reports](reports.html#heard-with-a-screen-reader). |
 | `npx debutly cancel <run id> --store <url>` | Stops a recorded run from anywhere. |
 | `npx debutly import` | Loads earlier runs from GitHub Actions report artifacts into the dashboard's database. |
 | `npx debutly costs` | Your OpenRouter key's spend, and what each app's latest run cost. |

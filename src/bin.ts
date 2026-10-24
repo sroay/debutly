@@ -16,7 +16,7 @@ Usage: npx debutly [command] [flags]
   run          the agents, with the settings in ${CONFIG_FILE} (the default command)
   doctor       checks the key, the browser, the config and that the app answers
   perceive     skeptical-buyer evaluators judge your pages, variants or an idea
-  hear         checks a run's screen-reader findings with NVDA (Windows)
+  hear         checks a run's screen-reader findings with NVDA (Windows) or VoiceOver (macOS)
   worker       an agent worker for queued runs
   cancel       stops a run: cancel <run id> --store <url>
   import       loads earlier runs from GitHub Actions report artifacts

@@ -70,9 +70,40 @@ const ROLE_AND_STATE_WORDS = [
 ];
 const ROLE_AND_STATE = new RegExp(`\\b(${[...ROLE_AND_STATE_WORDS].sort((a, b) => b.length - a.length).join("|")})\\b`, "gi");
 
-/** True when nothing but role and state words was said. */
+/** True when a role was said with nothing but state words around it: silence isn't "no name". */
 export function saidNoName(said: string): boolean {
-  return said.replace(ROLE_AND_STATE, " ").replace(/[^\p{L}\p{N}]+/gu, "") === "";
+  return /[\p{L}\p{N}]/u.test(said) && said.replace(ROLE_AND_STATE, " ").replace(/[^\p{L}\p{N}]+/gu, "") === "";
+}
+
+export interface SpeechLog {
+  spokenPhraseLog(): Promise<string[]>;
+  clearSpokenPhraseLog(): Promise<void>;
+}
+
+const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
+
+/**
+ * What a screen reader says after a key press: it waits for speech to start (VoiceOver can take
+ * a second, and what it says late was being credited to the next control), then for a pause.
+ */
+export async function nextUtterance(log: SpeechLog, { startWithinMs = 2500, pauseMs = 500, stepMs = 100 } = {}): Promise<string> {
+  const parts: string[] = [];
+  const take = async () => {
+    const said = await log.spokenPhraseLog();
+    if (said.length) await log.clearSpokenPhraseLog();
+    return said;
+  };
+  for (let waited = 0; waited < startWithinMs && !parts.length; waited += stepMs) {
+    await sleep(stepMs);
+    parts.push(...(await take()));
+  }
+  for (let quiet = 0; parts.length && quiet < pauseMs && parts.length < 30; ) {
+    await sleep(stepMs);
+    const said = await take();
+    parts.push(...said);
+    quiet = said.length ? 0 : quiet + stepMs;
+  }
+  return parts.join(" ").replace(/\s+/g, " ").trim();
 }
 
 /** How a screen reader says a placeholder: "john@doe.com" as "john at doe dot com", dots as "13 bullet". */
