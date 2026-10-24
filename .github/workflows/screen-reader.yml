@@ -12,6 +12,10 @@ on:
         type: choice
         options: [smoke, chatwoot, twenty, caldiy]
         default: smoke
+      with-agents:
+        description: Instead of the hand-written check, run Debutly's agents here and then debutly hear (costs model calls)
+        type: boolean
+        default: false
 
 permissions:
   contents: read
@@ -101,6 +105,21 @@ jobs:
           echo "::add-mask::$app"; echo "::add-mask::$mail"; echo "::add-mask::$login"
           { echo "APP_URL=$app"; echo "MAIL_URL=$mail"; echo "MAIL_LOGIN=$login"; } >> "$GITHUB_ENV"
       - run: npx playwright test checks/${{ inputs.check }}.spec.ts
+        if: ${{ !inputs.with-agents }}
+      - name: Run Debutly's agents here, then hear their findings
+        if: ${{ inputs.with-agents && inputs.check != 'smoke' }}
+        working-directory: rehearsals/${{ inputs.check }}
+        env:
+          DEBUTLY_API_KEY: ${{ secrets.DEBUTLY_API_KEY }}
+        run: |
+          (cd "$GITHUB_WORKSPACE" && npm ci --no-audit --no-fund)
+          debutly="$GITHUB_WORKSPACE/bin/debutly.mjs"
+          mailbox="https://$MAIL_LOGIN@${MAIL_URL#https://}"
+          echo "::add-mask::$mailbox"
+          node "$debutly" run --url "$APP_URL" --mailpit "$mailbox" --agents 2 --out "$RUNNER_TEMP/report" --browser-state "$RUNNER_TEMP/browser-state" || true
+          node "$debutly" hear "$RUNNER_TEMP/report" --browser-state "$RUNNER_TEMP/browser-state"
+          mkdir -p "$GITHUB_WORKSPACE/rehearsals/screen-reader/transcripts/report"
+          cp -r "$RUNNER_TEMP/report/." "$GITHUB_WORKSPACE/rehearsals/screen-reader/transcripts/report/"
       - name: Seal what NVDA said
         if: always()
         run: |
