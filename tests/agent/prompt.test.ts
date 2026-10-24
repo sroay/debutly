@@ -62,3 +62,26 @@ it("tells an Arabic-speaking agent to use the site in Arabic and type as an Arab
   expect(system).toContain("٠١٢٣٤٥٦٧٨٩");
   expect(buildSystemPrompt({ ...persona("p2", "Ben"), language: "en" }, "Sign up")).not.toContain("first language");
 });
+
+it("shows each control's state, as a person sees it", () => {
+  const obs = {
+    url: "http://a.test/settings",
+    title: "",
+    text: "Settings",
+    elements: [
+      { id: 0, role: "button", name: "Save", tag: "button", disabled: true as const },
+      { id: 1, role: "input:text", name: "Website", tag: "input", value: "www.shop.test", readOnly: true as const },
+      { id: 2, role: "input:password", name: "Password", tag: "input", filled: true as const },
+      { id: 3, role: "input:checkbox", name: "I agree", tag: "input", checked: true },
+      { id: 4, role: "button", name: "Account menu", tag: "button", expanded: false },
+      { id: 5, role: "input:email", name: "Email", tag: "input" },
+    ],
+  };
+  const message = buildStepMessage(obs, []);
+  expect(message).toContain('[0] button "Save" (disabled)');
+  expect(message).toContain('[1] input:text "Website" (read-only, holds "www.shop.test")');
+  expect(message).toContain('[2] input:password "Password" (filled in)');
+  expect(message).toContain('[3] input:checkbox "I agree" (checked)');
+  expect(message).toContain('[4] button "Account menu" (closed)');
+  expect(message).toContain('[5] input:email "Email"\n');
+});

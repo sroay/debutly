@@ -56,6 +56,19 @@ export const SCAN_SCRIPT = `(() => {
       item.value = chosen ? chosen.label.slice(0, 80) : '';
       item.options = Array.from(el.options).slice(0, 30).map((o) => o.label.slice(0, 60));
     }
+    // What a person sees of a control's state: what a field holds (a password only as filled),
+    // whether it can be edited, whether a box is ticked and whether a menu is open.
+    const textField = tag === 'textarea' || (tag === 'input' && !['checkbox', 'radio', 'file', 'submit', 'button', 'reset', 'image', 'range', 'color'].includes(el.type));
+    if (textField && el.value) {
+      if (el.type === 'password') item.filled = true;
+      else item.value = el.value.slice(0, 60);
+    }
+    if (textField && el.readOnly) item.readOnly = true;
+    const ariaChecked = el.getAttribute('aria-checked');
+    if (el.type === 'checkbox' || el.type === 'radio') item.checked = el.checked;
+    else if (ariaChecked === 'true' || ariaChecked === 'false') item.checked = ariaChecked === 'true';
+    const ariaExpanded = el.getAttribute('aria-expanded');
+    if (ariaExpanded === 'true' || ariaExpanded === 'false') item.expanded = ariaExpanded === 'true';
     out.push(item);
   }
   return out;

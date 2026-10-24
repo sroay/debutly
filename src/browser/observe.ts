@@ -50,7 +50,13 @@ export async function observe(page: Page): Promise<Observation> {
     const ax = names.get(el.id);
     if (ax) el.ax = ax;
   }
-  const text = (await page.locator("body").innerText()).replace(/\s+/g, " ").trim().slice(0, 2000);
+  // Line by line, as it reads on screen, so what changed after an action can be told line by line.
+  const text = (await page.locator("body").innerText())
+    .split("\n")
+    .map((line) => line.replace(/\s+/g, " ").trim())
+    .filter(Boolean)
+    .join("\n")
+    .slice(0, 2000);
   const language = (await page.evaluate(LANGUAGE_SCRIPT)) as Pick<Observation, "lang" | "dir" | "arabicShare" | "zoomBlocked">;
   return { url: page.url(), title: await page.title(), elements, text, ...language };
 }

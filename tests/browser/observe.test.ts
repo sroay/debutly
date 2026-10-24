@@ -150,3 +150,21 @@ it("names a native select by its label and lists its options apart", async () =>
     }),
   );
 });
+
+it("records what a field holds, and whether it is editable, ticked or open", async () => {
+  await page.goto("about:blank");
+  await page.setContent(`
+    <label>Website <input value="www.shop.test" readonly></label>
+    <label>Password <input type="password" value="secret-value"></label>
+    <label><input type="checkbox" checked> I agree</label>
+    <button aria-expanded="false">Account menu</button>
+    <p>First line</p><p>Second   line</p>`);
+  const obs = await observe(page);
+  const byName = (name: string) => obs.elements.find((e) => e.name === name)!;
+  expect(byName("Website")).toMatchObject({ value: "www.shop.test", readOnly: true });
+  expect(byName("Password")).toMatchObject({ filled: true });
+  expect(byName("Password").value).toBeUndefined();
+  expect(byName("I agree")).toMatchObject({ checked: true });
+  expect(byName("Account menu")).toMatchObject({ expanded: false });
+  expect(obs.text).toContain("First line\nSecond line");
+});

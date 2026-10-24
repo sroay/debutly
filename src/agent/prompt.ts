@@ -43,10 +43,23 @@ Action is one of:
 {"type":"done","success":boolean,"note":string}`;
 }
 
+/** A control's state, as a person sees it (and a screen reader announces it). */
+function stateOf(e: InteractiveElement): string {
+  const states = [
+    e.disabled ? "disabled" : "",
+    e.readOnly ? "read-only" : "",
+    e.checked === undefined ? "" : e.checked ? "checked" : "not checked",
+    e.expanded === undefined ? "" : e.expanded ? "open" : "closed",
+    e.filled ? "filled in" : "",
+    !e.options && e.value ? `holds "${e.value}"` : "",
+  ].filter(Boolean);
+  return states.length ? ` (${states.join(", ")})` : "";
+}
+
 function describeElement(e: InteractiveElement, screenReader = false): string {
   // A screen reader announces the role and name the browser gives it.
   const heard = screenReader && e.ax ? e.ax : e;
-  const line = `[${e.id}] ${heard.role} "${heard.name}"`;
+  const line = `[${e.id}] ${heard.role} "${heard.name}"${stateOf(e)}`;
   if (!e.options) return line;
   return `${line} set to "${e.value ?? ""}", options: ${e.options.map((o) => `"${o}"`).join(" | ")}`;
 }

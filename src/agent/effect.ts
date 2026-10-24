@@ -1,4 +1,4 @@
-import type { Action, ActionResult, Observation, Signal } from "../types";
+import type { Action, ActionResult, InteractiveElement, Observation, Signal } from "../types";
 
 const pathOf = (url: string) => {
   try {
@@ -9,6 +9,58 @@ const pathOf = (url: string) => {
   }
 };
 
+const MAX_LISTED = 4;
+const MAX_LINE = 80;
+
+const controlOf = (e: InteractiveElement) => `${e.role} "${e.name}"`;
+
+/** Controls in `a` beyond those in `b`, counting copies: a second "Untitled" row is new. */
+function beyond(a: InteractiveElement[], b: InteractiveElement[]): InteractiveElement[] {
+  const left = new Map<string, number>();
+  for (const e of b) left.set(controlOf(e), (left.get(controlOf(e)) ?? 0) + 1);
+  return a.filter((e) => {
+    const n = left.get(controlOf(e)) ?? 0;
+    if (n > 0) left.set(controlOf(e), n - 1);
+    return n === 0;
+  });
+}
+
+/** Controls still there whose state changed: a Save button now enabled, a box now checked. */
+function stateChanges(before: InteractiveElement[], after: InteractiveElement[]): string[] {
+  const out: string[] = [];
+  for (const a of after) {
+    const b = before.find((e) => controlOf(e) === controlOf(a));
+    if (!b) continue;
+    if (!!b.disabled !== !!a.disabled) out.push(`now ${a.disabled ? "disabled" : "enabled"} ${controlOf(a)}`);
+    if (b.checked !== undefined && a.checked !== undefined && b.checked !== a.checked) out.push(`now ${a.checked ? "checked" : "unchecked"} ${controlOf(a)}`);
+    if (b.expanded !== undefined && a.expanded !== undefined && b.expanded !== a.expanded) out.push(`now ${a.expanded ? "open" : "closed"} ${controlOf(a)}`);
+  }
+  return out;
+}
+
+const listed = (items: string[]) => items.slice(0, MAX_LISTED).join(", ") + (items.length > MAX_LISTED ? `, and ${items.length - MAX_LISTED} more` : "");
+
+/**
+ * What changed on the page, as a person would notice it: controls that appeared or went, state
+ * that changed, and new lines of text. Told only "the page changed", agents missed a password
+ * field that had appeared, pressed "Create company" seven times without seeing seven new rows,
+ * and kept retyping values while waiting for a Save button to wake up.
+ */
+function whatChanged(before: Observation, after: Observation): string {
+  const appeared = beyond(after.elements, before.elements);
+  const gone = beyond(before.elements, after.elements);
+  const names = new Set(after.elements.map((e) => e.name));
+  const had = new Set(before.text.split("\n").map((l) => l.trim()));
+  const newText = [...new Set(after.text.split("\n").map((l) => l.trim()))].filter((l) => l && !had.has(l) && !names.has(l)).map((l) => `"${l.slice(0, MAX_LINE)}"`);
+  const parts = [
+    appeared.length ? `new ${listed(appeared.map(controlOf))}` : "",
+    gone.length ? `gone ${listed(gone.map(controlOf))}` : "",
+    ...stateChanges(before.elements, after.elements).slice(0, MAX_LISTED),
+    newText.length ? `new text ${listed(newText)}` : "",
+  ].filter(Boolean);
+  return parts.length ? `the page changed: ${parts.join("; ")}` : "";
+}
+
 // What a person would notice after acting: where they are now, whether anything changed,
 // and whether something visibly broke. Without this, agents retry dead buttons forever.
 export function describeEffect(action: Action, before: Observation, after: Observation, signals: Signal[], result: ActionResult): string {
@@ -18,7 +70,9 @@ export function describeEffect(action: Action, before: Observation, after: Obser
   if (action.type === "done" || action.type === "check_email") return "";
 
   const parts: string[] = [];
+  const changed = whatChanged(before, after);
   if (pathOf(after.url) !== pathOf(before.url)) parts.push(`now on ${pathOf(after.url)}`);
+  else if (changed) parts.push(changed);
   else if (after.text !== before.text) parts.push("the page changed");
   else if (action.type !== "fill" && !signals.some((s) => s.kind === "download")) parts.push("nothing visibly changed");
 

@@ -73,9 +73,18 @@ export interface InteractiveElement {
   role: string;
   name: string;
   tag: string;
-  /** A native select's chosen option and its options, by label. */
+  /** What a field holds: a native select's chosen option, or a text field's text (never a password's). */
   value?: string;
+  /** A native select's options, by label. */
   options?: string[];
+  /** A password field with something typed in it. */
+  filled?: true;
+  /** Shown but not editable. */
+  readOnly?: true;
+  /** A checkbox, radio button or switch: on or off. */
+  checked?: boolean;
+  /** A control that opens something (a menu, a dropdown): open or closed. */
+  expanded?: boolean;
   /** The browser's own accessible name and role (Chromium), as a screen reader would announce them. */
   ax?: AccessibleName;
   /** Named only by its placeholder: no label, aria-label or aria-labelledby. */
