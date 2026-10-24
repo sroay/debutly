@@ -3,6 +3,9 @@
 # a confirmation email, or the agents could never confirm theirs.
 set -euo pipefail
 
+# What the first page weighs as sent, for reading a slow-connection agent's result.
+bash "$(dirname "$0")/../weight.sh" http://localhost:3000/app/login
+
 email="check-$(openssl rand -hex 4)@agents.test"
 password="Aa1!$(openssl rand -hex 8)"
 curl -sf -X POST http://localhost:3000/api/v1/accounts -H "Content-Type: application/json" \

@@ -10,3 +10,6 @@ esac
 curl -sf -o /dev/null http://localhost:3000/signup || { echo "::error title=Rehearsal setup::Cal.diy's sign-up page didn't load."; exit 1; }
 curl -sf -o /dev/null ${MAILPIT_AUTH:+-u "$MAILPIT_AUTH"} http://localhost:8025/api/v1/messages
 echo "Cal.diy and Mailpit answer, and sign-up is open."
+
+# What the first page weighs as sent, for reading a slow-connection agent's result.
+bash "$(dirname "$0")/../weight.sh" http://localhost:3000/signup
