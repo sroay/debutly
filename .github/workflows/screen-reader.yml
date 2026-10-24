@@ -1,7 +1,8 @@
 name: screen-reader
-# Checks rehearsal findings with a real screen reader: NVDA on Windows, driven by Guidepup.
+# Checks rehearsal findings with a real screen reader, driven by Guidepup: NVDA on Windows or
+# VoiceOver on macOS.
 # Started by hand. "smoke" needs no app. For an app, a Linux job runs it (as rehearse.yml does)
-# behind temporary addresses while the Windows job hears its pages. The Windows job makes a key
+# behind temporary addresses while the screen-reader job hears its pages. That job makes a key
 # pair for this run alone; the Linux job seals the addresses to it, so they never appear in a log.
 # The transcripts are sealed for report-key.pem's holder, like rehearsal reports.
 on:
@@ -12,6 +13,11 @@ on:
         type: choice
         options: [smoke, chatwoot, twenty, caldiy]
         default: smoke
+      screen-reader:
+        description: NVDA on Windows, or VoiceOver on macOS
+        type: choice
+        options: [nvda, voiceover]
+        default: nvda
       with-agents:
         description: Instead of the hand-written check, run Debutly's agents here and then debutly hear (costs model calls)
         type: boolean
@@ -62,7 +68,8 @@ jobs:
           done
 
   nvda:
-    runs-on: windows-2025
+    name: ${{ inputs.screen-reader }}
+    runs-on: ${{ inputs.screen-reader == 'voiceover' && 'macos-15' || 'windows-2025' }}
     timeout-minutes: 90
     defaults:
       run:
@@ -70,6 +77,10 @@ jobs:
         working-directory: rehearsals/screen-reader
     steps:
       - uses: actions/checkout@v4
+      # macOS's own openssl (LibreSSL) lacks options the sealing uses; the runner has OpenSSL 3.
+      - name: Use OpenSSL 3
+        if: ${{ runner.os == 'macOS' }}
+        run: echo "$(brew --prefix openssl@3)/bin" >> "$GITHUB_PATH"
       - name: Make this run's key
         if: ${{ inputs.check != 'smoke' }}
         run: |

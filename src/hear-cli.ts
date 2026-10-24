@@ -1,13 +1,16 @@
 // `debutly hear [report dir] [--browser-state dir] [--tabs 120]`: a run's screen-reader findings,
-// checked with NVDA on Windows (through Guidepup). The app must be running where the report's
-// pages point; for pages behind sign-in, run the agents with --browser-state <dir> first.
+// checked with a real screen reader through Guidepup: NVDA on Windows, VoiceOver on macOS. The
+// app must be running where the report's pages point; for pages behind sign-in, run the agents
+// with --browser-state <dir> first.
+import { execFileSync } from "node:child_process";
 import { readdirSync, statSync } from "node:fs";
 import { join } from "node:path";
 import { parseArgs } from "node:util";
 import { chromium, type Page } from "playwright";
 import { hearFindings, type ScreenReader } from "./hear";
 
-const USAGE = "Usage: npx debutly hear [report dir] [--browser-state <dir>] [--tabs 120]\nNeeds Windows with NVDA set up for automation: npm i -D @guidepup/guidepup && npx @guidepup/setup";
+const USAGE =
+  "Usage: npx debutly hear [report dir] [--browser-state <dir>] [--tabs 120]\nNeeds Windows (NVDA) or macOS (VoiceOver), set up for automation: npm i -D @guidepup/guidepup && npx @guidepup/setup";
 
 const { values, positionals } = parseArgs({
   allowPositionals: true,
@@ -31,20 +34,44 @@ function latestRun(): string | undefined {
 const clean = (s: string) => s.toLowerCase().replace(/[^\p{L}\p{N}]+/gu, "");
 const delay = (ms: number) => new Promise((r) => setTimeout(r, ms));
 
+/** The Chrome Playwright launches, as macOS knows it. */
+const CHROME_FOR_TESTING = "com.google.chrome.for.testing";
+
+interface SpeechLog {
+  spokenPhraseLog(): Promise<string[]>;
+  clearSpokenPhraseLog(): Promise<void>;
+}
+
+/** Everything said until the screen reader has been quiet: NVDA can speak in parts ("main landmark", then the field). */
+async function untilQuiet(reader: SpeechLog): Promise<string> {
+  const parts: string[] = [];
+  for (let quiet = 0; quiet < 2 && parts.length < 20; ) {
+    await delay(250);
+    const log = await reader.spokenPhraseLog();
+    await reader.clearSpokenPhraseLog();
+    if (log.length) {
+      parts.push(...log);
+      quiet = 0;
+    } else quiet++;
+  }
+  return parts.join(" ").replace(/\s+/g, " ").trim();
+}
+
+async function loadGuidepup(): Promise<typeof import("@guidepup/guidepup")> {
+  try {
+    return await import("@guidepup/guidepup");
+  } catch {
+    throw new Error(`Guidepup isn't installed.\n${USAGE}`);
+  }
+}
+
 /**
  * NVDA, through Guidepup. Putting it on the page follows Guidepup's own Playwright helper (MIT):
  * make sure the browser window is the one in front, then go to the top of the document. It
  * doesn't click the page to focus it, as that helper does: a click lands on whatever is there.
  */
 async function nvdaReader(): Promise<ScreenReader> {
-  if (process.platform !== "win32") throw new Error(`debutly hear uses NVDA, which runs on Windows.\n${USAGE}`);
-  let guidepup: typeof import("@guidepup/guidepup");
-  try {
-    guidepup = await import("@guidepup/guidepup");
-  } catch {
-    throw new Error(`Guidepup isn't installed.\n${USAGE}`);
-  }
-  const { nvda, NVDAKeyCodeCommands, WindowsKeyCodes, WindowsModifiers } = guidepup;
+  const { nvda, NVDAKeyCodeCommands, WindowsKeyCodes, WindowsModifiers } = await loadGuidepup();
   // Guidepup's NVDA build is versioned like "0.2.1-2026.2": the NVDA release is the last part.
   const version = (nvda as unknown as { version?: string }).version?.match(/(\d{4}\.\d+(?:\.\d+)?)$/)?.[1];
   return {
@@ -66,21 +93,43 @@ async function nvdaReader(): Promise<ScreenReader> {
       await nvda.clearSpokenPhraseLog();
     },
     press: (key) => nvda.press(key),
-    // NVDA can speak in parts ("main landmark", then the field): wait until it has been quiet.
-    async said() {
-      const parts: string[] = [];
-      for (let quiet = 0; quiet < 2 && parts.length < 20; ) {
-        await delay(250);
-        const log = await nvda.spokenPhraseLog();
-        await nvda.clearSpokenPhraseLog();
-        if (log.length) {
-          parts.push(...log);
-          quiet = 0;
-        } else quiet++;
-      }
-      return parts.join(" ").replace(/\s+/g, " ").trim();
-    },
+    said: () => untilQuiet(nvda),
   };
+}
+
+/**
+ * VoiceOver, through Guidepup. It follows keyboard focus, so Tab needs only Chrome in front
+ * (Guidepup's helper for reading a page with VoiceOver's own cursor goes further, through its
+ * item chooser; Tab doesn't need that). Pressing Control first stops anything still being read.
+ */
+async function voiceOverReader(): Promise<ScreenReader> {
+  const { voiceOver, macOSActivateId, MacOSKeyCodes } = await loadGuidepup();
+  let macOS = "";
+  try {
+    macOS = execFileSync("sw_vers", ["-productVersion"], { encoding: "utf8" }).trim();
+  } catch {
+    // not worth failing over
+  }
+  return {
+    name: macOS ? `VoiceOver (macOS ${macOS})` : "VoiceOver",
+    start: () => voiceOver.start({ capture: "initial" }),
+    stop: () => voiceOver.stop(),
+    async focus(page: Page) {
+      await macOSActivateId(CHROME_FOR_TESTING);
+      await voiceOver.perform({ keyCode: MacOSKeyCodes.Control }, { capture: false });
+      await page.bringToFront();
+      await delay(500);
+      await voiceOver.clearSpokenPhraseLog();
+    },
+    press: (key) => voiceOver.press(key),
+    said: () => untilQuiet(voiceOver),
+  };
+}
+
+async function screenReader(): Promise<ScreenReader> {
+  if (process.platform === "win32") return nvdaReader();
+  if (process.platform === "darwin") return voiceOverReader();
+  throw new Error(`debutly hear uses NVDA on Windows or VoiceOver on macOS.\n${USAGE}`);
 }
 
 const reportDir = positionals[0] ?? latestRun();
@@ -89,7 +138,7 @@ if (!reportDir) {
   process.exit(1);
 }
 try {
-  const reader = await nvdaReader();
+  const reader = await screenReader();
   console.log(`Hearing ${reportDir} with ${reader.name}...`);
   const heard = await hearFindings({
     reportDir,

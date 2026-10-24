@@ -133,6 +133,10 @@ it("tells a control announced without a name from one with a name, and says plac
   expect(saidNoName("edit, multi line, blank")).toBe(true);
   expect(saidNoName("Save settings, button")).toBe(false);
   expect(saidNoName("Monday, switch, on")).toBe(false);
+  // VoiceOver's words for the same
+  expect(saidNoName("edit text")).toBe(true);
+  expect(saidNoName("pop up button, collapsed")).toBe(true);
+  expect(saidNoName("Email, edit text")).toBe(false);
   expect(spoken("john@doe.com")).toBe("john at doe dot com");
   expect(spoken("•••••••••••••")).toBe("13 bullet");
 });

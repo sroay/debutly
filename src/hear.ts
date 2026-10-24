@@ -53,10 +53,22 @@ const ACTIVE_ID = `(() => { const el = document.activeElement; return el ? el.ge
 const BLUR = `(() => { if (document.activeElement && document.activeElement.blur) document.activeElement.blur(); })()`;
 const SETTLE_MS = 2500;
 
-// The words a screen reader adds about a control's role and state. What's left once they're
-// gone is its name: nothing left means the control was announced without one.
-const ROLE_AND_STATE =
-  /\b(button|toggle button|menu button|link|visited|same page|current page|combo box|edit|multi line|blank|read only|protected|collapsed|expanded|has auto complete|editable|check box|not checked|half checked|checked|switch|on|off|radio button|sub ?menu|opens dialog|opens list|selected|clickable|unavailable|required|invalid entry|pressed|not pressed|section|grouping|region|landmark|navigation|main|form|list|with \d+ items|out of list|graphic|heading|level \d+|\d+ of \d+|text field|secure text field|text area|pop-?up button|dimmed)\b/gi;
+// The words a screen reader adds about a control's role and state, NVDA's and VoiceOver's. What's
+// left once they're gone is its name: nothing left means the control was announced without one.
+// Longest first, so "edit text" goes as a whole before "edit" would.
+const ROLE_AND_STATE_WORDS = [
+  // NVDA
+  "button", "toggle button", "menu button", "link", "visited", "same page", "current page", "combo box", "edit",
+  "multi line", "blank", "read only", "protected", "collapsed", "expanded", "has auto complete", "editable",
+  "check box", "not checked", "half checked", "checked", "switch", "on", "off", "radio button", "sub ?menu",
+  "opens dialog", "opens list", "selected", "clickable", "unavailable", "required", "invalid entry", "pressed",
+  "not pressed", "section", "grouping", "region", "landmark", "navigation", "main", "form", "list",
+  "with \\d+ items", "out of list", "graphic", "heading", "level \\d+", "\\d+ of \\d+",
+  // VoiceOver
+  "text field", "secure text field", "text area", "pop[- ]?up button", "dimmed", "edit text", "secure edit text",
+  "unchecked", "group", "web content", "has keyboard focus", "image", "invalid data", "you are currently on an?",
+];
+const ROLE_AND_STATE = new RegExp(`\\b(${[...ROLE_AND_STATE_WORDS].sort((a, b) => b.length - a.length).join("|")})\\b`, "gi");
 
 /** True when nothing but role and state words was said. */
 export function saidNoName(said: string): boolean {
