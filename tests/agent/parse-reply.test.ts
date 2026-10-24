@@ -70,3 +70,17 @@ it("still refuses a string action that isn't an action", () => {
   // A flattened action still needs its fields.
   expect(() => parseAgentReply(`{"reasoning":"x","action":"click"}`)).toThrow();
 });
+
+it("reads a reply split into two objects, one after the other (2026-10-24)", () => {
+  const split = `{"reasoning": "The button is not responding; I will press Enter again."}\n{"action": "press","key":"Enter"}`;
+  expect(parseAgentReply(split)).toEqual({ reasoning: "The button is not responding; I will press Enter again.", action: { type: "press", key: "Enter" } });
+  const nested = `{"reasoning":"Save it {now}"}\n{"action":{"type":"click","id":3}}`;
+  expect(parseAgentReply(nested)).toEqual({ reasoning: "Save it {now}", action: { type: "click", id: 3 } });
+  // Two whole replies: the first one counts.
+  expect(parseAgentReply(`{"reasoning":"a","action":{"type":"wait"}}\n{"reasoning":"b","action":{"type":"click","id":1}}`)).toEqual({ reasoning: "a", action: { type: "wait" } });
+});
+
+it("says plainly that a reply has no action, so asking again can work", () => {
+  expect(() => parseAgentReply(`{"reasoning": "Since 'Get started' is disabled, I am waiting for the system."}`)).toThrow('the reply has no "action"');
+  expect(() => parseAgentReply(`{"reasoning":"x","action":{"type":"click"}}`)).toThrow(/^action\.id: /);
+});

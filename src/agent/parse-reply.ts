@@ -19,7 +19,48 @@ export function parseAgentReply(raw: string): { reasoning: string; action: Actio
   const start = raw.indexOf("{");
   const end = raw.lastIndexOf("}");
   if (start === -1 || end <= start) throw new Error("no JSON object in agent reply");
-  return ReplySchema.parse(actionAsObject(parseQuotedAction(raw.slice(start, end + 1))));
+  const reply = actionAsObject(parseQuotedAction(raw.slice(start, end + 1)));
+  const parsed = ReplySchema.safeParse(reply);
+  if (!parsed.success) throw new Error(problemWith(reply, parsed.error));
+  return parsed.data;
+}
+
+// Said back to the agent when it is asked again, so in words it can act on. Shown the validator's
+// own JSON for a reply with reasoning and no action, one model sent the same reply three times.
+function problemWith(reply: unknown, error: z.ZodError): string {
+  if (reply && typeof reply === "object" && !("action" in reply)) {
+    return `the reply has no "action". Add one, for example {"reasoning":"…","action":{"type":"wait"}}`;
+  }
+  return error.issues.map((i) => `${i.path.join(".") || "reply"}: ${i.message}`).join("; ");
+}
+
+/**
+ * The reply split into objects one after another, merged: {"reasoning":"…"} and on the next line
+ * {"action":"press","key":"Enter"} (GLM 5.3 Flash, 2026-10-24, twice in one run). When two whole
+ * replies come, the first one counts. Undefined when there is only one object or one doesn't parse.
+ */
+function splitReply(text: string): Record<string, unknown> | undefined {
+  const objects: string[] = [];
+  let depth = 0;
+  let from = 0;
+  let inString = false;
+  for (let i = 0; i < text.length; i++) {
+    const c = text[i];
+    if (inString) {
+      if (c === "\\") i++;
+      else if (c === '"') inString = false;
+    } else if (c === '"') inString = true;
+    else if (c === "{" && depth++ === 0) from = i;
+    else if (c === "}" && depth > 0 && --depth === 0) objects.push(text.slice(from, i + 1));
+  }
+  if (objects.length < 2) return undefined;
+  try {
+    const parsed = objects.map((o) => JSON.parse(o) as unknown);
+    if (!parsed.every((p) => p && typeof p === "object" && !Array.isArray(p))) return undefined;
+    return Object.assign({}, ...(parsed as Record<string, unknown>[]).reverse());
+  } catch {
+    return undefined;
+  }
 }
 
 // Some models (GLM 5.3 Flash) send the action as a string. Unescaped,
@@ -31,6 +72,8 @@ function parseQuotedAction(text: string): unknown {
   try {
     return JSON.parse(text);
   } catch (err) {
+    const split = splitReply(text);
+    if (split) return split;
     const unquoted = text.replace(/("action"\s*:\s*)"(\{[^{}]*\})"/, "$1$2");
     if (unquoted !== text) {
       try {
