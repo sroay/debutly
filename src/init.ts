@@ -103,15 +103,15 @@ async function guessCustomers(url: string): Promise<string | undefined> {
   }
 }
 
-export async function init(cwd: string = process.cwd()): Promise<number> {
-  const rl = createInterface({ input: process.stdin, output: process.stdout });
+export async function init(cwd: string = process.cwd(), input: NodeJS.ReadableStream & { isTTY?: boolean } = process.stdin): Promise<number> {
+  const rl = createInterface({ input, output: process.stdout });
   // Lines are buffered, so answers piped in by a script aren't lost between questions; at the end
   // of the input every question takes its default.
   const lines = rl[Symbol.asyncIterator]();
   const ask = async (question: string, fallback = "") => {
     process.stdout.write(fallback ? `${question} [${fallback}] ` : `${question} `);
     const { value, done } = await lines.next();
-    if (done || !process.stdin.isTTY) process.stdout.write("\n");
+    if (done || !input.isTTY) process.stdout.write("\n");
     return (done ? "" : String(value).trim()) || fallback;
   };
   try {
@@ -126,8 +126,9 @@ export async function init(cwd: string = process.cwd()): Promise<number> {
     console.log("\nWhat should the agents try to do?");
     GOALS.forEach((g, i) => console.log(`  ${i + 1}. ${g}`));
     console.log("  4. Something else");
-    const pick = await ask("Choose 1-4:", "1");
-    const goal = GOALS[Number(pick) - 1] ?? (await ask("Describe it in a sentence:"));
+    // A goal typed here instead of a number is the goal.
+    const pick = await ask("Choose 1-4, or type the goal:", "1");
+    const goal = GOALS[Number(pick) - 1] ?? (/^\d*$/.test(pick) ? await ask("Describe it in a sentence:") : pick);
 
     const guess = await guessCustomers(url);
     const icp = await ask("\nWho are your customers? One sentence, e.g. who they are and how big.", guess);

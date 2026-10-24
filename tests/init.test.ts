@@ -1,6 +1,11 @@
-import { expect, it } from "vitest";
+import { readFileSync } from "node:fs";
+import { mkdtemp } from "node:fs/promises";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
+import { Readable } from "node:stream";
+import { expect, it, vi } from "vitest";
 import { configArgs } from "../src/config";
-import { buildConfig, ignoreLines, startCommand, teamGoal, workflowYaml } from "../src/init";
+import { buildConfig, ignoreLines, init, startCommand, teamGoal, workflowYaml } from "../src/init";
 
 it("writes a config the run accepts, with crews for team goals", () => {
   const solo = buildConfig({ url: "http://localhost:3000", goal: "Sign up", icp: "Freelance designers", team: false });
@@ -30,4 +35,19 @@ it("writes a workflow that uses the action and the repository secret", () => {
 it("keeps the key file and local reports out of git, once", () => {
   expect(ignoreLines("node_modules\n")).toEqual([".env", ".debutly/"]);
   expect(ignoreLines("/.env\r\n.debutly/\r\n")).toEqual([]);
+});
+
+it("takes a goal typed at the numbered question as the goal, and asks for one after 4", async () => {
+  vi.spyOn(console, "log").mockImplementation(() => {});
+  vi.spyOn(process.stdout, "write").mockImplementation(() => true);
+  const run = async (...answers: string[]) => {
+    const dir = await mkdtemp(join(tmpdir(), "init-"));
+    expect(await init(dir, Readable.from(answers.map((a) => `${a}\n`)))).toBe(0);
+    return JSON.parse(readFileSync(join(dir, "debutly.json"), "utf8")).goal;
+  };
+  // Port 9 is closed, so no customers are guessed from the page.
+  expect(await run("http://127.0.0.1:9", "Book a demo with a clinic", "Small clinics", "", "", "")).toBe("Book a demo with a clinic");
+  expect(await run("http://127.0.0.1:9", "4", "Export a report", "Small clinics", "", "", "")).toBe("Export a report");
+  expect(await run("http://127.0.0.1:9", "", "Small clinics", "", "", "")).toBe("Sign up and get to the main screen");
+  vi.restoreAllMocks();
 });
