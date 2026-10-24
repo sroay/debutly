@@ -24,11 +24,19 @@ on:
       serve-minutes:
         description: Keep the app online for a person to check by hand, for this many minutes (up to 90; no agents)
         default: "0"
+      same-people:
+        description: Run the agents in the app's people.json (the same people as an earlier run), not new ones
+        type: boolean
+        default: false
+      debutly-ref:
+        description: Run another version of Debutly (a branch, tag or commit), to compare it with this one on the same people
+        default: ""
 
 permissions:
   contents: read
 
-concurrency: rehearse
+# One run per app and Debutly version at a time; two versions of one app can run side by side.
+concurrency: rehearse-${{ inputs.app }}-${{ inputs.debutly-ref }}
 
 jobs:
   rehearse:
@@ -62,9 +70,19 @@ jobs:
       - name: Check the app before any model calls
         run: bash "$APP_DIR/check.sh"
 
+      - name: Fetch the other Debutly version
+        if: ${{ !inputs.check-only && inputs.serve-minutes == '0' && inputs.debutly-ref != '' }}
+        env:
+          REF: ${{ inputs.debutly-ref }}
+        run: |
+          git fetch --no-tags origin "$REF"
+          git worktree add "$RUNNER_TEMP/debutly" FETCH_HEAD
+          echo "DEBUTLY_DIR=$RUNNER_TEMP/debutly" >> "$GITHUB_ENV"
+
       - name: Install Debutly
         if: ${{ !inputs.check-only && inputs.serve-minutes == '0' }}
         run: |
+          cd "${DEBUTLY_DIR:-$GITHUB_WORKSPACE}"
           npm ci --no-audit --no-fund
           npx playwright install --with-deps chromium
 
@@ -75,12 +93,17 @@ jobs:
           DEBUTLY_API_KEY: ${{ secrets.DEBUTLY_API_KEY }}
           LANGUAGES: ${{ inputs.languages }}
           AGENTS: ${{ inputs.agents }}
+          SAME_PEOPLE: ${{ inputs.same-people }}
         run: |
           if [ -z "$DEBUTLY_API_KEY" ]; then echo "::error title=Rehearsal::Add the DEBUTLY_API_KEY secret to run agents."; exit 1; fi
           args=(--out "$RUNNER_TEMP/report" --trigger manual --ci-url "$GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID")
           if [ -n "$LANGUAGES" ]; then args+=(--languages "$LANGUAGES"); fi
           if [ -n "$AGENTS" ]; then args+=(--agents "$AGENTS"); fi
-          node "$GITHUB_WORKSPACE/bin/debutly.mjs" run "${args[@]}"
+          if [ "$SAME_PEOPLE" = "true" ]; then
+            if [ ! -f people.json ]; then echo "::error title=Rehearsal::$APP_DIR/people.json is missing: commit the people.json of an earlier run."; exit 1; fi
+            args+=(--people people.json)
+          fi
+          node "${DEBUTLY_DIR:-$GITHUB_WORKSPACE}/bin/debutly.mjs" run "${args[@]}"
 
       - name: Seal the report
         if: ${{ always() && !inputs.check-only && inputs.serve-minutes == '0' }}
