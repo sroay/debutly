@@ -69,7 +69,7 @@ for (let step = 0; step < 10; step++) {
       await said(ownerPage, `Invite stayed disabled on /invite-team (fields: ${JSON.stringify(placeholders)})`);
       break;
     }
-    await ownerPage.getByRole("button", { name: /^(invite|continue)$/i }).click();
+    await ownerPage.getByRole("button", { name: /^(invite|continue)$/i, disabled: false }).first().click();
     await ownerPage.waitForURL((url) => url.pathname !== path, { timeout: 30_000 }).catch(() => {});
     continue;
   }
