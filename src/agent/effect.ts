@@ -1,5 +1,5 @@
 import type { Action, ActionResult, InteractiveElement, Observation, Signal } from "../types";
-import { controlLabel, type StepView } from "./prompt";
+import { controlLabel, type StepView } from "./label";
 
 const pathOf = (url: string) => {
   try {

@@ -1,6 +1,9 @@
 import { inclusionBrief } from "../persona/inclusion";
 import { languageBrief } from "../persona/language";
 import type { InteractiveElement, Observation, Persona } from "../types";
+import { controlLabel, type StepView } from "./label";
+
+export type { StepView } from "./label";
 
 // Stays constant for the whole session so providers can cache it; everything that changes goes in the user message.
 export interface AgentIdentity {
@@ -56,25 +59,10 @@ function stateOf(e: InteractiveElement): string {
   return states.length ? ` (${states.join(", ")})` : "";
 }
 
-/**
- * A control as the agent meets it. A screen reader announces the role and name the browser gives
- * it; a sighted person looking at a control with no text sees its icon.
- */
-export function controlLabel(e: InteractiveElement, screenReader = false): string {
-  const heard = screenReader && e.ax ? e.ax : e;
-  const icon = !screenReader && !e.name && e.icon ? ` (${e.icon} icon)` : "";
-  return `${heard.role} "${heard.name}"${icon}`;
-}
-
 function describeElement(e: InteractiveElement, screenReader = false): string {
   const line = `[${e.id}] ${controlLabel(e, screenReader)}${stateOf(e)}`;
   if (!e.options) return line;
   return `${line} set to "${e.value ?? ""}", options: ${e.options.map((o) => `"${o}"`).join(" | ")}`;
-}
-
-export interface StepView {
-  /** As a screen reader presents the page: the browser's names and roles, without what is hidden from it. */
-  screenReader?: boolean;
 }
 
 export function buildStepMessage(obs: Observation, history: string[], view: StepView = {}): string {
