@@ -29,8 +29,10 @@ const movedOn = async (from, ms = 6000) => {
   return new URL(page.url()).pathname !== from;
 };
 
-for (let step = 0; step < 8; step++) {
+for (let step = 0; step < 10; step++) {
   await page.waitForLoadState("networkidle").catch(() => {});
+  // Some steps load first (/workspace-activation): wait for their button.
+  await page.getByRole("button", { name: NEXT }).first().waitFor({ state: "visible", timeout: 30_000 }).catch(() => {});
   const path = new URL(page.url()).pathname;
   if (path.startsWith("/objects/")) break;
   for (const field of await page.locator("input[type=text]:visible, input:not([type]):visible").all()) {

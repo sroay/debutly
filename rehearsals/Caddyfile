@@ -1,0 +1,7 @@
+# In front of an app that serves itself straight from its container, as real hosting serves it:
+# compressed. Without it, Twenty's first page sent 10 MB of scripts uncompressed, and an agent on a
+# slow connection waited minutes for what a real customer gets in a fraction of that.
+:3000 {
+	encode zstd gzip
+	reverse_proxy {$UPSTREAM}
+}

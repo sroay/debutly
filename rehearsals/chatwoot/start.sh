@@ -34,7 +34,7 @@ EOF
 docker compose pull --quiet
 docker compose up -d postgres redis mailpit
 docker compose run --rm rails bundle exec rails db:chatwoot_prepare
-docker compose up -d rails sidekiq
+docker compose up -d rails sidekiq proxy
 
 for _ in $(seq 180); do
   if curl -sf -o /dev/null --max-time 5 http://localhost:3000/app/login; then break; fi

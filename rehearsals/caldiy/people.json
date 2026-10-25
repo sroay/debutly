@@ -1,0 +1,44 @@
+[
+  {
+    "kind": "individual",
+    "id": "p1",
+    "person": {
+      "id": "p1",
+      "name": "Fatima",
+      "background": "Fatima runs a physiotherapy clinic in Riyadh, serving local Arabic-speaking families and a growing number of English-speaking expats. She is cautious about adopting new technology and values simplicity above all.",
+      "goal": "A straightforward online booking system that works seamlessly in both Arabic and English, without confusing her or her staff.",
+      "patience": "high",
+      "techSavvy": "low",
+      "language": "ar",
+      "inclusion": "screen_reader"
+    }
+  },
+  {
+    "kind": "individual",
+    "id": "p2",
+    "person": {
+      "id": "p2",
+      "name": "James",
+      "background": "James is an American expat English tutor based in Dubai, with students across different time zones. He is highly tech-savvy and expects digital tools to be fast, intuitive, and reliable.",
+      "goal": "A smooth calendar sync and instant booking updates in both languages to manage his busy schedule without friction.",
+      "patience": "low",
+      "techSavvy": "high",
+      "language": "en",
+      "inclusion": "low_vision"
+    }
+  },
+  {
+    "kind": "individual",
+    "id": "p3",
+    "person": {
+      "id": "p3",
+      "name": "Laila",
+      "background": "Laila is a management consultant in Doha running a small firm. She is skeptical after a negative experience with a previous booking tool and needs a system that proves its worth.",
+      "goal": "A customizable, bilingual booking system with strong support and the flexibility to handle different service types and client needs.",
+      "patience": "medium",
+      "techSavvy": "medium",
+      "language": "ar",
+      "inclusion": "slow_connection"
+    }
+  }
+]

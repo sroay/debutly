@@ -26,5 +26,6 @@ EOF
 
 docker compose pull --quiet
 docker compose up -d --wait --wait-timeout 600 server
-docker compose up -d worker mailpit
+docker compose up -d worker mailpit proxy
+for _ in $(seq 30); do curl -sf -o /dev/null --max-time 5 http://localhost:3000/healthz && break; sleep 1; done
 echo "Twenty is up at http://localhost:3000"

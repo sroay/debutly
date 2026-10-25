@@ -11,8 +11,6 @@ x-twenty: &twenty
 services:
   server:
     <<: *twenty
-    ports:
-      - "127.0.0.1:3000:3000"
     environment:
       NODE_PORT: 3000
     depends_on:
@@ -55,6 +53,16 @@ services:
       interval: 5s
       timeout: 5s
       retries: 10
+
+  # Compresses what the app sends, as real hosting does (rehearsals/Caddyfile).
+  proxy:
+    image: caddy:2-alpine
+    ports:
+      - "127.0.0.1:3000:3000"
+    environment:
+      UPSTREAM: server:3000
+    volumes:
+      - ../Caddyfile:/etc/caddy/Caddyfile:ro
 
   mailpit:
     image: axllent/mailpit:v1.31.4

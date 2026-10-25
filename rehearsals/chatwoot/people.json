@@ -1,0 +1,44 @@
+[
+  {
+    "kind": "individual",
+    "id": "p1",
+    "person": {
+      "id": "p1",
+      "name": "Faisal",
+      "background": "Owns a traditional perfumery in Doha; recently set up a website but struggles to keep up with customer questions in both Arabic and English.",
+      "goal": "A straightforward chat tool that suggests polite replies in both languages without complicated setup.",
+      "patience": "low",
+      "techSavvy": "low",
+      "language": "ar",
+      "inclusion": "screen_reader"
+    }
+  },
+  {
+    "kind": "individual",
+    "id": "p2",
+    "person": {
+      "id": "p2",
+      "name": "Sarah",
+      "background": "Founder of a fast-growing tech accessories startup in Dubai; her team manages hundreds of customer chats daily.",
+      "goal": "An intelligent chat system that routes queries, provides analytics, and integrates with existing CRM to improve efficiency and sales.",
+      "patience": "medium",
+      "techSavvy": "high",
+      "language": "en",
+      "inclusion": "low_vision"
+    }
+  },
+  {
+    "kind": "individual",
+    "id": "p3",
+    "person": {
+      "id": "p3",
+      "name": "Khadija",
+      "background": "Manages a popular family restaurant in Manama with a steady flow of online orders and inquiries from locals and tourists.",
+      "goal": "A reliable dual-language chat response tool for handling FAQs accurately, with a simple interface for her non-technical staff.",
+      "patience": "medium",
+      "techSavvy": "medium",
+      "language": "ar",
+      "inclusion": "slow_connection"
+    }
+  }
+]

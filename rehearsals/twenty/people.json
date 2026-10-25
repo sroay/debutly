@@ -1,0 +1,48 @@
+[
+  {
+    "kind": "business",
+    "id": "u1",
+    "business": {
+      "name": "GulfServe FM",
+      "archetype": "small business",
+      "size": 3,
+      "monthlyBudget": 300,
+      "goal": "Consolidate scattered client records and deal tracking across sales and operations into one bilingual platform."
+    },
+    "owner": {
+      "id": "u1-o",
+      "name": "Khalid",
+      "background": "Founder of a growing facility management firm in Dubai seeking to professionalize operations.",
+      "goal": "Find a bilingual CRM that requires zero IT support and immediately gives him visibility into sales pipelines and service history.",
+      "patience": "low",
+      "techSavvy": "medium",
+      "language": "ar",
+      "role": "Owner",
+      "inclusion": "low_vision"
+    },
+    "employees": [
+      {
+        "id": "u1-e1",
+        "name": "James",
+        "background": "Experienced sales manager from the UK who previously used Salesforce at a larger firm and misses proper pipeline tools.",
+        "goal": "Replace his messy Excel sheets with a structured, mobile-friendly CRM that automates reminders for follow-ups.",
+        "patience": "medium",
+        "techSavvy": "high",
+        "language": "en",
+        "role": "Senior Sales Account Manager",
+        "inclusion": "screen_reader"
+      },
+      {
+        "id": "u1-e2",
+        "name": "Fatima",
+        "background": "Long-time service coordinator who has seen many software implementations fail and is deeply skeptical of complicated tools.",
+        "goal": "A straightforward way to log client requests and update ticket statuses in Arabic without complicated workflows.",
+        "patience": "low",
+        "techSavvy": "low",
+        "language": "ar",
+        "role": "Service Operations Coordinator",
+        "inclusion": "slow_connection"
+      }
+    ]
+  }
+]
