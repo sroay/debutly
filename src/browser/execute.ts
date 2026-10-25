@@ -50,7 +50,7 @@ const ENTER_SETTLE_MS = 1_000;
  * (2026-10-24). It goes by how the page looks, not its text, so a toggle whose change is only
  * visual is never pressed twice.
  */
-async function pressEnterThenSpace(page: Page): Promise<boolean> {
+async function pressEnterThenSpace(page: Page, id: number): Promise<boolean> {
   const look = () => page.screenshot({ animations: "disabled", timeout: 5_000 }).catch(() => undefined);
   const url = page.url();
   // The first key press on a page draws the focus ring; Shift, which presses nothing, draws it
@@ -68,6 +68,10 @@ async function pressEnterThenSpace(page: Page): Promise<boolean> {
   }
   const afterEnter = sent || page.url() !== url || !before ? undefined : await look();
   if (!before || !afterEnter || !afterEnter.equals(before)) return false;
+  // Space goes to whatever has focus: only to the button that was checked before Enter, never to
+  // something Enter moved focus to unseen.
+  const stillFocused = await page.evaluate((target) => document.activeElement?.getAttribute("data-debutly-id") === target, String(id));
+  if (!stillFocused) return false;
   await page.keyboard.press("Space");
   await page.waitForTimeout(ENTER_SETTLE_MS);
   if (page.url() !== url) return true;
@@ -269,6 +273,7 @@ const keyTargetsScript = (key: string) => `(() => {
     }
     if (e.labels) for (const l of e.labels) names.push(l.textContent);
     if (e.tagName === 'INPUT' || e.tagName === 'BUTTON') names.push(e.value);
+    if (e.tagName === 'INPUT' && e.type === 'image') names.push(e.getAttribute('alt'));
     if (e.tagName !== 'INPUT') names.push(e.innerText);
     targets.push({ id: e.getAttribute('data-debutly-id'), names: names.filter((n) => n && n.trim()) });
   };
@@ -285,7 +290,7 @@ const keyTargetsScript = (key: string) => `(() => {
       add(el);
     }
   }
-  if (key === 'Space' && el.matches('button, summary, input[type="checkbox"], input[type="radio"], input[type="submit"], input[type="button"], input[type="reset"], [role="button"], [role="checkbox"], [role="switch"], [role="menuitem"], [role="menuitemcheckbox"], [role="menuitemradio"], [role="option"], [role="tab"]')) {
+  if (key === 'Space' && el.matches('button, summary, input[type="checkbox"], input[type="radio"], input[type="submit"], input[type="button"], input[type="reset"], input[type="image"], [role="button"], [role="checkbox"], [role="switch"], [role="menuitem"], [role="menuitemcheckbox"], [role="menuitemradio"], [role="option"], [role="tab"]')) {
     add(el);
   }
   if ((key === 'ArrowDown' || key === 'ArrowUp') && el.tagName === 'SELECT') {
@@ -340,7 +345,7 @@ export async function execute(
         if (action.type === "click" && byKeyboard) {
           if (SPACE_KEY.has(el.role)) await page.keyboard.press("Space");
           else if (BUTTON_ROLE.test(el.role)) {
-            if (await pressEnterThenSpace(page)) result.enterIgnored = true;
+            if (await pressEnterThenSpace(page, action.id)) result.enterIgnored = true;
           } else if (!FOCUS_ONLY.test(el.role)) await page.keyboard.press("Enter");
         } else if (action.type === "click") {
           try {

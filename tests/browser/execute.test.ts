@@ -328,11 +328,25 @@ describe("keyboard only, as the screen-reader agent works", () => {
     expect(await page.locator("button").getAttribute("aria-pressed")).toBe("true");
   });
 
-  it("refuses Space on a destructive button, as it refuses Enter", async () => {
-    await show(`<button id="del" onclick="document.body.dataset.deleted = 'yes'">Delete workspace</button>`);
+  it("refuses Space on a destructive button, as it refuses Enter, image buttons too", async () => {
+    await show(`<button id="del" onclick="document.body.dataset.deleted = 'yes'">Delete workspace</button>
+      <form onsubmit="event.preventDefault(); document.body.dataset.deleted = 'yes'"><input id="img" type="image" alt="Delete account" src="data:image/gif;base64,R0lGODlhAQABAAAAACw=" width="8" height="8"></form>`);
     const obs = await observe(page);
-    await page.focus("#del");
-    expect((await execute(page, { type: "press", key: "Space" }, obs, fx.url)).blocked).toMatch(/^destructive action refused/);
+    for (const id of ["#del", "#img"]) {
+      await page.focus(id);
+      expect((await execute(page, { type: "press", key: "Space" }, obs, fx.url)).blocked).toMatch(/^destructive action refused/);
+    }
+    expect(await page.evaluate(() => document.body.dataset.deleted)).toBeUndefined();
+  });
+
+  it("never presses Space on something Enter moved focus to unseen", async () => {
+    // Enter is swallowed and focus moves, with no visible ring, to a button the agent never chose.
+    await show(`<style>button:focus, button:focus-visible { outline: none }</style>
+      <button id="go">Continue</button>
+      <button id="del" onclick="document.body.dataset.deleted = 'yes'">Delete workspace</button>
+      <script>document.addEventListener('keydown', (e) => { if (e.key === 'Enter') { e.preventDefault(); document.getElementById('del').focus(); } }, true);</script>`);
+    const obs = await observe(page);
+    expect(await execute(page, { type: "click", id: idOf(obs.elements, "Continue") }, obs, fx.url, undefined, keyboard)).toEqual({});
     expect(await page.evaluate(() => document.body.dataset.deleted)).toBeUndefined();
   });
 
