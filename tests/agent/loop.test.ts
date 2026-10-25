@@ -149,6 +149,22 @@ it("waits when the model keeps sending reasoning with no action, a few times onl
   expect(stuck.outcomeNote).toContain('the reply has no "action"');
 }, 60_000);
 
+it("asks once before giving up with an untried way on in plain sight, and respects a second give-up", async () => {
+  const giveUp = JSON.stringify({ reasoning: "No way in.", action: { type: "done", success: false, note: "stuck" } });
+  const llm = new ScriptedLlm(() => giveUp);
+  const session = await runSession({ page: await browser.newPage(), llm, persona: persona("p9", "Ines"), goal: "Sign up", origin: `${fx.url}/signup`, maxSteps: 3 });
+  expect(session.outcome).toBe("gave_up");
+  expect(llm.calls).toHaveLength(2);
+  expect(llm.calls[1].messages.at(-1)!.content).toContain(`you haven't tried "Create account"`);
+  expect(llm.calls[1].messages.at(-1)!.content).not.toContain(`"Sign up"`); // the menu link
+
+  // Asked, it goes on instead.
+  const goesOn = new ScriptedLlm((_req, i) => (i === 0 ? giveUp : i === 1 ? JSON.stringify({ reasoning: "Try it.", action: { type: "wait" } }) : JSON.stringify({ reasoning: "ok", action: { type: "done", success: true, note: "in" } })));
+  const second = await runSession({ page: await browser.newPage(), llm: goesOn, persona: persona("p10", "Jon"), goal: "Sign up", origin: `${fx.url}/signup`, maxSteps: 3 });
+  expect(second.outcome).toBe("success");
+  expect(second.steps[0]).toMatchObject({ action: { type: "wait" }, reasoning: "Try it." });
+}, 60_000);
+
 it("ends with error, keeping the raw reply, when the model stays unreadable", async () => {
   const llm = new ScriptedLlm(() => "I refuse to answer in JSON");
   const session = await runSession({

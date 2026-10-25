@@ -11,6 +11,7 @@ import type { LlmClient, LlmMessage } from "../llm/types";
 import type { ActionResult, Persona, Session, Step } from "../types";
 import { describeAction } from "./describe";
 import { describeEffect } from "./effect";
+import { untriedWaysOn } from "./give-up";
 import { NoActionError, parseAgentReply } from "./parse-reply";
 import { buildStepMessage, buildSystemPrompt, type AgentIdentity } from "./prompt";
 
@@ -157,6 +158,7 @@ async function takeSteps(o: RunSessionOptions, { signals, system, steps, history
   // The screen-reader agent hears what the browser tells assistive technology and works by keyboard.
   const screenReader = o.persona.inclusion === "screen_reader";
   let noActionWaits = 0;
+  const askedBeforeGivingUp = new Set<string>();
   for (let index = 0; index < o.maxSteps; index++) {
     if (o.shouldStop && (await o.shouldStop())) return end("cancelled", "run cancelled");
     const { inputTokens, outputTokens } = meter.total;
@@ -206,6 +208,32 @@ async function takeSteps(o: RunSessionOptions, { signals, system, steps, history
     }
     if (!reply) {
       return end("error", `${problem} | last reply: ${raw.slice(0, 300) || "(empty)"}`);
+    }
+    // Giving up with a way on in plain sight that it never pressed here: asked once per page.
+    // Still giving up, it gives up.
+    if (reply.action.type === "done" && !reply.action.success && !askedBeforeGivingUp.has(observation.url)) {
+      const wayOn = untriedWaysOn(observation, steps, screenReader);
+      if (wayOn.length) {
+        askedBeforeGivingUp.add(observation.url);
+        const again = await o.llm.complete({
+          system,
+          messages: [
+            ...messages,
+            { role: "assistant", content: raw },
+            {
+              role: "user",
+              content: `Before you give up: on this page you haven't tried ${wayOn.map((n) => `"${n}"`).join(", ")}. Someone who wanted to get in would try that first. Reply again with one JSON object: try it, or give up if you are sure.`,
+            },
+          ],
+          maxTokens: 4096,
+          onUsage: meter.add,
+        });
+        try {
+          reply = parseAgentReply(again);
+        } catch {
+          // an unreadable second answer leaves the first one standing
+        }
+      }
     }
 
     let result: ActionResult;
