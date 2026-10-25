@@ -25,11 +25,19 @@ export function parseAgentReply(raw: string): { reasoning: string; action: Actio
   return parsed.data;
 }
 
+/** A reply with reasoning and no action. It carries the reasoning, so the agent can be left to wait. */
+export class NoActionError extends Error {
+  constructor(readonly reasoning: string) {
+    super(`the reply has no "action". Add one, for example {"reasoning":"…","action":{"type":"wait"}}`);
+  }
+}
+
 // Said back to the agent when it is asked again, so in words it can act on. Shown the validator's
 // own JSON for a reply with reasoning and no action, one model sent the same reply three times.
 function problemWith(reply: unknown, error: z.ZodError): string {
   if (reply && typeof reply === "object" && !("action" in reply)) {
-    return `the reply has no "action". Add one, for example {"reasoning":"…","action":{"type":"wait"}}`;
+    const reasoning = (reply as { reasoning?: unknown }).reasoning;
+    throw new NoActionError(typeof reasoning === "string" ? reasoning : "");
   }
   return error.issues.map((i) => `${i.path.join(".") || "reply"}: ${i.message}`).join("; ");
 }

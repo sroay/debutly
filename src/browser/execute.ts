@@ -60,11 +60,25 @@ const focusCoveredScript = (id: number) => `(() => {
 })()`;
 
 class NotByKeyboard extends Error {}
+/** A control a person can't use at all right now, whatever they use: said as it is. */
+class Unusable extends Error {}
 
 /** Moves focus to the control as Tab would; refuses one that isn't in the tab order. Returns what hides it, if anything. */
 async function focusByKeyboard(page: Page, locator: Locator, id: number): Promise<string | undefined> {
-  const tabbable = await locator.evaluate((node) => (node as HTMLElement).tabIndex >= 0 && !node.closest("[inert]"), undefined, { timeout: 5_000 });
-  if (!tabbable) throw new NotByKeyboard(`${NOT_BY_KEYBOARD}: it isn't in the tab order`);
+  const reach = await locator.evaluate(
+    (node) => {
+      const el = node as HTMLElement & { disabled?: boolean };
+      if (el.disabled === true || el.getAttribute("aria-disabled") === "true") return "disabled";
+      return el.tabIndex >= 0 && !el.closest("[inert]") ? "tabbable" : "untabbable";
+    },
+    undefined,
+    { timeout: 5_000 },
+  );
+  // A disabled button can't take focus, so Enter went to whatever had it, and the agent was told
+  // only that nothing changed; it pressed "Create account" again and gave up (2026-10-24). A mouse
+  // click on it is told it is disabled; so is a key press.
+  if (reach === "disabled") throw new Unusable(UNUSABLE.disabled);
+  if (reach === "untabbable") throw new NotByKeyboard(`${NOT_BY_KEYBOARD}: it isn't in the tab order`);
   await locator.focus({ timeout: 5_000 });
   return ((await page.evaluate(focusCoveredScript(id))) as string | null) ?? undefined;
 }
@@ -331,7 +345,7 @@ export async function execute(
     return result.focusObscured ? result : {};
   } catch (err) {
     if (err instanceof Refused) return { blocked: err.message };
-    if (err instanceof NotByKeyboard) return { error: err.message };
+    if (err instanceof NotByKeyboard || err instanceof Unusable) return { error: err.message };
     const why = "id" in action ? await explainTimeout(page, action.id, err) : undefined;
     return { error: why ?? describeFailure(err), ...(result.focusObscured ? { focusObscured: result.focusObscured } : {}) };
   }
