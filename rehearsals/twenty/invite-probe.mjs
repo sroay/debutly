@@ -10,7 +10,11 @@ const APP = process.env.APP_URL ?? "http://localhost:3000";
 const MAIL = process.env.MAILPIT_URL ?? "http://localhost:8025";
 const NEXT = /^(continue|create workspace|skip|skip anyway|continue without sync|finish|get started)$/i;
 const tag = Date.now();
-const password = () => `Aa1!${randomBytes(8).toString("hex")}`;
+const passwords = new Map();
+const password = (email) => {
+  if (!passwords.has(email)) passwords.set(email, `Aa1!${randomBytes(8).toString("hex")}`);
+  return passwords.get(email);
+};
 const owner = `owner-${tag}@example.test`;
 const first = `signs-up-first-${tag}@example.test`;
 const invited = `opens-invite-first-${tag}@example.test`;
@@ -28,7 +32,7 @@ async function signUp(page, email) {
   await page.getByRole("button", { name: /continue with email/i }).click({ timeout: 10_000 }).catch(() => {});
   await page.getByPlaceholder(/email/i).first().fill(email);
   await page.getByRole("button", { name: /^continue$/i }).click();
-  await page.getByPlaceholder(/password/i).fill(password());
+  await page.getByPlaceholder(/password/i).fill(password(email));
   await page.getByRole("button", { name: /sign up|continue|sign in/i }).last().click();
 }
 
@@ -94,6 +98,20 @@ if (firstLink) {
   await said(page, "Signed up on the front page");
   await page.goto(firstLink);
   await said(page, "Then opened the invite");
+  // Continue on the invite, signing in with the account just made.
+  await page.getByRole("button", { name: /^continue$/i }).first().click().catch(() => {});
+  await page.waitForTimeout(2000);
+  const email = page.getByPlaceholder(/email/i).first();
+  if (await email.isVisible().catch(() => false)) {
+    if (!(await email.inputValue())) await email.fill(first);
+    await page.getByRole("button", { name: /^continue$/i }).first().click().catch(() => {});
+  }
+  const pass = page.getByPlaceholder(/password/i).first();
+  if (await pass.isVisible({ timeout: 10_000 }).catch(() => false)) {
+    await pass.fill(password(first));
+    await page.getByRole("button", { name: /sign in|sign up|continue/i }).last().click().catch(() => {});
+  }
+  await said(page, "Then pressed Continue on the invite and signed in");
   await page.screenshot({ path: "invite-probe-signed-up-first.png" });
 }
 
