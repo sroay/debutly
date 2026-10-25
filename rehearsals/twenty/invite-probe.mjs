@@ -57,9 +57,18 @@ for (let step = 0; step < 10; step++) {
   const path = new URL(ownerPage.url()).pathname;
   if (path.startsWith("/objects/")) break;
   if (path === "/invite-team") {
-    const fields = await ownerPage.locator("input:visible").all();
-    await fields[0].fill(first);
-    await fields[1].fill(invited);
+    // The email fields show example addresses as placeholders.
+    const fields = ownerPage.locator('input[placeholder*="@"]:visible');
+    await fields.nth(0).fill(first);
+    await fields.nth(1).fill(invited);
+    const enabled = await ownerPage
+      .waitForFunction(() => [...document.querySelectorAll("button")].some((b) => /^continue$/i.test(b.innerText.trim()) && !b.disabled), null, { timeout: 15_000 })
+      .then(() => true, () => false);
+    if (!enabled) {
+      const placeholders = await ownerPage.locator("input:visible").evaluateAll((els) => els.map((e) => e.getAttribute("placeholder")));
+      await said(ownerPage, `Continue stayed disabled on /invite-team (fields: ${JSON.stringify(placeholders)})`);
+      break;
+    }
     await ownerPage.getByRole("button", { name: /^continue$/i }).click();
     await ownerPage.waitForURL((url) => url.pathname !== path, { timeout: 30_000 }).catch(() => {});
     continue;
