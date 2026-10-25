@@ -117,7 +117,12 @@ document.getElementById('generate').addEventListener('click', () => {
 
   // A page that takes ?ms= milliseconds to arrive, as a heavy page does on a slow connection.
   app.get("/slow", (req, res) => {
-    setTimeout(() => res.send(layout("Slow", `<h1>Finally here</h1><a href="/pricing">Pricing</a>`, userOf(req))), Number(req.query.ms ?? 0));
+    // heavy=1: with a 200 KB script, sent uncompressed as an app served straight from its container sends it.
+    const script = req.query.heavy ? `<script src="/heavy.js"></script>` : "";
+    setTimeout(() => res.send(layout("Slow", `<h1>Finally here</h1><a href="/pricing">Pricing</a>${script}`, userOf(req))), Number(req.query.ms ?? 0));
+  });
+  app.get("/heavy.js", (_req, res) => {
+    res.type("application/javascript").send(`window.heavy = true;\n// ${"x".repeat(200 * 1024)}\n`);
   });
 
   app.get("/features", (req, res) => {

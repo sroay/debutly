@@ -247,6 +247,24 @@ it("reports a slow first page and starts once it is in", async () => {
   expect(session.steps[0].signals).toContainEqual(expect.objectContaining({ kind: "slow_load", finished: true, slowNetwork: true }));
 });
 
+it("weighs a slow first page's scripts and styles, and how much came uncompressed", async () => {
+  const llm = new ScriptedLlm(() => JSON.stringify({ reasoning: "", action: { type: "done", success: true, note: "ok" } }));
+  const session = await runSession({
+    page: await browser.newPage(),
+    llm,
+    persona: persona("p8", "Hal"),
+    goal: "Anything",
+    origin: `${fx.url}/slow?ms=300&heavy=1`,
+    maxSteps: 2,
+    firstLoad: { slowMs: 100 },
+  });
+  const slow = session.steps[0].signals.find((s) => s.kind === "slow_load");
+  expect(slow).toMatchObject({ assets: { files: 1 } });
+  const assets = (slow as Extract<typeof slow, { kind: "slow_load" }>).assets!;
+  expect(assets.bytes).toBeGreaterThan(200 * 1024);
+  expect(assets.uncompressedBytes).toBe(assets.bytes);
+});
+
 it("does not end the session when the first page outlasts the wait: the agent sees what there is", async () => {
   const llm = new ScriptedLlm(() => JSON.stringify({ reasoning: "", action: { type: "done", success: false, note: "nothing loaded" } }));
   const session = await runSession({

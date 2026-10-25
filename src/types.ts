@@ -55,7 +55,8 @@ export type Signal =
   | { kind: "http_error"; status: number; requestUrl: string; url: string; startedAt?: number; at?: number; body?: string }
   | { kind: "dialog"; dialogType: string; message: string; url: string }
   // A page that took long to arrive. finished: false when the agent's wait ran out first.
-  | { kind: "slow_load"; url: string; ms: number; finished: boolean; slowNetwork: boolean }
+  // assets: the scripts and styles received by then, as sent, and how much of that came uncompressed.
+  | { kind: "slow_load"; url: string; ms: number; finished: boolean; slowNetwork: boolean; assets?: { files: number; bytes: number; uncompressedBytes: number } }
   // A file the page handed over (a report, an export): the page itself often doesn't change.
   | { kind: "download"; filename: string; url: string };
 

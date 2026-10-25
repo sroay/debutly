@@ -131,7 +131,7 @@ function fromSignal(signal: Signal): Candidate | null {
         signature: `slow:${signal.slowNetwork ? "slow" : "normal"}:${pagePath}`,
         kind: "slow_load",
         title: signal.finished ? `${pagePath} took ${seconds} s to load${connection}` : `${pagePath} still hadn't loaded after ${seconds} s${connection}`,
-        detail: `${signal.slowNetwork ? "On a slow connection (500 kbit/s, 400 ms round trips, like weak mobile data)" : "On a normal connection"}, ${pagePath} ${signal.finished ? `took ${seconds} s before the page arrived` : `had not arrived after ${seconds} s, so the agent went on with whatever was on screen`}. Until then a visitor sees a blank or half-drawn page, and many leave.`,
+        detail: `${signal.slowNetwork ? "On a slow connection (500 kbit/s, 400 ms round trips, like weak mobile data)" : "On a normal connection"}, ${pagePath} ${signal.finished ? `took ${seconds} s before the page arrived` : `had not arrived after ${seconds} s, so the agent went on with whatever was on screen`}. Until then a visitor sees a blank or half-drawn page, and many leave.${weightNote(signal.assets)}`,
         pagePath,
         severity: !signal.finished || signal.ms >= VERY_SLOW_MS ? "major" : BASE_SEVERITY.slow_load,
       };
@@ -160,6 +160,20 @@ const NAMED_CONTROLS: Record<string, string> = {
   "input:tel": "phone field",
   "input:url": "web address field",
 };
+
+/** Said of a slow page whose scripts and styles came mostly uncompressed; the report's next step looks for it. */
+export const UNCOMPRESSED = "came uncompressed";
+const kb = (bytes: number) => (bytes >= 1024 * 1024 ? `${(bytes / 1024 / 1024).toFixed(1)} MB` : `${Math.round(bytes / 1024)} KB`);
+
+// What the scripts and styles that had arrived weighed. Mostly uncompressed, it may be the test
+// copy's doing (served straight from a container) rather than the real site's.
+function weightNote(assets: Extract<Signal, { kind: "slow_load" }>["assets"]): string {
+  if (!assets || assets.bytes < 100 * 1024) return "";
+  if (assets.uncompressedBytes >= assets.bytes / 2) {
+    return ` By then it had received ${kb(assets.bytes)} of scripts and styles, and ${kb(assets.uncompressedBytes)} of that ${UNCOMPRESSED}. Compressed (gzip or Brotli, which most hosting turns on), scripts are often a quarter of the size. If the real site compresses them, it is lighter than this test copy.`;
+  }
+  return ` By then it had received ${kb(assets.bytes)} of scripts and styles, compressed.`;
+}
 
 /** What to call a control that has no name, or undefined when it doesn't need one. */
 function unlabeledControl(role: string): string | undefined {

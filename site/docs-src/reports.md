@@ -49,7 +49,7 @@ Each finding says what went wrong, how many of the agents who reached that page 
 | Can't click | Something kept covering a control, such as a cookie banner, a tour popup or a fixed bar, so a person can't press it either. |
 | Unlabeled control | A button, link or field with no name, which a screen reader announces only as "button". Each finding says where the control is, by the named controls around it, and which icon it shows when the page's markup names one ("the trash icon"). Controls that Tab can't reach (disabled, or out of the tab order) and controls that have only a description are reported apart, as minor. |
 | Named only by its placeholder | A field with no label, which a screen reader names by its placeholder (a password's dots read as "13 bullet"). The placeholder is gone once someone types. |
-| Slow page | The page took over 10 seconds to arrive. |
+| Slow page | The page took over 10 seconds to arrive. It says what its scripts and styles weighed by then, and when most came uncompressed, that a test copy served straight from its container can be heavier than the real site. |
 | Agent stuck | An agent did the same thing three times on one page and nothing changed. |
 | Can't reach with the keyboard | The screen-reader agent couldn't move focus to a control: it isn't in the tab order. |
 | Keyboard focus hidden | A control with keyboard focus was entirely covered by something else. |

@@ -1,4 +1,4 @@
-import type { Page } from "playwright";
+import type { Page, Request } from "playwright";
 import type { ArtifactStore } from "../artifacts/store";
 import { execute } from "../browser/execute";
 import { observe } from "../browser/observe";
@@ -22,6 +22,8 @@ const LINKS_PER_EMAIL = 3;
 const FIRST_LOAD_MS = 90_000;
 /** A first page slower than this is reported. */
 const SLOW_LOAD_MS = 10_000;
+/** How long a slow first page's scripts and styles may take to be weighed before it is reported without. */
+const WEIGH_MS = 2_000;
 /** How long a step's screenshot may take before the step goes without one. */
 const SCREENSHOT_MS = 15_000;
 
@@ -75,14 +77,37 @@ async function openFirstPage(
 ): Promise<void> {
   const startedAt = Date.now();
   let finished = true;
+  // What its scripts and styles weigh as sent, and how much came uncompressed: a test copy served
+  // straight from its container may skip the compression its real hosting does (Twenty's sent
+  // 10 MB uncompressed, 2026-10-24), and then a slow page says more about the copy than the app.
+  const assets = { files: 0, bytes: 0, uncompressedBytes: 0 };
+  const weighing = new Set<Promise<void>>();
+  const weigh = (request: Request) => {
+    if (request.resourceType() !== "script" && request.resourceType() !== "stylesheet") return;
+    const done = (async () => {
+      const [{ responseBodySize }, encoding] = await Promise.all([request.sizes(), request.response().then((r) => r?.headerValue("content-encoding"))]);
+      assets.files++;
+      assets.bytes += responseBodySize;
+      if (!encoding || encoding === "identity") assets.uncompressedBytes += responseBodySize;
+    })()
+      .catch(() => {}) // the page moved on before it could be weighed
+      .finally(() => weighing.delete(done));
+    weighing.add(done);
+  };
+  page.on("requestfinished", weigh);
   try {
     await page.goto(origin, { waitUntil: "domcontentloaded", timeout: timeoutMs });
   } catch (err) {
     if (!(err instanceof Error && err.name === "TimeoutError")) throw err;
     finished = false;
+  } finally {
+    page.off("requestfinished", weigh);
   }
   const ms = Date.now() - startedAt;
-  if (!finished || ms >= slowMs) signals.note({ kind: "slow_load", url: origin, ms, finished, slowNetwork });
+  if (!finished || ms >= slowMs) {
+    await Promise.race([Promise.allSettled([...weighing]), new Promise((resolve) => setTimeout(resolve, WEIGH_MS))]);
+    signals.note({ kind: "slow_load", url: origin, ms, finished, slowNetwork, ...(assets.files ? { assets: { ...assets } } : {}) });
+  }
 }
 
 export async function runSession(o: RunSessionOptions): Promise<Session> {

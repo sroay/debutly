@@ -1,3 +1,4 @@
+import { UNCOMPRESSED } from "../detect/findings";
 import type { Finding, Session } from "../types";
 
 /** At most this many items, so the section reads in a couple of minutes. */
@@ -34,7 +35,9 @@ export function nextStep(f: Finding): string {
     case "stuck":
       return "Watch the reproduction below: the agent repeated an action that seemed to do nothing. Make the page show that it worked, or why it didn't.";
     case "slow_load":
-      return "Find what holds the page up: the agents sat waiting for it.";
+      return f.detail.includes(UNCOMPRESSED)
+        ? "Turn on compression (gzip or Brotli) for scripts and styles, or check that the real site has it."
+        : "Find what holds the page up: the agents sat waiting for it.";
     case "covered":
       return "Move or close whatever lies over the control, so it can be clicked.";
     case "keyboard":

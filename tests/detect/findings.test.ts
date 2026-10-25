@@ -208,6 +208,16 @@ it("reports a slow page, more seriously when it took over 30 s or never arrived"
   expect(never).toMatchObject({ title: "/ still hadn't loaded after 90 s on a slow connection", severity: "major" });
 });
 
+it("says how much a slow page sent, and when most of it came uncompressed, that the test copy may be to blame", () => {
+  const MB = 1024 * 1024;
+  const slow = (assets: { files: number; bytes: number; uncompressedBytes: number }): Signal => ({ kind: "slow_load", url: `${B}/`, ms: 90_000, finished: false, slowNetwork: true, assets });
+  const [plain] = detectFindings([session("a", [step(0, "/", [slow({ files: 570, bytes: 10.2 * MB, uncompressedBytes: 10.2 * MB })])])]).filter((f) => f.kind === "slow_load");
+  expect(plain.detail).toContain("By then it had received 10.2 MB of scripts and styles, and 10.2 MB of that came uncompressed.");
+  expect(plain.detail).toContain("If the real site compresses them, it is lighter than this test copy.");
+  const [packed] = detectFindings([session("a", [step(0, "/", [slow({ files: 40, bytes: 3 * MB, uncompressedBytes: 0.1 * MB })])])]).filter((f) => f.kind === "slow_load");
+  expect(packed.detail).toContain("By then it had received 3.0 MB of scripts and styles, compressed.");
+});
+
 it("reports a control that something keeps covering, even when the agent works round it", () => {
   const coveredSave = (index: number): Step => ({
     ...step(index, "/dashboard/profile", [], { type: "click", id: 0 }, ["Save"]),
