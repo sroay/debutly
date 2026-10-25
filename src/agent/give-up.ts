@@ -1,9 +1,10 @@
 import type { Observation, Step } from "../types";
 
-// What a person who wants to get in presses before giving up: to go on, join, sign in or start.
+// What a person presses before giving up: to go on, join, sign in or start, or to add or create
+// what they came to add (agents said adding a person was "missing" beside "Add person").
 // Arabic too, as agents often use Arabic interfaces.
 const WAY_ON =
-  /^(continue|next|proceed|join\b.*|accept\b.*|sign ?in|log ?in|sign ?up|create (an )?account|get started|start|confirm|verify|submit|استمر|متابعة|التالي|انضم.*|قبول.*|تسجيل الدخول|إنشاء حساب|ابدأ.*|تأكيد|إرسال)$/i;
+  /^(continue|next|proceed|join\b.*|accept\b.*|sign ?in|log ?in|sign ?up|create (an )?account|get started|start|confirm|verify|submit|(add|create|new)\b.*|استمر|متابعة|التالي|انضم.*|قبول.*|تسجيل الدخول|ابدأ.*|تأكيد|إرسال|(إنشاء|أضف|إضافة).*)$/i;
 // Buttons only: a page's own way on. A "Sign up" link in the site's menu is not one from where it stands.
 const PRESSABLE = /^(button|input:(submit|button))$/;
 
@@ -36,3 +37,6 @@ export function untriedWaysOn(obs: Observation, steps: Step[], screenReader = fa
     .filter((name) => WAY_ON.test(name) && !pressed.has(name.toLowerCase()));
   return [...new Set(names)].slice(0, 3);
 }
+
+/** A page with nothing to press is often still arriving: one agent on a slow connection gave up the moment an invite page opened. */
+export const nothingToPressYet = (obs: Observation) => obs.elements.length === 0;

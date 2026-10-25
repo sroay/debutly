@@ -11,7 +11,7 @@ import type { LlmClient, LlmMessage } from "../llm/types";
 import type { ActionResult, Persona, Session, Step } from "../types";
 import { describeAction } from "./describe";
 import { describeEffect } from "./effect";
-import { untriedWaysOn } from "./give-up";
+import { nothingToPressYet, untriedWaysOn } from "./give-up";
 import { NoActionError, parseAgentReply } from "./parse-reply";
 import { buildStepMessage, buildSystemPrompt, type AgentIdentity } from "./prompt";
 
@@ -209,11 +209,16 @@ async function takeSteps(o: RunSessionOptions, { signals, system, steps, history
     if (!reply) {
       return end("error", `${problem} | last reply: ${raw.slice(0, 300) || "(empty)"}`);
     }
-    // Giving up with a way on in plain sight that it never pressed here: asked once per page.
-    // Still giving up, it gives up.
+    // Giving up with a way on in plain sight that it never pressed here, or on a page with nothing
+    // to press yet: asked once per page. Still giving up, it gives up.
     if (reply.action.type === "done" && !reply.action.success && !askedBeforeGivingUp.has(observation.url)) {
       const wayOn = untriedWaysOn(observation, steps, screenReader);
-      if (wayOn.length) {
+      const ask = wayOn.length
+        ? `Before you give up: on this page you haven't tried ${wayOn.map((n) => `"${n}"`).join(", ")}. Someone who wanted to get on would try that first.`
+        : nothingToPressYet(observation)
+          ? "Before you give up: nothing on this page can be pressed yet, so it may still be loading. Someone who wanted to get on would wait a little first."
+          : "";
+      if (ask) {
         askedBeforeGivingUp.add(observation.url);
         const again = await o.llm.complete({
           system,
@@ -222,7 +227,7 @@ async function takeSteps(o: RunSessionOptions, { signals, system, steps, history
             { role: "assistant", content: raw },
             {
               role: "user",
-              content: `Before you give up: on this page you haven't tried ${wayOn.map((n) => `"${n}"`).join(", ")}. Someone who wanted to get in would try that first. Reply again with one JSON object: try it, or give up if you are sure.`,
+              content: `${ask} Reply again with one JSON object: go on, or give up if you are sure.`,
             },
           ],
           maxTokens: 4096,

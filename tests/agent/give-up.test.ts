@@ -1,5 +1,5 @@
 import { expect, it } from "vitest";
-import { untriedWaysOn } from "../../src/agent/give-up";
+import { nothingToPressYet, untriedWaysOn } from "../../src/agent/give-up";
 import type { InteractiveElement, Observation, Step } from "../../src/types";
 
 const el = (id: number, role: string, name: string, extra: Partial<InteractiveElement> = {}): InteractiveElement => ({ id, role, name, tag: role, ...extra });
@@ -25,4 +25,15 @@ it("leaves out disabled controls, links in the menu and anything that isn't a wa
 it("goes by what the screen reader announces for the screen-reader agent", () => {
   const page = at("http://a.test/x", [el(0, "button", "", { ax: { name: "Sign in", role: "button", hidden: false } }), el(1, "button", "Next", { ax: { name: "", role: "none", hidden: true } })]);
   expect(untriedWaysOn(page, [], true)).toEqual(["Sign in"]);
+});
+
+it("counts adding or creating what the agent came for as a way on, in Arabic too", () => {
+  // Twenty's People page, where an agent said the way to add a person was missing.
+  const people = at("http://a.test/objects/people", [el(0, "button", "إنشاء شخص"), el(1, "button", "تصفية"), el(2, "button", "أضف شخص"), el(3, "button", "Add column")]);
+  expect(untriedWaysOn(people, [])).toEqual(["إنشاء شخص", "أضف شخص", "Add column"]);
+});
+
+it("knows a page with nothing to press may still be arriving", () => {
+  expect(nothingToPressYet(at("http://a.test/invite/abc", []))).toBe(true);
+  expect(nothingToPressYet(at("http://a.test/invite/abc", [el(0, "button", "Continue")]))).toBe(false);
 });

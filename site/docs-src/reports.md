@@ -29,7 +29,7 @@ One line per agent: who it was, any access need, its first language when the run
 | Outcome | Meaning |
 |---|---|
 | `success` | It reached the goal, and said so. |
-| `gave_up` | It stopped where that person would have given up, and says why. Often the most useful line in the report. An agent about to give up on a page with a Continue, Join or Sign in button it never pressed there is asked once whether it has tried it, as a person who wanted in would. |
+| `gave_up` | It stopped where that person would have given up, and says why. Often the most useful line in the report. An agent about to give up on a page with a button it never pressed there to go on (Continue, Join, Sign in) or to add what it came for (Add person, Create company), or on a page with nothing to press yet, is asked once whether it has tried it or waited, as a person would. |
 | `budget_exhausted` | It used all its steps (`maxSteps`) or a token or time cap first. |
 | `not_invited` | A teammate whose invite email never arrived. |
 | `error` | Something outside your app stopped it: the model provider, or the browser. |

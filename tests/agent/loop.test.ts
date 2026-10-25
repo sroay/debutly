@@ -156,6 +156,7 @@ it("asks once before giving up with an untried way on in plain sight, and respec
   expect(session.outcome).toBe("gave_up");
   expect(llm.calls).toHaveLength(2);
   expect(llm.calls[1].messages.at(-1)!.content).toContain(`you haven't tried "Create account"`);
+  expect(llm.calls[1].messages.at(-1)!.content).toContain("give up if you are sure");
   expect(llm.calls[1].messages.at(-1)!.content).not.toContain(`"Sign up"`); // the menu link
 
   // Asked, it goes on instead.
