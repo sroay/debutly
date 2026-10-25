@@ -64,6 +64,14 @@ it("reports a control the keyboard can't reach, measured once, with high confide
   expect(f.detail).toMatch(/isn't in the tab order/);
 });
 
+it("reports a button that takes Space but not Enter", () => {
+  const go = button(0, "", { name: "Continue", role: "button", hidden: false });
+  const sr = session("sr", [step(0, page("/create/profile", [go]), { type: "click", id: 0 }, { enterIgnored: true })], "screen_reader");
+  const [f] = detectFindings([sr]).filter((x) => x.kind === "keyboard");
+  expect(f).toMatchObject({ title: 'Enter doesn\'t press button "Continue" on /create/profile', severity: "major", wcag: ["2.1.1"], hitBy: ["sr"] });
+  expect(f.control).toBeUndefined(); // not one for `debutly hear`, which checks what Tab reaches
+});
+
 it("reports keyboard focus hidden behind something", () => {
   const pay = button(0, "Pay");
   const [f] = detectFindings([session("sr", [step(0, page("/checkout", [pay]), { type: "click", id: 0 }, { focusObscured: 'div.cookie-bar ("We use cookies")' })], "screen_reader")]).filter(

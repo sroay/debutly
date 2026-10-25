@@ -72,6 +72,7 @@ export function describeEffect(action: Action, before: Observation, after: Obser
   if (action.type === "done" || action.type === "check_email") return "";
 
   const parts: string[] = [];
+  if (result.enterIgnored) parts.push("Enter did nothing on it, so Space was pressed instead");
   const changed = whatChanged(before, after, (e) => controlLabel(e, view.screenReader));
   if (pathOf(after.url) !== pathOf(before.url)) parts.push(`now on ${pathOf(after.url)}`);
   else if (changed) parts.push(changed);

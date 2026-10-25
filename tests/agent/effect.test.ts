@@ -80,3 +80,11 @@ it("names a new icon button by its icon for a sighted agent only", () => {
   expect(describeEffect({ type: "click", id: 0 }, before, after, [], {})).toBe('the page changed: new button "" (trash icon)');
   expect(describeEffect({ type: "click", id: 0 }, before, after, [], {}, { screenReader: true })).toBe('the page changed: new button ""');
 });
+
+it("tells a keyboard agent that Enter did nothing and Space was pressed", () => {
+  const before = at("Create profile\nContinue", [el(0, "button", "Continue")]);
+  const after = { ...at("Invite your team", [el(0, "button", "Continue")]), url: "http://a.test/invite-team" };
+  expect(describeEffect({ type: "click", id: 0 }, before, after, [], { enterIgnored: true }, { screenReader: true })).toBe(
+    "Enter did nothing on it, so Space was pressed instead; now on /invite-team",
+  );
+});

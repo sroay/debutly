@@ -33,7 +33,7 @@ export type CustomerUnit =
   | { kind: "business"; id: string; business: Business; owner: Persona; employees: Persona[] };
 
 /** Keys a person uses to drive popups and forms; nothing that could close tabs or run shortcuts. */
-export const PRESS_KEYS = ["Escape", "Enter", "Tab", "ArrowDown", "ArrowUp"] as const;
+export const PRESS_KEYS = ["Escape", "Enter", "Space", "Tab", "ArrowDown", "ArrowUp"] as const;
 export type PressKey = (typeof PRESS_KEYS)[number];
 
 export type Action =
@@ -116,6 +116,8 @@ export interface ActionResult {
   error?: string;
   /** Keyboard only: what entirely hid the control once it had focus. */
   focusObscured?: string;
+  /** Keyboard only: Enter did nothing on the button, and Space pressed it. */
+  enterIgnored?: true;
 }
 
 export interface Step extends ActionResult {

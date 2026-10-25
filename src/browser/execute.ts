@@ -37,6 +37,43 @@ export interface ExecuteOptions {
 const ARROW_KEY_ITEMS = new Set(["option", "menuitem", "menuitemcheckbox", "menuitemradio", "tab", "treeitem", "radio", "input:radio"]);
 // What Space presses; Enter presses the rest. Text fields and selects are only focused.
 const SPACE_KEY = new Set(["checkbox", "input:checkbox", "switch"]);
+// Buttons take Enter and Space alike, so a keyboard user who gets nothing from Enter tries Space.
+const BUTTON_ROLE = /^(button|input:(submit|button|reset|image))$/;
+/** How long to watch for Enter's effect before trying Space. */
+const ENTER_SETTLE_MS = 1_000;
+
+/**
+ * Presses Enter on the focused button; if nothing happened that a person would notice (the page
+ * sent nothing, kept its address and looks exactly the same), presses Space, as a keyboard user
+ * would. True when Space then did what Enter didn't: Twenty's set-up "Continue" ignores Enter and
+ * goes on with Space, and a keyboard-only agent that knew only Enter gave up there twice
+ * (2026-10-24). It goes by how the page looks, not its text, so a toggle whose change is only
+ * visual is never pressed twice.
+ */
+async function pressEnterThenSpace(page: Page): Promise<boolean> {
+  const look = () => page.screenshot({ animations: "disabled", timeout: 5_000 }).catch(() => undefined);
+  const url = page.url();
+  // The first key press on a page draws the focus ring; Shift, which presses nothing, draws it
+  // first, or Enter would always seem to have changed the page.
+  await page.keyboard.press("Shift");
+  const before = await look();
+  let sent = 0;
+  const count = () => sent++;
+  page.on("request", count);
+  try {
+    await page.keyboard.press("Enter");
+    await page.waitForTimeout(ENTER_SETTLE_MS);
+  } finally {
+    page.off("request", count);
+  }
+  const afterEnter = sent || page.url() !== url || !before ? undefined : await look();
+  if (!before || !afterEnter || !afterEnter.equals(before)) return false;
+  await page.keyboard.press("Space");
+  await page.waitForTimeout(ENTER_SETTLE_MS);
+  if (page.url() !== url) return true;
+  const afterSpace = await look();
+  return !!afterSpace && !afterSpace.equals(before);
+}
 const FOCUS_ONLY = /^(input:(text|email|password|number|search|tel|url|date|time|datetime-local|month|week)|textarea|select|combobox)$/;
 
 // Is the focused element entirely hidden behind something else? Checks its middle and four points
@@ -212,6 +249,7 @@ async function pick(page: Page, trigger: Locator, text: string): Promise<void> {
 //   (aria-activedescendant);
 // - Enter in a form field submits its form through the form's default button, which may sit
 //   outside the form (form="…"), or with no button through the form itself;
+// - Space presses the focused button, or ticks the focused box;
 // - an arrow key moves a focused native select to the next option.
 // Each thing the key would set off is listed with every name it goes by (aria-label, the elements
 // aria-labelledby points at, labels, text, value, title) and its data-debutly-id, so the check also
@@ -246,6 +284,9 @@ const keyTargetsScript = (key: string) => `(() => {
     } else if (!field && el.matches('a, button, input, summary, [role="button"], [role="link"], [role="menuitem"], [role="menuitemcheckbox"], [role="menuitemradio"], [role="option"], [role="tab"]')) {
       add(el);
     }
+  }
+  if (key === 'Space' && el.matches('button, summary, input[type="checkbox"], input[type="radio"], input[type="submit"], input[type="button"], input[type="reset"], [role="button"], [role="checkbox"], [role="switch"], [role="menuitem"], [role="menuitemcheckbox"], [role="menuitemradio"], [role="option"], [role="tab"]')) {
+    add(el);
   }
   if ((key === 'ArrowDown' || key === 'ArrowUp') && el.tagName === 'SELECT') {
     const next = el.options[el.selectedIndex + (key === 'ArrowDown' ? 1 : -1)];
@@ -297,7 +338,10 @@ export async function execute(
         const byKeyboard = opts.keyboard && !ARROW_KEY_ITEMS.has(el.role);
         if (byKeyboard) result.focusObscured = await focusByKeyboard(page, locator, action.id);
         if (action.type === "click" && byKeyboard) {
-          if (!FOCUS_ONLY.test(el.role)) await page.keyboard.press(SPACE_KEY.has(el.role) ? "Space" : "Enter");
+          if (SPACE_KEY.has(el.role)) await page.keyboard.press("Space");
+          else if (BUTTON_ROLE.test(el.role)) {
+            if (await pressEnterThenSpace(page)) result.enterIgnored = true;
+          } else if (!FOCUS_ONLY.test(el.role)) await page.keyboard.press("Enter");
         } else if (action.type === "click") {
           try {
             await locator.click({ timeout: 5_000 });
@@ -342,7 +386,7 @@ export async function execute(
     await page.waitForLoadState("domcontentloaded");
     // Let async handlers (fetch after submit, deferred errors) surface their signals.
     await page.waitForTimeout(300);
-    return result.focusObscured ? result : {};
+    return result.focusObscured || result.enterIgnored ? result : {};
   } catch (err) {
     if (err instanceof Refused) return { blocked: err.message };
     if (err instanceof NotByKeyboard || err instanceof Unusable) return { error: err.message };

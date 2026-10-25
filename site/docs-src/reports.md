@@ -52,6 +52,7 @@ Each finding says what went wrong, how many of the agents who reached that page 
 | Slow page | The page took over 10 seconds to arrive. It says what its scripts and styles weighed by then, and when most came uncompressed, that a test copy served straight from its container can be heavier than the real site. |
 | Agent stuck | An agent did the same thing three times on one page and nothing changed. |
 | Can't reach with the keyboard | The screen-reader agent couldn't move focus to a control: it isn't in the tab order. |
+| Enter doesn't press a button | The screen-reader agent pressed Enter on a button and nothing happened; Space pressed it. Most keyboard users press Enter, and stop there. Debutly tries Space only when Enter left the page looking exactly the same and sent nothing, so a button is never pressed twice. |
 | Keyboard focus hidden | A control with keyboard focus was entirely covered by something else. |
 | Scrolls sideways at 320 pixels | At 400% zoom the page is wider than the window. |
 | Language | The page doesn't say its language, or an Arabic page says another language or runs left to right. |

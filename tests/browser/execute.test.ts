@@ -303,6 +303,39 @@ it("says so when what the agent clicked to upload opens no file picker", async (
 describe("keyboard only, as the screen-reader agent works", () => {
   const keyboard = { keyboard: true };
 
+  it("tries Space when Enter does nothing on a button, as a keyboard user would, and says so (2026-10-25)", async () => {
+    // Like Twenty's set-up "Continue": a page-wide key handler swallows Enter. On a page no key has
+    // been pressed on yet.
+    const fresh = await browser.newPage();
+    await fresh.setContent(`<label>Job title <input value="Founder"></label>
+      <button onclick="document.body.dataset.clicks = String(Number(document.body.dataset.clicks || 0) + 1); document.body.append('Next step')">Continue</button>
+      <script>document.addEventListener('keydown', (e) => { if (e.key === 'Enter') e.preventDefault(); }, true);</script>`);
+    let obs = await observe(fresh);
+    expect(await execute(fresh, { type: "click", id: idOf(obs.elements, "Continue") }, obs, fx.url, undefined, keyboard)).toEqual({ enterIgnored: true });
+    expect(await fresh.evaluate(() => document.body.dataset.clicks)).toBe("1");
+    await fresh.close();
+
+    // An ordinary button goes on with Enter, once, and Space is never pressed.
+    await show(`<button onclick="document.body.dataset.clicks = String(Number(document.body.dataset.clicks || 0) + 1); document.body.append('Saved')">Save</button>`);
+    obs = await observe(page);
+    expect(await execute(page, { type: "click", id: idOf(obs.elements, "Save") }, obs, fx.url, undefined, keyboard)).toEqual({});
+    expect(await page.evaluate(() => document.body.dataset.clicks)).toBe("1");
+
+    // A toggle whose change is only how it looks is pressed once too, not switched on and back off.
+    await show(`<button aria-pressed="false" onclick="this.setAttribute('aria-pressed', String(this.getAttribute('aria-pressed') !== 'true')); this.style.background = this.getAttribute('aria-pressed') === 'true' ? 'black' : ''">Mute</button>`);
+    obs = await observe(page);
+    expect(await execute(page, { type: "click", id: idOf(obs.elements, "Mute") }, obs, fx.url, undefined, keyboard)).toEqual({});
+    expect(await page.locator("button").getAttribute("aria-pressed")).toBe("true");
+  });
+
+  it("refuses Space on a destructive button, as it refuses Enter", async () => {
+    await show(`<button id="del" onclick="document.body.dataset.deleted = 'yes'">Delete workspace</button>`);
+    const obs = await observe(page);
+    await page.focus("#del");
+    expect((await execute(page, { type: "press", key: "Space" }, obs, fx.url)).blocked).toMatch(/^destructive action refused/);
+    expect(await page.evaluate(() => document.body.dataset.deleted)).toBeUndefined();
+  });
+
   it("says a disabled control is disabled, rather than pressing Enter wherever focus was (2026-10-24)", async () => {
     // The password missed a special character, so "Create account" stayed disabled.
     await show(`<form onsubmit="event.preventDefault(); document.body.dataset.sent = 'yes'">

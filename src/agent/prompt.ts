@@ -41,7 +41,7 @@ Action is one of:
 {"type":"fill","id":number,"text":string}  (on a select or dropdown, text is the option to choose)
 {"type":"upload","id":number,"file":"photo"|"document"}  (attach a file through an upload button or file field: you have a sample photo and a sample CV/document)
 {"type":"goto","path":string}
-{"type":"press","key":"Escape"|"Enter"|"Tab"|"ArrowDown"|"ArrowUp"}  (e.g. Escape closes a popup that blocks the page)
+{"type":"press","key":"Escape"|"Enter"|"Space"|"Tab"|"ArrowDown"|"ArrowUp"}  (e.g. Escape closes a popup that blocks the page; Space presses the focused button or ticks a box)
 {"type":"wait"}  (the page is still loading, e.g. a spinner or a form that has not appeared yet: wait a few seconds rather than leave)${identity ? `\n{"type":"check_email"}` : ""}
 {"type":"done","success":boolean,"note":string}`;
 }

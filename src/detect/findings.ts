@@ -529,6 +529,23 @@ export function detectFindings(sessions: Session[], opts: DetectOptions = {}): F
           step.index,
         );
       }
+      // A button that takes Space but not Enter: most keyboard users press Enter, and stop there.
+      if (acted && step.enterIgnored) {
+        const control = `${acted.role} "${acted.ax?.name || acted.name}"`;
+        record(
+          {
+            signature: `enter:${pagePath}:${control}`,
+            kind: "keyboard",
+            title: `Enter doesn't press ${control} on ${pagePath}`,
+            detail: `With keyboard focus on it, Enter did nothing (no request, no change on the page), and Space pressed it. Buttons take both, and most keyboard and screen-reader users press Enter, so they get no further here.`,
+            pagePath,
+            severity: severityFor("keyboard", [pagePath]),
+            wcag: ["2.1.1"],
+          },
+          s.agentId,
+          step.index,
+        );
+      }
       if (acted && step.focusObscured) {
         const control = `${acted.role} "${acted.name}"`;
         record(

@@ -41,6 +41,7 @@ export function nextStep(f: Finding): string {
     case "covered":
       return "Move or close whatever lies over the control, so it can be clicked.";
     case "keyboard":
+      if (f.signature.startsWith("enter:")) return "Let Enter press it too: look for a key handler that catches Enter and stops it (a page-wide shortcut, a form's own Enter handling).";
       return 'Use a real <button> or <a>, or add tabindex="0" and handle Enter and Space.';
     case "focus_obscured":
       return "Keep the control with keyboard focus in view: move or shrink what covers it.";
