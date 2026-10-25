@@ -1,6 +1,6 @@
 {
   "name": "debutly",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "Rehearse your launch: AI agents use your web app like your first customers and report what breaks.",
   "type": "module",
   "license": "AGPL-3.0-only",
