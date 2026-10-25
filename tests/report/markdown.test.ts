@@ -186,3 +186,11 @@ it("says so when nothing stopped an agent and nothing serious was found", () => 
   expect(section).toContain("1 of 1 agents reached the goal.");
   expect(section).toContain("Nothing stopped an agent, and nothing serious was found.");
 });
+
+it("points at a screenshot kept in the run's database by its copy beside the report", () => {
+  const stopped: Session = { ...session, steps: [{ ...session.steps[0], screenshotPath: "db:b45add03-adb0-4f75-8c51-b95be52eb36f/u2-o-038.jpg" }] };
+  const md = renderReport({ targetUrl: "http://a.test", goal: "Buy", sessions: [stopped], findings: [finding("high", "JS error on /pricing")] });
+  expect(md).toContain("Start with the last screenshot, screenshots/u2-o-038.jpg.");
+  expect(md).toContain("Screenshot: screenshots/u2-o-038.jpg");
+  expect(md).not.toContain("db:");
+});

@@ -69,6 +69,8 @@ const quote = (s: string) => `"${s.length > MAX_QUOTE ? `${s.slice(0, MAX_QUOTE)
 /** A screenshot as the report's reader finds it: next to the report, not on the machine that ran it. */
 export function shotPath(path: string): string {
   if (/^https?:/.test(path)) return path;
+  // Kept in the run's database too (db:<run>/<file>), and under the same name beside the report.
+  if (path.startsWith("db:")) return `screenshots/${path.split("/").pop()}`;
   const at = path.replace(/\\/g, "/").lastIndexOf("/screenshots/");
   return at >= 0 ? path.replace(/\\/g, "/").slice(at + 1) : path;
 }
