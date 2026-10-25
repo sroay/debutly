@@ -132,6 +132,23 @@ it("asks again after an unreadable reply and carries on", async () => {
   expect(retry[2].content).toMatch(/not valid/i);
 });
 
+it("waits when the model keeps sending reasoning with no action, a few times only (2026-10-24)", async () => {
+  const thinking = JSON.stringify({ reasoning: "I opened the menu; I will wait to see what appears." });
+  const done = JSON.stringify({ reasoning: "done", action: { type: "done", success: true, note: "ok" } });
+  // Three replies with no action, then a good one.
+  const llm = new ScriptedLlm((_req, i) => (i < 3 ? thinking : done));
+  const session = await runSession({ page: await browser.newPage(), llm, persona: persona("p5", "Sara"), goal: "Anything", origin: fx.url, maxSteps: 3 });
+  expect(session.outcome).toBe("success");
+  expect(session.steps[0]).toMatchObject({ action: { type: "wait" }, reasoning: "I opened the menu; I will wait to see what appears." });
+
+  // Never an action at all: a few waits, then the engine error it is.
+  const stubborn = new ScriptedLlm(() => thinking);
+  const stuck = await runSession({ page: await browser.newPage(), llm: stubborn, persona: persona("p6", "Tom"), goal: "Anything", origin: fx.url, maxSteps: 10 });
+  expect(stuck.steps.map((s) => s.action.type)).toEqual(["wait", "wait", "wait"]);
+  expect(stuck.outcome).toBe("error");
+  expect(stuck.outcomeNote).toContain('the reply has no "action"');
+}, 60_000);
+
 it("ends with error, keeping the raw reply, when the model stays unreadable", async () => {
   const llm = new ScriptedLlm(() => "I refuse to answer in JSON");
   const session = await runSession({

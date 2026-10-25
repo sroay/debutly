@@ -303,6 +303,20 @@ it("says so when what the agent clicked to upload opens no file picker", async (
 describe("keyboard only, as the screen-reader agent works", () => {
   const keyboard = { keyboard: true };
 
+  it("says a disabled control is disabled, rather than pressing Enter wherever focus was (2026-10-24)", async () => {
+    // The password missed a special character, so "Create account" stayed disabled.
+    await show(`<form onsubmit="event.preventDefault(); document.body.dataset.sent = 'yes'">
+      <label>Password <input type="password"></label>
+      <button disabled>Create account</button>
+      <div role="button" tabindex="0" aria-disabled="true">Next</div></form>`);
+    await page.focus("input");
+    const obs = await observe(page);
+    for (const name of ["Create account", "Next"]) {
+      expect(await execute(page, { type: "click", id: idOf(obs.elements, name) }, obs, fx.url, undefined, keyboard)).toEqual({ error: "the element is disabled" });
+    }
+    expect(await page.evaluate(() => document.body.dataset.sent)).toBeUndefined();
+  });
+
   it("presses a button by focusing it and pressing Enter, and ticks a checkbox with Space", async () => {
     await show(`<button onclick="document.body.dataset.saved = 'yes'">Save</button>
       <label><input type="checkbox" id="news"> Send me news</label>`);

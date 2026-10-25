@@ -11,10 +11,12 @@ import type { LlmClient, LlmMessage } from "../llm/types";
 import type { ActionResult, Persona, Session, Step } from "../types";
 import { describeAction } from "./describe";
 import { describeEffect } from "./effect";
-import { parseAgentReply } from "./parse-reply";
+import { NoActionError, parseAgentReply } from "./parse-reply";
 import { buildStepMessage, buildSystemPrompt, type AgentIdentity } from "./prompt";
 
 const MAX_REPLY_ATTEMPTS = 3;
+/** Steps a session may wait for want of an action in the reply, before that is an engine error. */
+const MAX_NO_ACTION_WAITS = 3;
 const LINKS_PER_EMAIL = 3;
 /** How long the first page may take to arrive; a slow-connection agent needs more than 30 s. */
 const FIRST_LOAD_MS = 90_000;
@@ -129,6 +131,7 @@ interface SessionState {
 async function takeSteps(o: RunSessionOptions, { signals, system, steps, history, emailedLinks, meter, startedAt, end, reflow }: SessionState): Promise<Session> {
   // The screen-reader agent hears what the browser tells assistive technology and works by keyboard.
   const screenReader = o.persona.inclusion === "screen_reader";
+  let noActionWaits = 0;
   for (let index = 0; index < o.maxSteps; index++) {
     if (o.shouldStop && (await o.shouldStop())) return end("cancelled", "run cancelled");
     const { inputTokens, outputTokens } = meter.total;
@@ -151,6 +154,7 @@ async function takeSteps(o: RunSessionOptions, { signals, system, steps, history
     let reply: ReturnType<typeof parseAgentReply> | undefined;
     let raw = "";
     let problem = "";
+    let noAction: NoActionError | undefined;
     // Real models occasionally send prose, an empty reply or malformed JSON; say what was wrong and ask again.
     for (let attempt = 0; attempt < MAX_REPLY_ATTEMPTS && !reply; attempt++) {
       raw = await o.llm.complete({ system, messages: [...messages], maxTokens: 4096, onUsage: meter.add });
@@ -158,6 +162,7 @@ async function takeSteps(o: RunSessionOptions, { signals, system, steps, history
         reply = parseAgentReply(raw);
       } catch (err) {
         problem = err instanceof Error ? err.message : String(err);
+        noAction = err instanceof NoActionError ? err : undefined;
         messages.push(
           { role: "assistant", content: raw || "(empty reply)" },
           {
@@ -166,6 +171,13 @@ async function takeSteps(o: RunSessionOptions, { signals, system, steps, history
           },
         );
       }
+    }
+    // Asked three times, GLM 5.3 Flash went on sending only its reasoning, often "I will wait", and
+    // the agent ended on an engine error (2026-10-24). It waits instead, as someone unsure what to
+    // do next would; not for ever.
+    if (!reply && noAction && noActionWaits < MAX_NO_ACTION_WAITS) {
+      noActionWaits++;
+      reply = { reasoning: noAction.reasoning, action: { type: "wait" } };
     }
     if (!reply) {
       return end("error", `${problem} | last reply: ${raw.slice(0, 300) || "(empty)"}`);
