@@ -54,6 +54,9 @@ export type Signal =
   // body: the start of a server error's response, which can say why (e.g. a missing API key).
   | { kind: "http_error"; status: number; requestUrl: string; url: string; startedAt?: number; at?: number; body?: string }
   | { kind: "dialog"; dialogType: string; message: string; url: string }
+  // A reply that said 200 OK but carried an error and no result (a GraphQL "errors" list with no
+  // "data"): the page shows nothing of it, so the browser's status codes never see it.
+  | { kind: "api_error"; message: string; requestUrl: string; url: string }
   // A page that took long to arrive. finished: false when the agent's wait ran out first.
   // assets: the scripts and styles received by then, as sent, and how much of that came uncompressed.
   | { kind: "slow_load"; url: string; ms: number; finished: boolean; slowNetwork: boolean; assets?: { files: number; bytes: number; uncompressedBytes: number } }
@@ -192,7 +195,8 @@ export type FindingKind =
   | "reflow"
   | "language"
   | "zoom"
-  | "hidden_focus";
+  | "hidden_focus"
+  | "api_error";
 
 export interface Finding {
   signature: string;

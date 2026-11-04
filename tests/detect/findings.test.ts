@@ -27,6 +27,15 @@ it("finds HTTP errors, escalates critical paths and scores consensus", () => {
   ]);
 });
 
+it("finds an error an app hid in a 200 OK reply, with no result, as major, and a blocker on a sign-up path (2026-11-04)", () => {
+  const hidden: Signal = { kind: "api_error", message: "User does not have access to this workspace", requestUrl: `${B}/graphql`, url: `${B}/dashboard` };
+  const [f] = detectFindings([session("a", [step(0, "/dashboard", [hidden])]), session("b", [step(0, "/dashboard", [hidden])])]).filter((x) => x.kind === "api_error");
+  expect(f).toMatchObject({ severity: "major", hitBy: ["a", "b"], title: "An answer of 200 OK from /graphql carried an error" });
+  expect(f.detail).toContain('"User does not have access to this workspace"');
+  const [onSignUp] = detectFindings([session("a", [step(0, "/signup", [{ ...hidden, url: `${B}/signup` }])])]).filter((x) => x.kind === "api_error");
+  expect(onSignUp.severity).toBe("blocker");
+});
+
 it("counts pages that differ only by an id as one page", () => {
   const limits = (account: number): Signal => ({ kind: "http_error", status: 404, requestUrl: `${B}/api/v1/accounts/${account}/limits`, url: `${B}/app/accounts/${account}/onboarding` });
   const unnamed = (i: number, path: string, signals: Signal[] = []) => step(i, path, signals, { type: "wait" }, [""]);

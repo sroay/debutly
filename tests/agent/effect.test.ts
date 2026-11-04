@@ -33,6 +33,13 @@ it("stays quiet about typing, which rarely changes the visible text", () => {
   expect(describeEffect({ type: "fill", id: 1, text: "a" }, pricing, pricing, [], {})).toBe("");
 });
 
+it("says what error the server answered with, when a 200 reply carried one (2026-11-04)", () => {
+  const signals = [{ kind: "api_error" as const, message: "User does not have access to this workspace", requestUrl: "http://a.test/graphql", url: pricing.url }];
+  expect(describeEffect({ type: "click", id: 1 }, pricing, pricing, signals, {})).toBe(
+    'nothing visibly changed; the server answered with an error: "User does not have access to this workspace"',
+  );
+});
+
 it("reports blocked and failed actions instead", () => {
   expect(describeEffect({ type: "click", id: 1 }, pricing, pricing, [], { blocked: "destructive action refused" })).toBe("blocked: destructive action refused");
   expect(describeEffect({ type: "click", id: 1 }, pricing, pricing, [], { error: "timeout" })).toBe("failed: timeout");

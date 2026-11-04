@@ -56,6 +56,8 @@ export function nextStep(f: Finding): string {
       return 'Make the hidden part unreachable while hidden: add inert to it (or tabindex="-1" to each control), or stop hiding it from screen readers.';
     case "zoom":
       return "Remove user-scalable=no and maximum-scale from the page's viewport meta tag.";
+    case "api_error":
+      return "Find what the server rejected: its error message names it. Make the page show that it failed, and why.";
   }
 }
 

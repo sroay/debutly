@@ -88,6 +88,10 @@ export function describeEffect(action: Action, before: Observation, after: Obser
 
   for (const s of signals) if (s.kind === "dialog") parts.push(`a ${s.dialogType} dialog said "${s.message}" (answered OK)`);
   if (signals.some((s) => s.kind === "page_error")) parts.push("a JavaScript error occurred");
+  // An app answers a failed request with 200 OK and an error in its reply (GraphQL): what a person
+  // sees is the page not moving on, so the message is the one thing that says why. Told
+  // (2026-11-04) the Continue that did nothing for a teammate, after 5 retries.
+  for (const s of signals) if (s.kind === "api_error") parts.push(`the server answered with an error: "${s.message}"`);
   // Only the server failing: a person never sees a status code, and apps answer 404 or 401 as part
   // of working (a setting never saved yet). Told "a request failed (HTTP 404)" after each click, an
   // agent decided onboarding was broken (2026-10-25). The report still lists those answers.

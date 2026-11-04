@@ -46,6 +46,7 @@ Each finding says what went wrong, how many of the agents who reached that page 
 | Finding | What it means |
 |---|---|
 | HTTP error | A request returned 4xx or 5xx. 404s at addresses an agent made up itself are left out. |
+| Error in a successful reply | A request answered 200 OK, but its reply (GraphQL) held an error and no result, so the page may show nothing. The error message is quoted. A reply with a partial result is not counted. |
 | JavaScript error | An uncaught error on the page. |
 | Console error | The page logged an error. |
 | Can't click | Something that is part of the page kept covering a control, such as a fixed bar or an invisible layer over everything, so a person can't press it either. A click caught by something open over the page (a dialog, tour step, menu or dropdown list, or the backdrop dimming the page behind one) isn't a finding: the agent is told what is open and to close it first, as a person would. |

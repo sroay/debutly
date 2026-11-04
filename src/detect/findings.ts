@@ -18,6 +18,7 @@ const BASE_SEVERITY: Record<FindingKind, Severity> = {
   language: "minor",
   zoom: "major",
   hidden_focus: "major",
+  api_error: "major",
 };
 // What the browser measures, not what an agent made of the page: one measurement is enough.
 export const MEASURED: ReadonlySet<FindingKind> = new Set(["a11y_unlabeled", "covered", "keyboard", "focus_obscured", "reflow", "language", "zoom", "hidden_focus"]);
@@ -109,6 +110,17 @@ function fromSignal(signal: Signal): Candidate | null {
         detail: `Request ${signal.requestUrl} returned ${signal.status} while on ${pagePath}.`,
         pagePath,
         severity: severityFor("http_error", [target, pagePath], signal.status),
+      };
+    }
+    case "api_error": {
+      const target = pathOf(signal.requestUrl);
+      return {
+        signature: `api:${target}:${signal.message.slice(0, 80)}`,
+        kind: "api_error",
+        title: `An answer of 200 OK from ${target} carried an error`,
+        detail: `Request ${signal.requestUrl} answered 200 OK, with no result and this error: "${signal.message}". The status code said all was well, so the page may show no sign of it.`,
+        pagePath,
+        severity: severityFor("api_error", [target, pagePath]),
       };
     }
     case "page_error":

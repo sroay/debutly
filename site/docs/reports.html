@@ -156,6 +156,10 @@
 <td>A request returned 4xx or 5xx. 404s at addresses an agent made up itself are left out.</td>
 </tr>
 <tr>
+<td>Error in a successful reply</td>
+<td>A request answered 200 OK, but its reply (GraphQL) held an error and no result, so the page may show nothing. The error message is quoted. A reply with a partial result is not counted.</td>
+</tr>
+<tr>
 <td>JavaScript error</td>
 <td>An uncaught error on the page.</td>
 </tr>
