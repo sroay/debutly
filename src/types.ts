@@ -124,6 +124,8 @@ export interface ActionResult {
   enterIgnored?: true;
   /** What the browser's own bubble said about fields a submit found invalid: '"Password": Please lengthen…'. */
   invalid?: string[];
+  /** A new tab the action opened, and whether the agent went there (not when it led outside the product). */
+  newTab?: { url: string; followed: boolean };
 }
 
 export interface Step extends ActionResult {

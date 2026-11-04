@@ -67,18 +67,22 @@ function whatChanged(before: Observation, after: Observation, controlOf: Label):
 // Controls are named as the agent meets them, as in its step message.
 export function describeEffect(action: Action, before: Observation, after: Observation, signals: Signal[], result: ActionResult, view: StepView = {}): string {
   if (result.blocked) return `blocked: ${result.blocked}`;
-  if (result.error) return `failed: ${result.error}`;
+  // On a slow connection a click can land late: pressed again, the button is gone because the page
+  // moved on. Told only "failed", an agent thought onboarding had stuck and waited five steps on the
+  // next page (2026-11-04).
+  if (result.error) return `failed: ${result.error}${pathOf(after.url) !== pathOf(before.url) ? `; now on ${pathOf(after.url)}` : ""}`;
   // check_email reports its own result; done ends the session.
   if (action.type === "done" || action.type === "check_email") return "";
 
   const parts: string[] = [];
+  if (result.newTab) parts.push(result.newTab.followed ? "it opened a new tab, now in front" : `it opened ${result.newTab.url} in a new tab, outside this product; you are still on this page`);
   if (result.enterIgnored) parts.push("Enter did nothing on it, so Space was pressed instead");
   if (result.invalid?.length) parts.push(`the browser stopped the form and said: ${result.invalid.join("; ")}`);
   const changed = whatChanged(before, after, (e) => controlLabel(e, view.screenReader));
   if (pathOf(after.url) !== pathOf(before.url)) parts.push(`now on ${pathOf(after.url)}`);
   else if (changed) parts.push(changed);
   else if (after.text !== before.text) parts.push("the page changed");
-  else if (action.type !== "fill" && !result.invalid?.length && !signals.some((s) => s.kind === "download")) parts.push("nothing visibly changed");
+  else if (action.type !== "fill" && !result.invalid?.length && !result.newTab && !signals.some((s) => s.kind === "download")) parts.push("nothing visibly changed");
 
   for (const s of signals) if (s.kind === "download") parts.push(`a file downloaded: ${s.filename}`);
 

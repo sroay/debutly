@@ -101,6 +101,31 @@ it("still refuses off-site links that did not arrive by email", async () => {
   expect(session.steps[0].guessedUrl).toBe(true);
 });
 
+it("goes to the tab a link opens, as a person finds themselves on it, but not outside the product (2026-11-04)", async () => {
+  const page = await browser.newPage();
+  await page.route(`${fx.url}/event-types`, (r) =>
+    r.fulfill({ contentType: "text/html", body: `<a href="/lia/30min" target="_blank">View public page</a> <a href="https://help.example/booking" target="_blank">Help</a>` }),
+  );
+  // A booking page slower to arrive than the agent's next look.
+  await page.context().route(`${fx.url}/lia/30min`, async (r) => {
+    await new Promise((resolve) => setTimeout(resolve, 2_500));
+    await r.fulfill({ contentType: "text/html", body: "<h1>Book a 30 min meeting</h1>" });
+  });
+  await page.context().route("https://help.example/**", (r) => r.fulfill({ contentType: "text/html", body: "Help centre" }));
+  const llm = scriptedAgents({
+    Lia: [{ click: "View public page" }, { goto: "/event-types" }, { click: "Help" }, { done: [false, "stop"] }],
+  });
+  const session = await runSession({ page, llm, persona: persona("p12", "Lia"), goal: "Book", origin: `${fx.url}/event-types`, maxSteps: 5 });
+  expect(session.steps[0].newTab).toEqual({ url: `${fx.url}/lia/30min`, followed: true });
+  expect(session.steps[1].observation.url).toBe(`${fx.url}/lia/30min`);
+  expect(session.steps[2].newTab).toEqual({ url: "https://help.example/booking", followed: false });
+  expect(session.steps[3].observation.url).toBe(`${fx.url}/event-types`);
+  expect(page.context().pages()).toHaveLength(1);
+  const lastPrompt = llm.calls[3].messages[0].content;
+  expect(lastPrompt).toContain('clicked link "View public page" → it opened a new tab, now in front; now on /lia/30min');
+  expect(lastPrompt).toContain('clicked link "Help" → it opened https://help.example/booking in a new tab, outside this product; you are still on this page\n');
+});
+
 it("stops at the step budget", async () => {
   const llm = scriptedAgents({ Ben: Array.from({ length: 5 }, () => ({ click: "Home" })) });
   const session = await runSession({

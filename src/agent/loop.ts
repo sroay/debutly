@@ -136,6 +136,40 @@ async function openFirstPage(
   }
 }
 
+/**
+ * A link or button that opens a new tab puts a person on that tab. The agent's own tab goes there
+ * instead (its slow connection and signals stay with it) and new tabs are closed; one outside the
+ * product only tells the agent where it went. Seeing no change, agents clicked Cal.diy's "View
+ * public page" up to ten times (2026-11-04). A new tab is known by its first request, which leaves
+ * as the link is clicked: Playwright hands over the tab itself only once its page starts arriving,
+ * which on a slow server can be after the agent's next look.
+ */
+function watchNewTabs(page: Page): string[] {
+  const opened: string[] = [];
+  page.context().on("request", (r) => {
+    if (!r.isNavigationRequest() || r.redirectedFrom()) return;
+    let elsewhere = true;
+    try {
+      elsewhere = r.frame().page() !== page;
+    } catch {
+      // a new tab's first request leaves before its frame exists
+    }
+    if (elsewhere) opened.push(r.url());
+  });
+  page.context().on("page", (tab) => {
+    if (tab !== page) void tab.close().catch(() => {});
+  });
+  return opened;
+}
+
+async function followNewTab(page: Page, opened: string[], mayOpen: (url: string) => boolean): Promise<ActionResult["newTab"]> {
+  const url = opened.splice(0).at(-1);
+  if (!url) return undefined;
+  const followed = mayOpen(url);
+  if (followed) await page.goto(url).catch(() => {}); // a page that never arrives is read as it is
+  return { url, followed };
+}
+
 export async function runSession(o: RunSessionOptions): Promise<Session> {
   const signals = new SignalCollector(o.page);
   const system = buildSystemPrompt(o.persona, o.goal, o.inbox ? o.identity : undefined, o.brief);
@@ -184,6 +218,8 @@ async function takeSteps(o: RunSessionOptions, { signals, system, steps, history
   const screenReader = o.persona.inclusion === "screen_reader";
   let noActionWaits = 0;
   const askedBeforeGivingUp = new Set<string>();
+  const opened = watchNewTabs(o.page);
+  const mayOpen = (url: string) => new URL(url).origin === new URL(o.origin).origin || emailedLinks.has(url);
   for (let index = 0; index < o.maxSteps; index++) {
     if (o.shouldStop && (await o.shouldStop())) return end("cancelled", "run cancelled");
     const { inputTokens, outputTokens } = meter.total;
@@ -194,10 +230,14 @@ async function takeSteps(o: RunSessionOptions, { signals, system, steps, history
       return end("budget_exhausted", `stopped at the time cap (${Math.round(o.caps.maxMs / 1000)}s)`);
     }
     await settle(o.page, o.settle);
+    // A tab the last action opened has had the settle to show itself.
+    const prev = steps.at(-1);
+    const newTab = await followNewTab(o.page, opened, mayOpen);
+    if (newTab && prev) prev.newTab = newTab;
+    if (newTab?.followed) await settle(o.page, o.settle);
     await reflow?.measure(o.page);
     const observation = await observe(o.page);
     // Now that we can see the page after the previous action, tell the agent what it did.
-    const prev = steps.at(-1);
     if (prev) {
       const effect = describeEffect(prev.action, prev.observation, observation, prev.signals, prev, { screenReader });
       if (effect) history[history.length - 1] += ` → ${effect}`;

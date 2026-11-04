@@ -38,6 +38,13 @@ it("reports blocked and failed actions instead", () => {
   expect(describeEffect({ type: "click", id: 1 }, pricing, pricing, [], { error: "timeout" })).toBe("failed: timeout");
 });
 
+it("says where the page went when an action failed because an earlier one had moved it on (2026-11-04)", () => {
+  const next = page("http://a.test/onboarding/calendar", "Connect your calendar");
+  expect(describeEffect({ type: "click", id: 1 }, pricing, next, [], { error: "the element is no longer on the page" })).toBe(
+    "failed: the element is no longer on the page; now on /onboarding/calendar",
+  );
+});
+
 it("tells the agent a dialog popped up and was answered OK", () => {
   const signals = [{ kind: "dialog" as const, dialogType: "confirm", message: "Import this CV?", url: pricing.url }];
   expect(describeEffect({ type: "click", id: 1 }, pricing, pricing, signals, {})).toBe(
