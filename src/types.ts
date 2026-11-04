@@ -67,6 +67,8 @@ export interface AccessibleName {
   hidden: boolean;
   /** What a screen reader reads after the role (aria-describedby, a tooltip); absent when there's none. */
   description?: string;
+  /** Hidden by aria-hidden on it or around it, rather than for another reason. */
+  ariaHidden?: true;
 }
 
 export interface InteractiveElement {
@@ -178,7 +180,8 @@ export type FindingKind =
   | "focus_obscured"
   | "reflow"
   | "language"
-  | "zoom";
+  | "zoom"
+  | "hidden_focus";
 
 export interface Finding {
   signature: string;

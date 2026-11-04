@@ -67,6 +67,7 @@ export async function accessibleNames(page: Page): Promise<Map<number, Accessibl
         role: node.role?.value ?? "",
         hidden: node.ignored,
         ...(description ? { description } : {}),
+        ...(node.ignoredReasons?.some((r) => r.name === "ariaHiddenElement" || r.name === "ariaHiddenSubtree") ? { ariaHidden: true as const } : {}),
       });
     }
     return out;

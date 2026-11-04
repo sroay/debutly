@@ -53,6 +53,7 @@ Each finding says what went wrong, how many of the agents who reached that page 
 | Agent stuck | An agent did the same thing three times on one page and nothing changed. |
 | Can't reach with the keyboard | The screen-reader agent couldn't move focus to a control: it isn't in the tab order. |
 | Enter doesn't press a button | The screen-reader agent pressed Enter on a button and nothing happened; Space pressed it. Most keyboard users press Enter, and stop there. Debutly tries Space only when Enter left the page looking exactly the same and sent nothing, so a button is never pressed twice. |
+| Hidden but reachable with Tab | Controls marked aria-hidden, often a closed menu left in the page, that Tab still lands on: keyboard focus disappears from view and a screen reader says nothing. Not checked while a dialog is open, which hides the page behind it on purpose. |
 | Keyboard focus hidden | A control with keyboard focus was entirely covered by something else, measured after the page has scrolled it into view. A dropdown's own open list over it doesn't count. |
 | Scrolls sideways at 320 pixels | At 400% zoom the page is wider than the window. |
 | Language | The page doesn't say its language, or an Arabic page says another language or runs left to right. |

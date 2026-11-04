@@ -17,9 +17,10 @@ const BASE_SEVERITY: Record<FindingKind, Severity> = {
   reflow: "minor",
   language: "minor",
   zoom: "major",
+  hidden_focus: "major",
 };
 // What the browser measures, not what an agent made of the page: one measurement is enough.
-export const MEASURED: ReadonlySet<FindingKind> = new Set(["a11y_unlabeled", "covered", "keyboard", "focus_obscured", "reflow", "language", "zoom"]);
+export const MEASURED: ReadonlySet<FindingKind> = new Set(["a11y_unlabeled", "covered", "keyboard", "focus_obscured", "reflow", "language", "zoom", "hidden_focus"]);
 /** Sideways overflow this small is reported, but never raised above minor. */
 const SLIGHT_OVERFLOW_PX = 20;
 /** A page whose letters are at least this share Arabic is an Arabic page. */
@@ -219,6 +220,29 @@ function placeOf(elements: InteractiveElement[], i: number): string {
   if (before && after) return `after ${q(before)} and before ${q(after)}`;
   if (before) return `after ${q(before)}`;
   return after ? `before ${q(after)}` : "";
+}
+
+/**
+ * Controls hidden from screen readers (aria-hidden) that Tab still reaches: a closed mobile menu
+ * left in the page, its ~15 links aria-hidden but focusable (2026-10-25). Keyboard focus goes into
+ * them unseen, and a screen reader says nothing or something misleading. Not while something is
+ * open over the page: a modal hides the page behind it on purpose, and keeps focus inside itself.
+ */
+function hiddenButReachable(obs: Observation, pagePath: string): Candidate | undefined {
+  if (obs.openLayer) return undefined;
+  const reached = obs.elements.filter((e) => e.ax?.ariaHidden && !e.disabled && e.tabbable !== false && e.role !== "input:file");
+  if (!reached.length) return undefined;
+  const names = [...new Set(reached.map((e) => e.name.trim()).filter(Boolean))].slice(0, 3).map((n) => `"${n.slice(0, 40)}"`);
+  const count = reached.length === 1 ? "A control" : `${reached.length} controls`;
+  return {
+    signature: `hidden-focus:${pagePath}`,
+    kind: "hidden_focus",
+    title: `${count} on ${pagePath} ${reached.length === 1 ? "is" : "are"} hidden from screen readers but reachable with Tab`,
+    detail: `${count}${names.length ? ` (${names.join(", ")}${reached.length > names.length ? ", …" : ""})` : ""} ${reached.length === 1 ? "is" : "are"} marked aria-hidden, often a closed menu or panel left in the page, yet Tab still lands on ${reached.length === 1 ? "it" : "them"}: keyboard focus disappears from view, and a screen reader says nothing or something misleading.`,
+    pagePath,
+    severity: severityFor("hidden_focus", [pagePath]),
+    wcag: ["4.1.2", "2.4.3"],
+  };
 }
 
 /** One finding per page, kind of control and kind of problem, naming up to three places. */
@@ -522,6 +546,8 @@ export function detectFindings(sessions: Session[], opts: DetectOptions = {}): F
       }
 
       for (const c of unnamedControls(step.observation.elements, pagePath)) record(c, s.agentId, step.index);
+      const hiddenFocus = hiddenButReachable(step.observation, pagePath);
+      if (hiddenFocus) record(hiddenFocus, s.agentId, step.index);
 
       if (originOf(step.observation.url) === appOrigin) for (const c of languageFindings(step.observation, pagePath)) record(c, s.agentId, step.index);
 

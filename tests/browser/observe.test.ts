@@ -41,7 +41,7 @@ it("gives each control the name and role the browser gives assistive technology"
   const obs = await observe(page);
   expect(obs.elements.map((e) => e.ax)).toEqual([
     { name: "Close dialog", role: "button", hidden: false },
-    { name: "", role: "none", hidden: true },
+    { name: "", role: "none", hidden: true, ariaHidden: true },
     { name: "Team name", role: "textbox", hidden: false },
     { name: "", role: "button", hidden: false },
   ]);
@@ -192,4 +192,26 @@ it("says what is open over the page: a dialog by its name, or an open dropdown l
   expect((await observe(page)).openLayer).toBe("a dropdown list");
   await page.setContent(`<button aria-expanded="false">Menu</button><div role="dialog" style="display:none">Hidden</div>`);
   expect((await observe(page)).openLayer).toBeUndefined();
+});
+
+it("finds controls hidden from screen readers that Tab still reaches, and not while a dialog is open (2026-10-25)", async () => {
+  const { detectFindings } = await import("../../src/detect/findings");
+  const findingsFor = async () => {
+    const obs = await observe(page);
+    const session = { agentId: "a", personaName: "A", goal: "g", outcome: "gave_up" as const, outcomeNote: "", steps: [{ index: 0, observation: obs, action: { type: "wait" as const }, reasoning: "", signals: [] }] };
+    return detectFindings([session]).filter((f) => f.kind === "hidden_focus");
+  };
+  await page.goto("about:blank");
+  // A closed mobile menu, slid off screen and aria-hidden, its links still in the tab order.
+  await page.setContent(`<button>Open menu</button><nav aria-hidden="true" style="position:fixed;left:-300px"><a href="/a">Dashboard</a><a href="/b">Analyse Job</a></nav>`);
+  const [f] = await findingsFor();
+  expect(f).toMatchObject({ severity: "major", wcag: ["4.1.2", "2.4.3"] });
+  expect(f.title).toMatch(/^2 controls on \S+ are hidden from screen readers but reachable with Tab$/);
+  expect(f.detail).toContain('("Dashboard", "Analyse Job")');
+  // Made inert, as it should be: nothing to report.
+  await page.setContent(`<button>Open menu</button><nav aria-hidden="true" inert style="position:fixed;left:-300px"><a href="/a">Dashboard</a></nav>`);
+  expect(await findingsFor()).toEqual([]);
+  // A modal hides the page behind it on purpose.
+  await page.setContent(`<div aria-hidden="true"><a href="/a">Dashboard</a></div><div role="dialog" aria-modal="true" aria-label="Welcome"><button>Skip</button></div>`);
+  expect(await findingsFor()).toEqual([]);
 });

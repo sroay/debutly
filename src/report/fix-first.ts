@@ -51,6 +51,8 @@ export function nextStep(f: Finding): string {
       if (f.signature.startsWith("dir:")) return 'Set dir="rtl" on Arabic pages (on <html>, or on the part that holds the Arabic).';
       if (f.signature === "lang:missing") return 'Add a lang attribute to the <html> element, e.g. lang="en".';
       return 'Set lang="ar" on Arabic pages.';
+    case "hidden_focus":
+      return 'Make the hidden part unreachable while hidden: add inert to it (or tabindex="-1" to each control), or stop hiding it from screen readers.';
     case "zoom":
       return "Remove user-scalable=no and maximum-scale from the page's viewport meta tag.";
   }

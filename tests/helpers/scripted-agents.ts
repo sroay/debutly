@@ -39,7 +39,8 @@ export function scriptedAgents(scripts: Record<string, Intent[]>): ScriptedLlm {
     else if ("fill" in intent)
       action = { type: "fill", id: idOf(intent.fill[0]), text: intent.fill[1].replace(/\{email:([^}]+)\}/g, (_, who: string) => teammateEmail(who)) };
     else if ("openEmailLink" in intent) {
-      const links = [...page.matchAll(/links: (\S+)/g)];
+      // By its number, as agents are told to open emailed links.
+      const links = [...page.matchAll(/\[(email link \d+)\] \S+/g)];
       if (!links.length) throw new Error(`no emailed link seen by ${name}`);
       action = { type: "goto", path: links[links.length - 1][1] };
     }

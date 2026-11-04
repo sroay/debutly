@@ -191,6 +191,10 @@
 <td>The screen-reader agent pressed Enter on a button and nothing happened; Space pressed it. Most keyboard users press Enter, and stop there. Debutly tries Space only when Enter left the page looking exactly the same and sent nothing, so a button is never pressed twice.</td>
 </tr>
 <tr>
+<td>Hidden but reachable with Tab</td>
+<td>Controls marked aria-hidden, often a closed menu left in the page, that Tab still lands on: keyboard focus disappears from view and a screen reader says nothing. Not checked while a dialog is open, which hides the page behind it on purpose.</td>
+</tr>
+<tr>
 <td>Keyboard focus hidden</td>
 <td>A control with keyboard focus was entirely covered by something else, measured after the page has scrolled it into view. A dropdown&#39;s own open list over it doesn&#39;t count.</td>
 </tr>
