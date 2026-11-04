@@ -12,6 +12,8 @@ import type { ActionResult, Persona, Session, Step } from "../types";
 import { describeAction } from "./describe";
 import { describeEffect } from "./effect";
 import { nothingToPressYet, untriedWaysOn } from "./give-up";
+import { saidOtherControl } from "./intent";
+import { controlLabel } from "./label";
 import { NoActionError, parseAgentReply } from "./parse-reply";
 import { buildStepMessage, buildSystemPrompt, type AgentIdentity } from "./prompt";
 
@@ -209,6 +211,22 @@ async function takeSteps(o: RunSessionOptions, { signals, system, steps, history
     if (!reply) {
       return end("error", `${problem} | last reply: ${raw.slice(0, 300) || "(empty)"}`);
     }
+    // One more question about the reply just given; an unreadable answer leaves the reply standing.
+    const askAgain = async (question: string) => {
+      const again = await o.llm.complete({
+        system,
+        messages: [...messages, { role: "assistant", content: raw }, { role: "user", content: question }],
+        maxTokens: 4096,
+        onUsage: meter.add,
+      });
+      try {
+        const answer = parseAgentReply(again);
+        raw = again;
+        return answer;
+      } catch {
+        return undefined;
+      }
+    };
     // Giving up with a way on in plain sight that it never pressed here, or on a page with nothing
     // to press yet: asked once per page. Still giving up, it gives up.
     if (reply.action.type === "done" && !reply.action.success && !askedBeforeGivingUp.has(observation.url)) {
@@ -220,25 +238,15 @@ async function takeSteps(o: RunSessionOptions, { signals, system, steps, history
           : "";
       if (ask) {
         askedBeforeGivingUp.add(observation.url);
-        const again = await o.llm.complete({
-          system,
-          messages: [
-            ...messages,
-            { role: "assistant", content: raw },
-            {
-              role: "user",
-              content: `${ask} Reply again with one JSON object: go on, or give up if you are sure.`,
-            },
-          ],
-          maxTokens: 4096,
-          onUsage: meter.add,
-        });
-        try {
-          reply = parseAgentReply(again);
-        } catch {
-          // an unreadable second answer leaves the first one standing
-        }
+        reply = (await askAgain(`${ask} Reply again with one JSON object: go on, or give up if you are sure.`)) ?? reply;
       }
+    }
+    // Its words name one control and its action points at another: asked once to check the id.
+    const meant = saidOtherControl(reply.reasoning, reply.action, observation, screenReader);
+    const chosen = "id" in reply.action ? observation.elements.find((e) => e.id === (reply!.action as { id: number }).id) : undefined;
+    if (meant && chosen) {
+      const question = `You wrote about ${meant.map((n) => `"${n}"`).join(" or ")}, but your action points at [${chosen.id}] ${controlLabel(chosen, screenReader)}. Check the id: reply again with one JSON object.`;
+      reply = (await askAgain(question)) ?? reply;
     }
 
     let result: ActionResult;

@@ -166,6 +166,20 @@ it("asks once before giving up with an untried way on in plain sight, and respec
   expect(second.steps[0]).toMatchObject({ action: { type: "wait" }, reasoning: "Try it." });
 }, 60_000);
 
+it("asks once when its words name one control and its action another, and takes the corrected action", async () => {
+  // On the pricing page: it says Studio but sends the id of something else first.
+  const llm = new ScriptedLlm((req, i) => {
+    const studio = /\[(\d+)\] button "Choose Studio"/.exec(req.messages[0].content)?.[1];
+    const other = /\[(\d+)\] button "Choose Solo"/.exec(req.messages[0].content)?.[1];
+    if (i === 0) return JSON.stringify({ reasoning: "I want the bigger plan, so I'll press Choose Studio.", action: { type: "click", id: Number(other) } });
+    if (i === 1) return JSON.stringify({ reasoning: "Right, Choose Studio.", action: { type: "click", id: Number(studio) } });
+    return JSON.stringify({ reasoning: "ok", action: { type: "done", success: true, note: "ok" } });
+  });
+  const session = await runSession({ page: await browser.newPage(), llm, persona: persona("p11", "Kim"), goal: "Buy Studio", origin: `${fx.url}/pricing`, maxSteps: 2 });
+  expect(llm.calls[1].messages.at(-1)!.content).toMatch(/^You wrote about "Choose Studio", but your action points at \[\d+\] button "Choose Solo"/);
+  expect(session.steps[0].reasoning).toBe("Right, Choose Studio.");
+}, 60_000);
+
 it("ends with error, keeping the raw reply, when the model stays unreadable", async () => {
   const llm = new ScriptedLlm(() => "I refuse to answer in JSON");
   const session = await runSession({
