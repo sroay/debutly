@@ -75,7 +75,7 @@ it("reads its inbox and follows an emailed link to another server", async () => 
     expect(llm.calls[0].system).toContain("zoe@agents.test");
     expect(llm.calls[0].system).toContain('{"type":"check_email"}');
     expect(asked).toEqual(["zoe@agents.test"]);
-    expect(llm.calls[1].messages[0].content).toContain(`checked email → 1 email: "Your magic link" links: ${link}`);
+    expect(llm.calls[1].messages[0].content).toContain(`checked email → 1 email: "Your magic link" links: [email link 1] ${link}`);
     expect(session.steps[1].blocked).toBeUndefined();
     expect(session.steps[1].guessedUrl).toBeUndefined();
     expect(session.steps[2].observation.url).toBe(link);

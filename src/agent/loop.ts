@@ -57,10 +57,33 @@ export interface RunSessionOptions {
   firstLoad?: { timeoutMs?: number; slowMs?: number };
 }
 
-function describeInbox(messages: EmailMessage[]): string {
+/** The inbox as the agent reads it, each link numbered ("email link 2") so it can be opened without retyping it. */
+export function describeInbox(messages: EmailMessage[], numberOf: (link: string) => number): string {
   if (!messages.length) return "checked email → no emails yet";
-  const items = messages.map((m) => `"${m.subject}"${m.links.length ? ` links: ${m.links.slice(0, LINKS_PER_EMAIL).join(" ")}` : ""}`);
+  const items = messages.map((m) => {
+    const links = m.links.slice(0, LINKS_PER_EMAIL).map((l) => `[email link ${numberOf(l)}] ${l}`);
+    return `"${m.subject}"${links.length ? ` links: ${links.join(" ")}` : ""}`;
+  });
   return `checked email → ${messages.length} email${messages.length === 1 ? "" : "s"}: ${items.join("; ")}`;
+}
+
+/**
+ * The emailed link a goto means: "email link 2" by its number, or a mistyped copy of one, the same
+ * path and query under a garbled host. An agent retyped a sign-in link as http://127.0.0.0.0.1:…,
+ * got "Invalid URL" and gave up (2026-10-25). Undefined when it means no emailed link.
+ */
+export function emailedLinkMeant(path: string, links: string[]): string | undefined {
+  const numbered = /^email ?link ?(\d+)$/i.exec(path.trim());
+  if (numbered) return links[Number(numbered[1]) - 1];
+  const tail = (u: string) => {
+    const start = u.indexOf("//");
+    const slash = u.indexOf("/", start < 0 ? 0 : start + 2);
+    return slash < 0 ? "" : u.slice(slash);
+  };
+  const typed = tail(path.trim());
+  // Long enough to be a link's own path and token, not a common page like "/login".
+  if (typed.length < 20) return undefined;
+  return links.find((l) => tail(l) === typed && l !== path.trim());
 }
 
 /**
@@ -258,14 +281,22 @@ async function takeSteps(o: RunSessionOptions, { signals, system, steps, history
         try {
           const mail = await o.inbox.latest(o.identity.email);
           for (const m of mail) for (const link of m.links) emailedLinks.add(link);
-          historyLine = describeInbox(mail);
+          const numbered = [...emailedLinks];
+          historyLine = describeInbox(mail, (link) => numbered.indexOf(link) + 1);
           result = {};
         } catch (err) {
           result = { error: err instanceof Error ? err.message : String(err) };
         }
       }
     } else {
-      result = await execute(o.page, reply.action, observation, o.origin, (href) => emailedLinks.has(href), { keyboard: screenReader });
+      // An emailed link, by its number or as a mistyped copy, is opened as it was sent.
+      const link = reply.action.type === "goto" ? emailedLinkMeant(reply.action.path, [...emailedLinks]) : undefined;
+      if (reply.action.type === "goto" && /^email ?link ?\d+$/i.test(reply.action.path.trim()) && !link) {
+        result = { error: `there is no ${reply.action.path.trim()}: check your email to see the links` };
+      } else {
+        const action = link ? { type: "goto" as const, path: link } : reply.action;
+        result = await execute(o.page, action, observation, o.origin, (href) => emailedLinks.has(href), { keyboard: screenReader });
+      }
     }
 
     let screenshotPath: string | undefined;

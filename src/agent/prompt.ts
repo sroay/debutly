@@ -14,7 +14,7 @@ export interface AgentIdentity {
 export function buildSystemPrompt(persona: Persona, goal: string, identity?: AgentIdentity, brief?: string): string {
   const email = identity
     ? `Your email address is ${identity.email}. Use it whenever the site asks for your email.
-To read your inbox (for example a login link or a confirmation), reply {"type":"check_email"}. To open a link from an email, use {"type":"goto","path":"<the full link>"}.`
+To read your inbox (for example a login link or a confirmation), reply {"type":"check_email"}. To open a link from an email, use its number: {"type":"goto","path":"email link 1"}.`
     : `Use emails at example.com.`;
   const about = [
     `You are ${persona.name}. ${persona.background}`,
