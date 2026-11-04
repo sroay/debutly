@@ -241,6 +241,15 @@ it("clicks the visible part of a partly covered element, like a person would", a
   expect(await page.evaluate(() => document.body.dataset.clicked)).toBe("yes");
 }, 15_000);
 
+it("clicks clickable text on its text, where a field row opens only from its value (2026-11-04)", async () => {
+  await show(`<style>.row { cursor: pointer; display: flex; justify-content: space-between; width: 400px }</style>
+    <div class="row"><span>Job title</span><span onclick="this.replaceWith(Object.assign(document.createElement('input'), { ariaLabel: 'Job title' }))">Add a job title</span></div>`);
+  const obs = await observe(page);
+  expect(obs.elements.map((e) => [e.role, e.name])).toEqual([["clickable", "Job title Add a job title"]]);
+  expect(await execute(page, { type: "click", id: 0 }, obs, fx.url)).toEqual({});
+  expect((await observe(page)).elements).toContainEqual(expect.objectContaining({ role: "input:text", name: "Job title" }));
+});
+
 it("waits a few seconds when the agent chooses to", async () => {
   await page.goto(`${fx.url}/signup`);
   const obs = await observe(page);

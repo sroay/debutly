@@ -224,6 +224,29 @@ async function explainTimeout(page: Page, id: number, err: unknown): Promise<str
 }
 
 // Playwright clicks an element's centre; a person clicks whatever part of it they can see.
+/**
+ * Clickable text is clicked on its text, the last piece of it, as a person clicks a field's value:
+ * an app can put the pointer over a whole field row, label and value, and open the field only from
+ * the value. Clicked in the row's middle, Twenty's job title did nothing, seven times (2026-11-04).
+ */
+const TEXT_PART_SCRIPT = (id: number) => `(() => {
+  for (const n of document.querySelectorAll('[data-debutly-part]')) n.removeAttribute('data-debutly-part');
+  const el = document.querySelector('[data-debutly-id="${id}"]');
+  if (!el) return;
+  let part = el;
+  for (const n of el.querySelectorAll('*')) {
+    const own = Array.from(n.childNodes).some((c) => c.nodeType === 3 && c.textContent.trim());
+    const r = n.getBoundingClientRect();
+    if (own && r.width > 0 && r.height > 0) part = n;
+  }
+  part.setAttribute('data-debutly-part', '');
+})()`;
+
+async function textPartOf(page: Page, id: number): Promise<Locator> {
+  await page.evaluate(TEXT_PART_SCRIPT(id));
+  return page.locator("[data-debutly-part]");
+}
+
 async function clickVisiblePart(page: Page, id: number): Promise<boolean> {
   const locator = page.locator(`[data-debutly-id="${id}"]`);
   await locator.scrollIntoViewIfNeeded({ timeout: 2_000 }).catch(() => {});
@@ -409,7 +432,7 @@ export async function execute(
           } else if (!FOCUS_ONLY.test(el.role)) await page.keyboard.press("Enter");
         } else if (action.type === "click") {
           try {
-            await locator.click({ timeout: 5_000 });
+            await (el.role === "clickable" ? await textPartOf(page, action.id) : locator).click({ timeout: 5_000 });
           } catch (err) {
             if (!describeFailure(err).startsWith(COVERED) || !(await clickVisiblePart(page, action.id))) {
               // Something open over the page took the click: the agent is told what to do, as a

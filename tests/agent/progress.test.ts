@@ -64,9 +64,10 @@ it("asks nothing about an agent that got there, and leaves out a reply it can't 
 
 it("says what got done, what didn't, and the page its last steps went round on", () => {
   const s = owner();
+  // In the goal's order; the report lists what got done in the order it was done.
   s.progress = [
-    { part: "create the workspace", done: true, stepIndex: 0 },
     { part: "invite the teammates", done: true, stepIndex: 1 },
+    { part: "create the workspace", done: true, stepIndex: 0 },
     { part: "add three companies, each with a contact", done: false },
   ];
   expect(pageKind("/object/person/358db0e0-2b3a-4d2a-a748-0cab0f580138")).toBe("/object/person/…");

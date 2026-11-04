@@ -107,7 +107,8 @@ export function stuckOn(s: Session): { page: string; steps: number; of: number }
 /** "3 of 4 parts done: create the workspace (step 8), …; not done: give each a contact person." */
 export function describeProgress(s: Session): string {
   if (!s.progress?.length) return "";
-  const done = s.progress.filter((p) => p.done);
+  // Done parts in the order they were done: a goal lists inviting the team last, an owner may do it first.
+  const done = s.progress.filter((p) => p.done).sort((a, b) => (a.stepIndex ?? Infinity) - (b.stepIndex ?? Infinity));
   const left = s.progress.filter((p) => !p.done);
   const list = (ps: GoalPart[], steps: boolean) => ps.map((p) => `${p.part}${steps && p.stepIndex !== undefined ? ` (step ${p.stepIndex + 1})` : ""}`).join(", ");
   const stuck = stuckOn(s);
