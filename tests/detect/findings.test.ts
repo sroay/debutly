@@ -252,6 +252,16 @@ it("reports a control that something keeps covering, even when the agent works r
   expect(f.evidence).toEqual([{ agentId: "a", stepIndex: 2 }]);
 });
 
+it("drops a covered control the agent pressed fine later on the same page: what lay over it went away (2026-11-04)", () => {
+  // A dropdown list over "Add agents": the agent chose from it, then pressed Add agents.
+  const coveredAdd = (index: number): Step => ({ ...step(index, "/inboxes/new/agents", [], { type: "click", id: 0 }, ["Add agents"]), error: "another element covers it: <button type=\"button\">" });
+  const pressedAdd = step(3, "/inboxes/new/agents", [], { type: "click", id: 0 }, ["Add agents"]);
+  const chose = step(2, "/inboxes/new/agents", [], { type: "click", id: 0 }, ["Sarah P2"]);
+  expect(detectFindings([session("a", [coveredAdd(0), coveredAdd(1), chose, pressedAdd])]).filter((f) => f.kind === "covered")).toEqual([]);
+  // Never pressed afterwards: still a finding.
+  expect(detectFindings([session("a", [coveredAdd(0), coveredAdd(1), chose])]).filter((f) => f.kind === "covered")).toHaveLength(1);
+});
+
 it("does not call an agent stuck for waiting while the app works", () => {
   const waiting = (i: number) => step(i, "/content", [], { type: "wait" });
   const findings = detectFindings([session("a", [waiting(0), waiting(1), waiting(2)])]);

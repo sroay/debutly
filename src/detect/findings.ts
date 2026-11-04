@@ -245,6 +245,16 @@ function hiddenButReachable(obs: Observation, pagePath: string): Candidate | und
   };
 }
 
+/** Whether the agent pressed the control without trouble later on the same page. */
+function pressedLater(steps: Step[], after: number, pagePath: string, control: string): boolean {
+  return steps.some((st) => {
+    if (st.index <= after || st.error || st.blocked || st.action.type !== "click" || pathOf(st.observation.url) !== pagePath) return false;
+    const id = st.action.id;
+    const el = st.observation.elements.find((e) => e.id === id);
+    return !!el && `${el.role} "${el.name}"` === control;
+  });
+}
+
 /** One finding per page, kind of control and kind of problem, naming up to three places. */
 function unnamedControls(elements: InteractiveElement[], pagePath: string): Candidate[] {
   const groups = new Map<string, { control: string; role: string; problem: Unnamed; places: string[]; said: string; count: number }>();
@@ -607,12 +617,14 @@ export function detectFindings(sessions: Session[], opts: DetectOptions = {}): F
 
       // A control something else keeps covering: the person can't press it either. The agent
       // works round it in other ways (keys, closing things), so this is not always "stuck".
+      // Unless the agent presses it later on the same page: then what lay over it went away once
+      // the agent dealt with it (a dropdown list chosen from, 2026-11-04), and it is no defect.
       const target = step.action.type === "click" && step.error?.startsWith(COVERED) ? step.observation.elements.find((e) => e.id === (step.action as { id: number }).id) : undefined;
       if (target) {
         const control = `${target.role} "${target.name}"`;
         const times = (covered.get(control) ?? 0) + 1;
         covered.set(control, times);
-        if (times === COVERED_REPEATS) {
+        if (times === COVERED_REPEATS && !pressedLater(s.steps, step.index, pagePath, control)) {
           const by = step.error!.slice(COVERED.length).replace(/^:\s*/, "");
           record(
             {
