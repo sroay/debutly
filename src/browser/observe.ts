@@ -43,6 +43,36 @@ const LANGUAGE_SCRIPT = `(() => {
   };
 })()`;
 
+/**
+ * What is open over the page and takes clicks outside it: a dialog (or a tour step, a bottom sheet),
+ * or a dropdown list or menu. Agents clicked behind a welcome dialog, an open menu and an open
+ * dropdown on three apps in one week (2026-10-25, 2026-11-01), and each was reported as
+ * "something covers it". "" when nothing is open.
+ */
+export const OPEN_LAYER_SCRIPT = `(() => {
+  const shown = (e) => {
+    const b = e.getBoundingClientRect();
+    const s = getComputedStyle(e);
+    return b.width > 0 && b.height > 0 && s.visibility !== 'hidden' && s.display !== 'none' && Number(s.opacity) !== 0;
+  };
+  const nameOf = (e) => {
+    const label = e.getAttribute('aria-label');
+    if (label) return label;
+    const by = (e.getAttribute('aria-labelledby') || '').split(/\\s+/)[0];
+    const titled = by && document.getElementById(by);
+    if (titled) return titled.textContent;
+    const heading = e.querySelector('h1, h2, h3, h4, [role="heading"]');
+    return heading ? heading.textContent : '';
+  };
+  const dialog = [...document.querySelectorAll('[role="dialog"], [role="alertdialog"], dialog[open], [aria-modal="true"]')].find(shown);
+  const list = [...document.querySelectorAll('[role="listbox"], [role="menu"]')].find((e) => shown(e) && document.querySelector('[aria-expanded="true"]'));
+  const layer = dialog || list;
+  if (!layer) return '';
+  const kind = layer === dialog ? 'a dialog' : layer.getAttribute('role') === 'menu' ? 'a menu' : 'a dropdown list';
+  const name = (nameOf(layer) || '').replace(/\\s+/g, ' ').trim().slice(0, 60);
+  return kind + (name ? ' ("' + name + '")' : '');
+})()`;
+
 export async function observe(page: Page): Promise<Observation> {
   const elements = (await page.evaluate(SCAN_SCRIPT)) as InteractiveElement[];
   const names = await accessibleNames(page);
@@ -58,5 +88,6 @@ export async function observe(page: Page): Promise<Observation> {
     .join("\n")
     .slice(0, 2000);
   const language = (await page.evaluate(LANGUAGE_SCRIPT)) as Pick<Observation, "lang" | "dir" | "arabicShare" | "zoomBlocked">;
-  return { url: page.url(), title: await page.title(), elements, text, ...language };
+  const openLayer = (await page.evaluate(OPEN_LAYER_SCRIPT)) as string;
+  return { url: page.url(), title: await page.title(), elements, text, ...language, ...(openLayer ? { openLayer } : {}) };
 }

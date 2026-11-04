@@ -109,6 +109,8 @@ export interface Observation {
   arabicShare?: number;
   /** The page's viewport setting when it stops pinch-zoom (user-scalable=no, maximum-scale under 2), else "". */
   zoomBlocked?: string;
+  /** What is open over the page and takes clicks outside it, e.g. 'a dialog ("Welcome")' or "a dropdown list". */
+  openLayer?: string;
 }
 
 export interface ActionResult {

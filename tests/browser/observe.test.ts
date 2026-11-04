@@ -183,3 +183,13 @@ it("reads the icon a control with no text shows, from how icon sets name their i
   const { elements } = await observe(page);
   expect(elements.map((e) => e.icon)).toEqual(["dots vertical", "panel left close", "trash", "bars", "settings", "bell", undefined, undefined]);
 });
+
+it("says what is open over the page: a dialog by its name, or an open dropdown list", async () => {
+  await page.goto("about:blank");
+  await page.setContent(`<button>Behind</button><div role="dialog" aria-modal="true" aria-labelledby="t"><h2 id="t">Welcome to Acme</h2><button>Skip</button></div>`);
+  expect((await observe(page)).openLayer).toBe('a dialog ("Welcome to Acme")');
+  await page.setContent(`<button role="combobox" aria-expanded="true">Industry</button><div role="listbox"><div role="option">Agency</div></div>`);
+  expect((await observe(page)).openLayer).toBe("a dropdown list");
+  await page.setContent(`<button aria-expanded="false">Menu</button><div role="dialog" style="display:none">Hidden</div>`);
+  expect((await observe(page)).openLayer).toBeUndefined();
+});

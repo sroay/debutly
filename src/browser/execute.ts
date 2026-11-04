@@ -1,5 +1,6 @@
 import type { Locator, Page } from "playwright";
 import type { Action, ActionResult, InteractiveElement, Observation } from "../types";
+import { OPEN_LAYER_SCRIPT } from "./observe";
 import { sampleFiles, sampleFor, type SampleKind } from "./samples";
 
 const DESTRUCTIVE = /\b(delete|remove|destroy|deactivate|close account|cancel (my )?(subscription|account))\b/i;
@@ -85,6 +86,8 @@ const FOCUS_ONLY = /^(input:(text|email|password|number|search|tel|url|date|time
 const focusCoveredScript = (id: number) => `(() => {
   const el = document.querySelector('[data-debutly-id="${id}"]');
   if (!el) return null;
+  // A dropdown's own open list may be drawn over it, by design (2026-11-01).
+  if (el.getAttribute('aria-expanded') === 'true') return null;
   const r = el.getBoundingClientRect();
   const points = [[0.5, 0.5], [0.1, 0.1], [0.9, 0.1], [0.1, 0.9], [0.9, 0.9]].map(([fx, fy]) => [r.left + r.width * fx, r.top + r.height * fy]);
   let cover = null;
@@ -94,7 +97,7 @@ const focusCoveredScript = (id: number) => `(() => {
     if (!hit || hit === el || el.contains(hit) || hit.contains(el)) return null;
     cover = cover || hit;
   }
-  if (!cover) return 'the edge of the window';
+  if (!cover) return '${EDGE_OF_WINDOW}';
   const classes = typeof cover.className === 'string' ? cover.className.trim().split(/\\s+/).filter(Boolean).slice(0, 2) : [];
   const text = (cover.innerText || '').replace(/\\s+/g, ' ').trim().slice(0, 50);
   return cover.tagName.toLowerCase() + (cover.id ? '#' + cover.id : '') + classes.map((c) => '.' + c).join('') + (text ? ' ("' + text + '")' : '');
@@ -121,7 +124,44 @@ async function focusByKeyboard(page: Page, locator: Locator, id: number): Promis
   if (reach === "disabled") throw new Unusable(UNUSABLE.disabled);
   if (reach === "untabbable") throw new NotByKeyboard(`${NOT_BY_KEYBOARD}: it isn't in the tab order`);
   await locator.focus({ timeout: 5_000 });
+  const hidden = (await page.evaluate(focusCoveredScript(id))) as string | null;
+  // A page that scrolls smoothly brings the focused control into view a moment later: measured at
+  // once, a Continue button in plain sight was reported hidden by the edge of the window.
+  if (hidden !== EDGE_OF_WINDOW) return hidden ?? undefined;
+  await page.waitForTimeout(SMOOTH_SCROLL_MS);
   return ((await page.evaluate(focusCoveredScript(id))) as string | null) ?? undefined;
+}
+
+const EDGE_OF_WINDOW = "the edge of the window";
+/** Long enough for a smooth scroll to finish. */
+const SMOOTH_SCROLL_MS = 600;
+
+/**
+ * Whether a click on the control was taken by something open over the page, which a person uses
+ * or closes first: a dialog, tour step, menu or dropdown list, or the backdrop that dims the page
+ * behind one (an open dropdown can also make the page itself take every click outside it). Says
+ * what is open, or "" when the cover is part of the page: a fixed bar, or an invisible layer over
+ * everything, which a person can't see to close and so stays a finding.
+ */
+const OPEN_OVER_SCRIPT = (id: number) => `(() => {
+  const el = document.querySelector('[data-debutly-id="${id}"]');
+  if (!el) return '';
+  const r = el.getBoundingClientRect();
+  const hit = document.elementFromPoint(Math.min(Math.max(r.left + r.width / 2, 0), innerWidth - 1), Math.min(Math.max(r.top + r.height / 2, 0), innerHeight - 1));
+  const open = ${OPEN_LAYER_SCRIPT};
+  if (!hit || hit === document.documentElement || hit === document.body) return open;
+  if (hit.closest('[role="dialog"], [role="alertdialog"], dialog, [aria-modal="true"], [role="listbox"], [role="menu"]')) return open || 'something';
+  const b = hit.getBoundingClientRect();
+  const s = getComputedStyle(hit);
+  const fills = (s.position === 'fixed' || s.position === 'absolute') && b.width >= innerWidth * 0.9 && b.height >= innerHeight * 0.9;
+  const bg = s.backgroundColor;
+  const alpha = bg === 'transparent' ? 0 : bg.startsWith('rgba') ? parseFloat(bg.slice(bg.lastIndexOf(',') + 1)) : 1;
+  const dims = alpha > 0 || (s.backdropFilter && s.backdropFilter !== 'none');
+  return fills && dims ? open || 'something (its backdrop dims the page)' : '';
+})()`;
+
+async function openOver(page: Page, id: number): Promise<string> {
+  return ((await page.evaluate(OPEN_OVER_SCRIPT(id)).catch(() => "")) as string) || "";
 }
 
 // Playwright's timeout message hides the cause in its call log; say it the way a person would notice it.
@@ -351,7 +391,13 @@ export async function execute(
           try {
             await locator.click({ timeout: 5_000 });
           } catch (err) {
-            if (!describeFailure(err).startsWith(COVERED) || !(await clickVisiblePart(page, action.id))) throw err;
+            if (!describeFailure(err).startsWith(COVERED) || !(await clickVisiblePart(page, action.id))) {
+              // Something open over the page took the click: the agent is told what to do, as a
+              // person sees it, and it is no defect of the page behind.
+              const open = describeFailure(err).startsWith(COVERED) ? await openOver(page, action.id) : "";
+              if (open) throw new Unusable(`${open} is open over the page and takes the click: finish it, choose from it or close it (Escape, or its close button) first`);
+              throw err;
+            }
           }
         } else if (el.tag === "select") await choose(locator, action.text);
         else if (customDropdown) await pick(page, locator, action.text);

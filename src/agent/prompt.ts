@@ -47,8 +47,10 @@ Action is one of:
 }
 
 /** A control's state, as a person sees it (and a screen reader announces it). */
-function stateOf(e: InteractiveElement): string {
+function stateOf(e: InteractiveElement, behindOpenLayer = false): string {
   const states = [
+    // Hidden from assistive technology while something is open: what a modal does to the page behind it.
+    behindOpenLayer && e.ax?.hidden ? "behind what is open" : "",
     e.disabled ? "disabled" : "",
     e.readOnly ? "read-only" : "",
     e.checked === undefined ? "" : e.checked ? "checked" : "not checked",
@@ -59,19 +61,20 @@ function stateOf(e: InteractiveElement): string {
   return states.length ? ` (${states.join(", ")})` : "";
 }
 
-function describeElement(e: InteractiveElement, screenReader = false): string {
-  const line = `[${e.id}] ${controlLabel(e, screenReader)}${stateOf(e)}`;
+function describeElement(e: InteractiveElement, screenReader = false, behindOpenLayer = false): string {
+  const line = `[${e.id}] ${controlLabel(e, screenReader)}${stateOf(e, behindOpenLayer)}`;
   if (!e.options) return line;
   return `${line} set to "${e.value ?? ""}", options: ${e.options.map((o) => `"${o}"`).join(" | ")}`;
 }
 
 export function buildStepMessage(obs: Observation, history: string[], view: StepView = {}): string {
   const shown = view.screenReader ? obs.elements.filter((e) => !e.ax?.hidden) : obs.elements;
-  const elements = shown.map((e) => describeElement(e, view.screenReader)).join("\n");
+  const elements = shown.map((e) => describeElement(e, view.screenReader, !!obs.openLayer)).join("\n");
   const past = history.length ? history.map((h, i) => `${i + 1}. ${h}`).join("\n") : "(none yet)";
+  const open = obs.openLayer ? `\nOpen now: ${obs.openLayer}. It takes clicks outside it: finish it, choose from it or close it (Escape, or its close button) before using what is behind it.\n` : "";
   return `URL: ${obs.url}
 Title: ${obs.title}
-
+${open}
 Interactive elements:
 ${elements}
 

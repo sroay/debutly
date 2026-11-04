@@ -46,14 +46,14 @@ Each finding says what went wrong, how many of the agents who reached that page 
 | HTTP error | A request returned 4xx or 5xx. 404s at addresses an agent made up itself are left out. |
 | JavaScript error | An uncaught error on the page. |
 | Console error | The page logged an error. |
-| Can't click | Something kept covering a control, such as a cookie banner, a tour popup or a fixed bar, so a person can't press it either. |
+| Can't click | Something that is part of the page kept covering a control, such as a fixed bar or an invisible layer over everything, so a person can't press it either. A click caught by something open over the page (a dialog, tour step, menu or dropdown list, or the backdrop dimming the page behind one) isn't a finding: the agent is told what is open and to close it first, as a person would. |
 | Unlabeled control | A button, link or field with no name, which a screen reader announces only as "button". Each finding says where the control is, by the named controls around it, and which icon it shows when the page's markup names one ("the trash icon"). Controls that Tab can't reach (disabled, or out of the tab order) and controls that have only a description are reported apart, as minor. |
 | Named only by its placeholder | A field with no label, which a screen reader names by its placeholder (a password's dots read as "13 bullet"). The placeholder is gone once someone types. |
 | Slow page | The page took over 10 seconds to arrive. It says what its scripts and styles weighed by then, and when most came uncompressed, that a test copy served straight from its container can be heavier than the real site. |
 | Agent stuck | An agent did the same thing three times on one page and nothing changed. |
 | Can't reach with the keyboard | The screen-reader agent couldn't move focus to a control: it isn't in the tab order. |
 | Enter doesn't press a button | The screen-reader agent pressed Enter on a button and nothing happened; Space pressed it. Most keyboard users press Enter, and stop there. Debutly tries Space only when Enter left the page looking exactly the same and sent nothing, so a button is never pressed twice. |
-| Keyboard focus hidden | A control with keyboard focus was entirely covered by something else. |
+| Keyboard focus hidden | A control with keyboard focus was entirely covered by something else, measured after the page has scrolled it into view. A dropdown's own open list over it doesn't count. |
 | Scrolls sideways at 320 pixels | At 400% zoom the page is wider than the window. |
 | Language | The page doesn't say its language, or an Arabic page says another language or runs left to right. |
 | Zoom stopped | The page's viewport setting stops pinch-zoom on phones (`user-scalable=no`, or `maximum-scale` under 2). |

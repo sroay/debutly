@@ -96,3 +96,23 @@ it("shows a sighted agent the icon on a button with no text, but not the screen-
   expect(buildStepMessage(obs, [])).toContain('[0] button "" (dots vertical icon)');
   expect(buildStepMessage(obs, [], { screenReader: true })).not.toContain("icon");
 });
+
+it("says what is open over the page, and marks the controls behind it", () => {
+  const obs = {
+    url: "http://a.test/dashboard",
+    title: "",
+    text: "",
+    openLayer: 'a dialog ("Welcome to Acme")',
+    elements: [
+      { id: 0, role: "link", name: "Add competitors", tag: "a", ax: { name: "Add competitors", role: "link", hidden: true } },
+      { id: 1, role: "button", name: "Skip", tag: "button", ax: { name: "Skip", role: "button", hidden: false } },
+    ],
+  };
+  const message = buildStepMessage(obs, []);
+  expect(message).toContain('Open now: a dialog ("Welcome to Acme"). It takes clicks outside it');
+  expect(message).toContain('[0] link "Add competitors" (behind what is open)');
+  expect(message).toContain('[1] button "Skip"\n');
+  // Nothing open, nothing said.
+  expect(buildStepMessage({ ...obs, openLayer: undefined }, [])).not.toContain("Open now");
+  expect(buildStepMessage({ ...obs, openLayer: undefined }, [])).not.toContain("behind what is open");
+});

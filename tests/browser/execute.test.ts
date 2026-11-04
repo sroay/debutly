@@ -2,7 +2,7 @@ import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { chromium, type Browser, type Page } from "playwright";
 import { startFixture, type RunningFixture } from "../../fixture/server";
 import { observe } from "../../src/browser/observe";
-import { execute, NOT_BY_KEYBOARD } from "../../src/browser/execute";
+import { COVERED, execute, NOT_BY_KEYBOARD } from "../../src/browser/execute";
 
 let fx: RunningFixture;
 let browser: Browser;
@@ -300,6 +300,32 @@ it("says so when what the agent clicked to upload opens no file picker", async (
   expect(result.error).toBe("clicking it opened no file picker");
 });
 
+it("tells the agent a dialog is open when its backdrop takes the click, and keeps a fixed bar over a button a finding (2026-11-04)", async () => {
+  // A welcome dialog over the dashboard: its backdrop fills the window.
+  await show(`<a href="#" id="add">Add competitors</a>
+    <div style="position:fixed;inset:0;background:rgba(0,0,0,.8)"></div>
+    <div role="dialog" aria-modal="true" aria-label="Welcome" style="position:fixed;top:20px;left:20px;background:#fff"><button>Skip</button></div>`);
+  let obs = await observe(page);
+  const behind = await execute(page, { type: "click", id: idOf(obs.elements, "Add competitors") }, obs, fx.url);
+  expect(behind.error).toBe('a dialog ("Welcome") is open over the page and takes the click: finish it, choose from it or close it (Escape, or its close button) first');
+
+  // A bottom bar fixed over the dialog's button is part of the page: still "something covers it".
+  await show(`<div style="height:300px"></div><button id="next" style="position:absolute;top:350px;width:200px;height:40px">Next</button>
+    <nav aria-label="Main" style="position:fixed;left:0;right:0;top:330px;height:80px;background:#000"></nav>`);
+  obs = await observe(page);
+  const bar = await execute(page, { type: "click", id: idOf(obs.elements, "Next") }, obs, fx.url);
+  expect(bar.error).toMatch(new RegExp("^" + COVERED));
+}, 30_000);
+
+it("doesn't call a dropdown's own open list over it hidden focus", async () => {
+  await show(`<button role="combobox" aria-expanded="true" style="position:absolute;top:10px;left:10px;width:200px;height:30px">Industry</button>
+    <div role="listbox" style="position:absolute;top:0;left:0;width:260px;height:120px;background:#fff"><div role="option">SaaS / Software</div></div>`);
+  await page.addStyleTag({ content: "[role=listbox]{z-index:10}" });
+  const obs = await observe(page);
+  const result = await execute(page, { type: "click", id: idOf(obs.elements, "Industry") }, obs, fx.url, undefined, { keyboard: true });
+  expect(result.focusObscured).toBeUndefined();
+});
+
 describe("keyboard only, as the screen-reader agent works", () => {
   const keyboard = { keyboard: true };
 
@@ -420,3 +446,11 @@ it("refuses a control whose browser-given name is destructive, though Debutly's 
   expect((await execute(page, { type: "press", key: "Enter" }, obs, fx.url)).blocked).toMatch(/^destructive action refused/);
   expect(await page.evaluate(() => document.body.dataset.deleted)).toBeUndefined();
 });
+
+it("tells the agent about an open menu by the backdrop that dims the page, though the menu isn't marked as a dialog", async () => {
+  // A mobile menu: a drawer and a dimming backdrop, neither with a dialog role.
+  await show(`<button style="position:absolute;left:400px;top:100px">Add</button><div style="position:fixed;inset:0;background:rgba(20,20,20,.45)"></div><aside style="position:fixed;top:0;left:0;width:200px;height:100%;background:#111"><a href="#">Analyse Job</a></aside>`);
+  const obs = await observe(page);
+  const result = await execute(page, { type: "click", id: idOf(obs.elements, "Add") }, obs, fx.url);
+  expect(result.error).toBe("something (its backdrop dims the page) is open over the page and takes the click: finish it, choose from it or close it (Escape, or its close button) first");
+}, 15_000);
