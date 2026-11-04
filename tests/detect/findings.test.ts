@@ -145,6 +145,26 @@ it("recognises a missing key however the app words it (2026-10-20)", () => {
   expect([env("/api/a"), env("/api/b"), env("/api/c"), env("/api/d")]).toEqual([true, true, true, false]);
 });
 
+it("puts a sign-in provider the test environment has no keys for down to the environment (2026-10-25)", () => {
+  const google: Signal = {
+    kind: "http_error",
+    status: 400,
+    requestUrl: "http://127.0.0.1:54421/auth/v1/authorize?provider=google",
+    url: `${B}/login`,
+    body: JSON.stringify({ code: 400, error_code: "validation_failed", msg: "Unsupported provider: provider is not enabled" }),
+  };
+  const [f] = detectFindings([session("a", [step(0, "/login", [google])])], { blocked: [], sandbox: true }).filter((x) => x.kind === "http_error");
+  expect(f.sandboxCause).toEqual(["missing key: Unsupported provider: provider is not enabled"]);
+  // Outside a test environment it is the app's to answer for.
+  expect(detectFindings([session("a", [step(0, "/login", [google])])]).find((x) => x.kind === "http_error")?.sandboxCause).toBeUndefined();
+});
+
+it("judges only the app's own pages for their language, not a sign-in server's raw error page", () => {
+  const appPage = { ...step(0, "/login"), observation: { ...step(0, "/login").observation, lang: "en", dir: "ltr", arabicShare: 0 } };
+  const authError = { ...step(1, "/auth/v1/authorize"), observation: { ...step(1, "/x").observation, url: "http://127.0.0.1:54421/auth/v1/authorize?provider=google", lang: "", dir: "ltr", arabicShare: 0 } };
+  expect(detectFindings([session("a", [appPage, authError])]).filter((f) => f.kind === "language")).toEqual([]);
+});
+
 it("in a test environment, puts a failure to read the website the agent made up down to the environment (2026-10-17)", () => {
   // The agent's company and its site are invented: pulsehr.io has no DNS records, so the app's
   // website read fails before the sandbox ever sees a call.

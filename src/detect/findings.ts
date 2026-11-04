@@ -34,6 +34,8 @@ const VERY_SLOW_MS = 30_000;
 // "no" and "API key", and the variable it wants.
 const MISSING_KEY =
   /no (?:[\w-]+ ){0,2}api[ _-]?key|api[ _-]?key (?:is )?(?:not set|missing|not configured|required)|no ai api configured|not configured|configure [a-z0-9_]*key\b|\bset [a-z0-9]+_[a-z0-9_]*key\b|\b[a-z0-9]+_api_key (?:is )?(?:not set|missing|undefined)/i;
+// How an auth server refuses a sign-in provider it has no keys for.
+const PROVIDER_OFF = /provider is not enabled|unsupported provider|provider (?:is )?(?:disabled|not configured)/i;
 // A web address typed in on its own, as an agent gives its company's site ("https://www.pulsehr.io/").
 const TYPED_SITE = /^(?:https?:\/\/)?(?:www\.)?((?:[a-z0-9-]+\.)+[a-z]{2,})(?:[/?#]\S*)?$/i;
 // How an app says it couldn't get at a site: "Could not read that website", "DNS lookup failed".
@@ -49,6 +51,14 @@ const SANDBOX_SLACK_MS = 2000;
 // Pages that differ only by a record's id are one page: every new customer of one app landed on
 // /app/accounts/<their account>/onboarding, which listed the same unlabeled button once per agent.
 const ID_SEGMENT = /^(?:\d+|[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}|[0-9a-f]{16,}|(?=[a-z0-9]*\d)[a-z0-9]{20,})$/i;
+
+const originOf = (url: string) => {
+  try {
+    return new URL(url).origin;
+  } catch {
+    return "";
+  }
+};
 
 const pathOf = (url: string) => {
   try {
@@ -282,12 +292,12 @@ function unnamedControls(elements: InteractiveElement[], pagePath: string): Cand
 
 const capitalize = (s: string) => s.charAt(0).toUpperCase() + s.slice(1);
 
-/** What a server error said, for quoting: its JSON `error` or `message` if it has one. */
+/** What a server error said, for quoting: its JSON `error`, `message` or `msg` (Supabase's auth) if it has one. */
 function said(body: string): string {
   let text = body;
   try {
-    const parsed = JSON.parse(body) as { error?: unknown; message?: unknown };
-    const field = parsed.error ?? parsed.message;
+    const parsed = JSON.parse(body) as { error?: unknown; message?: unknown; msg?: unknown };
+    const field = typeof parsed.error === "string" ? parsed.error : (parsed.message ?? parsed.msg);
     if (typeof field === "string") text = field;
   } catch {
     // not JSON: quote it as it is
@@ -298,8 +308,12 @@ function said(body: string): string {
 
 /** In a test environment, the app's own words when a server error says a key is missing. */
 function missingKey(signal: Signal, sandbox: boolean): string | undefined {
-  if (!sandbox || signal.kind !== "http_error" || signal.status < 500 || !signal.body || !MISSING_KEY.test(signal.body)) return undefined;
-  return said(signal.body);
+  if (!sandbox || signal.kind !== "http_error" || !signal.body) return undefined;
+  if (signal.status >= 500 && MISSING_KEY.test(signal.body)) return said(signal.body);
+  // A sign-in provider the test environment's auth server has no keys for (Google, Microsoft…)
+  // refuses with a 400: "Unsupported provider: provider is not enabled" (2026-10-25).
+  if (signal.status >= 400 && PROVIDER_OFF.test(signal.body)) return said(signal.body);
+  return undefined;
 }
 
 /** The site an agent typed in for its company, which is made up like the company. */
@@ -455,6 +469,8 @@ export function detectFindings(sessions: Session[], opts: DetectOptions = {}): F
   };
 
   for (const s of sessions) {
+    // The app's own pages are where it started; a sign-in server's raw error page is not one of them.
+    const appOrigin = originOf(s.steps[0]?.observation.url ?? "");
     let repeatKey = "";
     let repeats = 0;
     // Per control: how often a click on it was refused because another element lay on top.
@@ -507,7 +523,7 @@ export function detectFindings(sessions: Session[], opts: DetectOptions = {}): F
 
       for (const c of unnamedControls(step.observation.elements, pagePath)) record(c, s.agentId, step.index);
 
-      for (const c of languageFindings(step.observation, pagePath)) record(c, s.agentId, step.index);
+      if (originOf(step.observation.url) === appOrigin) for (const c of languageFindings(step.observation, pagePath)) record(c, s.agentId, step.index);
 
       // Keyboard only (the screen-reader agent): a control Tab never reaches, and focus that
       // something entirely hides.
