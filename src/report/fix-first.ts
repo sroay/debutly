@@ -1,3 +1,4 @@
+import { describeProgress } from "../agent/progress";
 import { UNCOMPRESSED } from "../detect/findings";
 import type { Finding, Session } from "../types";
 
@@ -84,7 +85,9 @@ function stoppedItem(s: Session, needs: string, environment: boolean): string {
   // Out of steps, the note only says so; the agent's last thought says where it was.
   const said = s.outcome === "budget_exhausted" && s.steps.at(-1)?.reasoning ? `Its last thought: ${quote(s.steps.at(-1)!.reasoning)}` : `In the agent's words: ${quote(s.outcomeNote)}`;
   return [
-    `**${s.personaName}${who ? ` (${who})` : ""} ${STOPPED[s.outcome]}${where}.** ${said}`,
+    `**${s.personaName}${who ? ` (${who})` : ""} ${STOPPED[s.outcome]}${where}.**`,
+    describeProgress(s),
+    said,
     environment ? "Part of it may be the test environment: see the end of the report." : "",
     shot ? `Start with the last screenshot, ${shotPath(shot)}.` : "",
   ]

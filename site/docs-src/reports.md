@@ -15,7 +15,7 @@ How many agents ran, what the run cost, and the count of findings by severity. I
 
 Up to five things to look at, in order, so the report is useful in a couple of minutes:
 
-1. Each agent that gave up, ran out of steps or never got its invite: where it stopped, in its own words (or its last thought, if it ran out of steps), and its last screenshot.
+1. Each agent that gave up, ran out of steps or never got its invite: where it stopped, how far it got with its goal, in its own words (or its last thought, if it ran out of steps), and its last screenshot.
 2. Then the blocker and major findings, those an agent that stopped ran into first, each with one line on what to do.
 
 Minor and low-confidence findings are left for the full list below.
@@ -36,6 +36,8 @@ One line per agent: who it was, any access need, its first language when the run
 | `cancelled` | The run was stopped with Ctrl+C or `npx debutly cancel`. |
 
 **Where agents stopped** lists each agent that didn't succeed, the page it was on, and its own words.
+
+For an agent that gave up or ran out of steps, the report also says how far it got. The goal is split into the parts a person would tick off, such as "create the workspace", "invite the teammates" and "add three companies", and each is marked done, with the step that finished it, or not done. A part the agent believed done but the screen never showed is not done. When most of its steps after the last part done were on one page, the report names it: that is usually where to look. This takes one call to the judge model (`DEBUTLY_JUDGE_MODEL`) per agent that didn't finish. The outcomes table shows the count, e.g. `budget_exhausted (2 of 5 parts done)`.
 
 ## Findings
 

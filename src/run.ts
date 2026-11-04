@@ -2,6 +2,7 @@ import { mkdir, writeFile } from "node:fs/promises";
 import { join } from "node:path";
 import { chromium } from "playwright";
 import { LocalArtifactStore, type ArtifactStore } from "./artifacts/store";
+import { goalProgress } from "./agent/progress";
 import { runAgentSession } from "./agent/run-agent";
 import { runUnit, type RunAgent } from "./crew/run-unit";
 import { detectFindings } from "./detect/findings";
@@ -21,6 +22,8 @@ export interface SimulationOptions {
   /** Individuals and/or business crews; crews run owner first, then invited employees. */
   units: CustomerUnit[];
   llm: LlmClient;
+  /** Tells how far each agent that gave up or ran out of steps got with its goal; without one, reports leave that out. */
+  judge?: LlmClient;
   maxSteps: number;
   /** How many units run at once. */
   concurrency: number;
@@ -104,6 +107,17 @@ export async function runSimulation(o: SimulationOptions): Promise<SimulationRes
           );
     const perUnit = await mapWithConcurrency(o.units, o.concurrency, (unit) => runUnit(unit, o.goal, { runAgent, emailOf, inbox: o.inbox }));
     const sessions = perUnit.flat();
+    if (o.judge) {
+      const judge = o.judge;
+      await mapWithConcurrency(sessions, o.concurrency, async (s) => {
+        try {
+          const parts = await goalProgress(judge, s);
+          if (parts) s.progress = parts;
+        } catch (err) {
+          console.warn(`Could not tell how far ${s.personaName} got: ${err instanceof Error ? err.message : err}`);
+        }
+      });
+    }
     // Teammates who were never invited never ran; record them too.
     if (store && runId) for (const s of sessions.filter((x) => x.outcome === "not_invited")) await store.finishSession(runId, s);
 

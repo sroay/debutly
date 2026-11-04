@@ -1,4 +1,5 @@
 import { describeAction } from "../agent/describe";
+import { describeProgress } from "../agent/progress";
 import { MEASURED } from "../detect/findings";
 import { describeCriterion } from "../detect/wcag";
 import { OUT_OF_CREDITS } from "../llm/types";
@@ -85,6 +86,9 @@ function renderUnits(units: CustomerUnit[], sessions: Session[]): string[] {
 const needLabel = (s: Session) =>
   [s.inclusion?.replace(/_/g, " "), s.language && s.language !== "en" ? languageName(s.language) : ""].filter(Boolean).join(", ") || "—";
 
+// How far an agent that didn't get there got, in the outcomes table: " (3 of 4 parts done)".
+const partsDone = (s: Session) => (s.progress?.length ? ` (${s.progress.filter((p) => p.done).length} of ${s.progress.length} parts done)` : "");
+
 // The agents' own reasons are often the clearest statement of a blocker.
 function renderStops(sessions: Session[]): string {
   const lines = sessions.flatMap((s) => {
@@ -97,7 +101,8 @@ function renderStops(sessions: Session[]): string {
     } catch {
       where = "";
     }
-    return [`- **${s.personaName}** ${verb}${where}: "${s.outcomeNote}"`];
+    const progress = describeProgress(s);
+    return [`- **${s.personaName}** ${verb}${where}: "${s.outcomeNote}"${progress ? ` ${progress}` : ""}`];
   });
   return lines.length ? lines.join("\n") : "_Every agent reached its goal._";
 }
@@ -171,7 +176,7 @@ export function renderReport(input: ReportInput): string {
     "",
     `| Persona | Role | Needs | Outcome | Note |`,
     `|---|---|---|---|---|`,
-    ...input.sessions.map((s) => `| ${s.personaName} | ${s.role ?? "—"} | ${needLabel(s)} | ${s.outcome} | ${s.outcomeNote} |`),
+    ...input.sessions.map((s) => `| ${s.personaName} | ${s.role ?? "—"} | ${needLabel(s)} | ${s.outcome}${partsDone(s)} | ${s.outcomeNote} |`),
     "",
     `## Where agents stopped`,
     "",

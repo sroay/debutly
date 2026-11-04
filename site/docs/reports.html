@@ -101,7 +101,7 @@
 <h2 id="fix-these-first"><a class="anchor" href="#fix-these-first">Fix these first</a></h2>
 <p>Up to five things to look at, in order, so the report is useful in a couple of minutes:</p>
 <ol>
-<li>Each agent that gave up, ran out of steps or never got its invite: where it stopped, in its own words (or its last thought, if it ran out of steps), and its last screenshot.</li>
+<li>Each agent that gave up, ran out of steps or never got its invite: where it stopped, how far it got with its goal, in its own words (or its last thought, if it ran out of steps), and its last screenshot.</li>
 <li>Then the blocker and major findings, those an agent that stopped ran into first, each with one line on what to do.</li>
 </ol>
 <p>Minor and low-confidence findings are left for the full list below.</p>
@@ -141,6 +141,7 @@
 </tr>
 </tbody></table></div>
 <p><strong>Where agents stopped</strong> lists each agent that didn&#39;t succeed, the page it was on, and its own words.</p>
+<p>For an agent that gave up or ran out of steps, the report also says how far it got. The goal is split into the parts a person would tick off, such as &quot;create the workspace&quot;, &quot;invite the teammates&quot; and &quot;add three companies&quot;, and each is marked done, with the step that finished it, or not done. A part the agent believed done but the screen never showed is not done. When most of its steps after the last part done were on one page, the report names it: that is usually where to look. This takes one call to the judge model (<code>DEBUTLY_JUDGE_MODEL</code>) per agent that didn&#39;t finish. The outcomes table shows the count, e.g. <code>budget_exhausted (2 of 5 parts done)</code>.</p>
 <h2 id="findings"><a class="anchor" href="#findings">Findings</a></h2>
 <p>Each finding says what went wrong, how many of the agents who reached that page ran into it, and how to reproduce it: the agent&#39;s steps, each with its reason, and a screenshot. Pages that differ only by an id count as one page, written with <code>:id</code>: <code>/accounts/2/onboarding</code> and <code>/accounts/3/onboarding</code> are both <code>/accounts/:id/onboarding</code>.</p>
 <div class="table-wrap"><table>

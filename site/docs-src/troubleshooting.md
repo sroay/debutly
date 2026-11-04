@@ -47,7 +47,7 @@ Their invite email didn't reach Mailpit by the time the owner finished. Check th
 
 ## An agent ran out of steps
 
-`budget_exhausted` means it used all of `maxSteps` (30). A long journey may need more: `--max-steps 50`. If it spent them going round in circles, the findings usually say why, such as a control something covers.
+`budget_exhausted` means it used all of `maxSteps` (30). The report says how many parts of its goal it got done, and the page most of its last steps were on. If it got most parts done and was still going, the journey may need more steps: `--max-steps 50`. If it spent them going round on one page, look there first: the findings usually say why, such as a control something covers.
 
 ## Lots of "Caused by the test environment"
 

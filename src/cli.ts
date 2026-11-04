@@ -220,6 +220,7 @@ const result = await runSimulation({
   goal: values.goal,
   units,
   llm: nav,
+  judge,
   maxSteps,
   concurrency: Number(values.concurrency),
   outDir,

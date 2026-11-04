@@ -166,6 +166,15 @@ export interface Session {
   usage?: { inputTokens: number; outputTokens: number; costUsd?: number };
   /** The low-vision agent's pages, measured again at 320 CSS pixels wide. */
   reflow?: ReflowCheck[];
+  /** For an agent that gave up or ran out of steps: the goal's parts, and which it got done. */
+  progress?: GoalPart[];
+}
+
+/** A part of an agent's goal, as a person would tick it off, and the step that finished it. */
+export interface GoalPart {
+  part: string;
+  done: boolean;
+  stepIndex?: number;
 }
 
 export type Severity = "blocker" | "major" | "minor";
