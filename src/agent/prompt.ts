@@ -37,7 +37,7 @@ Use test data only: card number 4242 4242 4242 4242. Never enter real personal o
 
 Reply with exactly one JSON object: {"reasoning": string, "action": Action}
 Action is one of:
-{"type":"click","id":number}
+{"type":"click","id":number}  (a "clickable" is text the page lets you click, such as a title that turns into a field to edit)
 {"type":"fill","id":number,"text":string}  (on a select or dropdown, text is the option to choose)
 {"type":"upload","id":number,"file":"photo"|"document"}  (attach a file through an upload button or file field: you have a sample photo and a sample CV/document)
 {"type":"goto","path":string}
@@ -68,7 +68,8 @@ function describeElement(e: InteractiveElement, screenReader = false, behindOpen
 }
 
 export function buildStepMessage(obs: Observation, history: string[], view: StepView = {}): string {
-  const shown = view.screenReader ? obs.elements.filter((e) => !e.ax?.hidden) : obs.elements;
+  // Clickable text is no control to a screen reader: it is read out as text, and Tab passes it by.
+  const shown = view.screenReader ? obs.elements.filter((e) => !e.ax?.hidden && e.role !== "clickable") : obs.elements;
   const elements = shown.map((e) => describeElement(e, view.screenReader, !!obs.openLayer)).join("\n");
   const past = history.length ? history.map((h, i) => `${i + 1}. ${h}`).join("\n") : "(none yet)";
   const open = obs.openLayer ? `\nOpen now: ${obs.openLayer}. It takes clicks outside it: finish it, choose from it or close it (Escape, or its close button) before using what is behind it.\n` : "";

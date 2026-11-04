@@ -184,6 +184,36 @@ it("reads the icon a control with no text shows, from how icon sets name their i
   expect(elements.map((e) => e.icon)).toEqual(["dots vertical", "panel left close", "trash", "bars", "settings", "bell", undefined, undefined]);
 });
 
+it("lists text a sighted person can click though it is no control, like a title that turns into a field (2026-11-04)", async () => {
+  await page.goto("about:blank");
+  await page.setContent(`<style>.c { cursor: pointer }</style>
+    <div class="c" onclick="this.outerHTML='<input aria-label=Name>'"><span>Untitled</span></div>
+    <div class="c"><a href="/a">Open record</a> <span>12 notes</span></div>
+    <label class="c">Remember me <input type="checkbox"></label>
+    <div class="c">${"A long card description that runs on and on. ".repeat(3)}</div>
+    <div class="c" aria-hidden="true">Collapsed menu entry</div>
+    <p>Plain text</p>`);
+  const obs = await observe(page);
+  expect(obs.elements.map((e) => [e.role, e.name])).toEqual([
+    ["clickable", "Untitled"],
+    ["link", "Open record"],
+    ["input:checkbox", "Remember me"],
+    ["clickable", "Collapsed menu entry"],
+  ]);
+  expect(obs.elements[0]).toMatchObject({ tag: "div", tabbable: false });
+  const { buildStepMessage } = await import("../../src/agent/prompt");
+  expect(buildStepMessage(obs, [])).toContain('[0] clickable "Untitled"');
+  // Read out as text, not offered as a control.
+  expect(buildStepMessage(obs, [], { screenReader: true })).not.toContain("clickable");
+  // A hidden menu entry no keyboard reaches is no "hidden but reachable" finding.
+  const { detectFindings } = await import("../../src/detect/findings");
+  const session = { agentId: "a", personaName: "A", goal: "g", outcome: "gave_up" as const, outcomeNote: "", steps: [{ index: 0, observation: obs, action: { type: "wait" as const }, reasoning: "", signals: [] }] };
+  expect(detectFindings([session]).filter((f) => f.kind === "hidden_focus")).toEqual([]);
+  const { execute } = await import("../../src/browser/execute");
+  await execute(page, { type: "click", id: 0 }, obs, "http://a.test");
+  expect((await observe(page)).elements[0]).toMatchObject({ role: "input:text", name: "Name" });
+});
+
 it("says what is open over the page: a dialog by its name, or an open dropdown list", async () => {
   await page.goto("about:blank");
   await page.setContent(`<button>Behind</button><div role="dialog" aria-modal="true" aria-labelledby="t"><h2 id="t">Welcome to Acme</h2><button>Skip</button></div>`);

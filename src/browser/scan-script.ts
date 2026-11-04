@@ -41,12 +41,37 @@ export const SCAN_SCRIPT = `(() => {
     }
     return '';
   };
+  // Text a sighted person clicks though its markup names no control: it shows the pointer a link
+  // does, as a record's title that turns into a field does. Only the element that sets the pointer
+  // (it is inherited), holding no control and inside none, with a short text. Twenty's "Untitled"
+  // contact title is a div like that; unable to see it, an owner spent 19 steps trying to name a
+  // contact and ran out of steps (2026-11-04).
+  const MAX_CLICKABLE = 30;
+  let clickables = 0;
+  const pointer = (el) => !!el && getComputedStyle(el).cursor === 'pointer';
+  const clickableText = (el) => {
+    if (clickables >= MAX_CLICKABLE || el.closest('[data-debutly-id], label, svg') || el.querySelector(selector)) return '';
+    if (!pointer(el) || pointer(el.parentElement) || !visible(el)) return '';
+    const text = (el.innerText || '').replace(/\\s+/g, ' ').trim();
+    return text.length <= 80 ? text : '';
+  };
   const out = [];
   let next = 0;
   // Ids from the last look stay on elements that have since gone out of sight; the same number
   // given to another element then matches two ("strict mode violation"). Start clean each time.
   for (const el of document.querySelectorAll('[data-debutly-id]')) el.removeAttribute('data-debutly-id');
-  for (const el of document.querySelectorAll(selector)) {
+  for (const el of document.querySelectorAll('body *')) {
+    if (!el.matches(selector)) {
+      const text = clickableText(el);
+      if (!text) continue;
+      clickables++;
+      const id = next++;
+      el.setAttribute('data-debutly-id', String(id));
+      const item = { id, role: 'clickable', name: text, tag: el.tagName.toLowerCase() };
+      if (el.tabIndex < 0) item.tabbable = false;
+      out.push(item);
+      continue;
+    }
     // Apps hide the real file field behind a styled button or drop zone; files can still be
     // attached to it, so list it.
     const fileField = el.tagName === 'INPUT' && el.type === 'file';
