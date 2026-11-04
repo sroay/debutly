@@ -73,19 +73,25 @@ export function describeEffect(action: Action, before: Observation, after: Obser
 
   const parts: string[] = [];
   if (result.enterIgnored) parts.push("Enter did nothing on it, so Space was pressed instead");
+  if (result.invalid?.length) parts.push(`the browser stopped the form and said: ${result.invalid.join("; ")}`);
   const changed = whatChanged(before, after, (e) => controlLabel(e, view.screenReader));
   if (pathOf(after.url) !== pathOf(before.url)) parts.push(`now on ${pathOf(after.url)}`);
   else if (changed) parts.push(changed);
   else if (after.text !== before.text) parts.push("the page changed");
-  else if (action.type !== "fill" && !signals.some((s) => s.kind === "download")) parts.push("nothing visibly changed");
+  else if (action.type !== "fill" && !result.invalid?.length && !signals.some((s) => s.kind === "download")) parts.push("nothing visibly changed");
 
   for (const s of signals) if (s.kind === "download") parts.push(`a file downloaded: ${s.filename}`);
 
   for (const s of signals) if (s.kind === "dialog") parts.push(`a ${s.dialogType} dialog said "${s.message}" (answered OK)`);
   if (signals.some((s) => s.kind === "page_error")) parts.push("a JavaScript error occurred");
+  // Only the server failing: a person never sees a status code, and apps answer 404 or 401 as part
+  // of working (a setting never saved yet). Told "a request failed (HTTP 404)" after each click, an
+  // agent decided onboarding was broken (2026-10-25). The report still lists those answers.
   const failed = [
     ...new Set(
-      signals.filter((s) => s.kind === "http_error" && pathOf(s.requestUrl) !== "/favicon.ico").map((s) => (s.kind === "http_error" ? s.status : 0)),
+      signals
+        .filter((s) => s.kind === "http_error" && s.status >= 500 && pathOf(s.requestUrl) !== "/favicon.ico")
+        .map((s) => (s.kind === "http_error" ? s.status : 0)),
     ),
   ];
   for (const status of failed) parts.push(`a request failed (HTTP ${status})`);

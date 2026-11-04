@@ -23,6 +23,12 @@ it("reports on-page changes and failed requests", () => {
   expect(describeEffect({ type: "click", id: 1 }, pricing, after, signals, {})).toBe('the page changed: new text "Something went wrong"; a request failed (HTTP 500)');
 });
 
+it("says nothing of 4xx answers, which a person never sees and apps give in passing (2026-10-25)", () => {
+  // A settings page reading a setting never saved: 404 by design.
+  const notSaved = [{ kind: "http_error" as const, status: 404, requestUrl: "http://a.test/api/settings?key=linkedin_tokens", url: pricing.url }];
+  expect(describeEffect({ type: "click", id: 1 }, pricing, pricing, notSaved, {})).toBe("nothing visibly changed");
+});
+
 it("stays quiet about typing, which rarely changes the visible text", () => {
   expect(describeEffect({ type: "fill", id: 1, text: "a" }, pricing, pricing, [], {})).toBe("");
 });
@@ -86,5 +92,13 @@ it("tells a keyboard agent that Enter did nothing and Space was pressed", () => 
   const after = { ...at("Invite your team", [el(0, "button", "Continue")]), url: "http://a.test/invite-team" };
   expect(describeEffect({ type: "click", id: 0 }, before, after, [], { enterIgnored: true }, { screenReader: true })).toBe(
     "Enter did nothing on it, so Space was pressed instead; now on /invite-team",
+  );
+});
+
+it("passes on what the browser's own bubble said, instead of 'nothing visibly changed'", () => {
+  const signup = at("Create account", [el(0, "input:password", "Password (min 8 chars)"), el(1, "button", "Create account")]);
+  const invalid = ['"Password (min 8 chars)": Please lengthen this text to 8 characters or more (you are currently using 7 characters).'];
+  expect(describeEffect({ type: "click", id: 1 }, signup, signup, [], { invalid })).toBe(
+    'the browser stopped the form and said: "Password (min 8 chars)": Please lengthen this text to 8 characters or more (you are currently using 7 characters).',
   );
 });

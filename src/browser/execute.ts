@@ -133,6 +133,25 @@ async function focusByKeyboard(page: Page, locator: Locator, id: number): Promis
 }
 
 const EDGE_OF_WINDOW = "the edge of the window";
+
+// What the browser itself says when a submit finds a field invalid ("Please lengthen this text to
+// 8 characters or more"): a person sees that bubble; it isn't in the page's text, so an agent with
+// a 7-letter password saw nothing happen, and gave up saying sign-up was broken (2026-10-25).
+// Listened for during each action; a string, like SCAN_SCRIPT.
+const LISTEN_INVALID = `(() => {
+  if (window.__debutlyInvalid) return;
+  window.__debutlyInvalid = [];
+  document.addEventListener('invalid', (e) => {
+    const el = e.target;
+    const label = (el.labels && el.labels[0] && el.labels[0].textContent) || el.getAttribute('aria-label') || el.getAttribute('placeholder') || el.name || 'a field';
+    window.__debutlyInvalid.push('"' + label.replace(/\\s+/g, ' ').trim().slice(0, 60) + '": ' + el.validationMessage);
+  }, true);
+})()`;
+const READ_INVALID = `(() => {
+  const said = window.__debutlyInvalid || [];
+  window.__debutlyInvalid = [];
+  return [...new Set(said)].slice(0, 3);
+})()`;
 /** Long enough for a smooth scroll to finish. */
 const SMOOTH_SCROLL_MS = 600;
 
@@ -371,6 +390,7 @@ export async function execute(
   opts: ExecuteOptions = {},
 ): Promise<ActionResult> {
   const result: ActionResult = {};
+  await page.evaluate(LISTEN_INVALID).catch(() => {});
   try {
     switch (action.type) {
       case "click":
@@ -437,7 +457,9 @@ export async function execute(
     await page.waitForLoadState("domcontentloaded");
     // Let async handlers (fetch after submit, deferred errors) surface their signals.
     await page.waitForTimeout(300);
-    return result.focusObscured || result.enterIgnored ? result : {};
+    const invalid = ((await page.evaluate(READ_INVALID).catch(() => [])) as string[]) ?? [];
+    if (invalid.length) result.invalid = invalid;
+    return result;
   } catch (err) {
     if (err instanceof Refused) return { blocked: err.message };
     if (err instanceof NotByKeyboard || err instanceof Unusable) return { error: err.message };

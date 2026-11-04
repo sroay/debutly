@@ -120,6 +120,8 @@ export interface ActionResult {
   focusObscured?: string;
   /** Keyboard only: Enter did nothing on the button, and Space pressed it. */
   enterIgnored?: true;
+  /** What the browser's own bubble said about fields a submit found invalid: '"Password": Please lengthen…'. */
+  invalid?: string[];
 }
 
 export interface Step extends ActionResult {

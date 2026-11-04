@@ -454,3 +454,20 @@ it("tells the agent about an open menu by the backdrop that dims the page, thoug
   const result = await execute(page, { type: "click", id: idOf(obs.elements, "Add") }, obs, fx.url);
   expect(result.error).toBe("something (its backdrop dims the page) is open over the page and takes the click: finish it, choose from it or close it (Escape, or its close button) first");
 }, 15_000);
+
+it("hears what the browser's own bubble says when a submit finds a field invalid (2026-10-25)", async () => {
+  // A 7-letter password where 8 are needed: the browser stops the form with a bubble the page's text doesn't have.
+  await show(`<form onsubmit="event.preventDefault(); document.body.dataset.sent = 'yes'">
+    <input type="password" placeholder="Password (min 8 chars)" minlength="8" required>
+    <button>Create account</button></form>`);
+  let obs = await observe(page);
+  await execute(page, { type: "fill", id: idOf(obs.elements, "Password (min 8 chars)"), text: "Raj1234" }, obs, fx.url);
+  obs = await observe(page);
+  const result = await execute(page, { type: "click", id: idOf(obs.elements, "Create account") }, obs, fx.url);
+  expect(result.invalid).toHaveLength(1);
+  expect(result.invalid![0]).toMatch(/^"Password \(min 8 chars\)": Please lengthen this text to 8 characters or more/);
+  expect(await page.evaluate(() => document.body.dataset.sent)).toBeUndefined();
+  // Once put right, nothing is said.
+  await execute(page, { type: "fill", id: idOf(obs.elements, "Password (min 8 chars)"), text: "Raj12345!" }, obs, fx.url);
+  expect((await execute(page, { type: "click", id: idOf(obs.elements, "Create account") }, obs, fx.url)).invalid).toBeUndefined();
+}, 30_000);
